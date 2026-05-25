@@ -1,0 +1,109 @@
+.toastContainer {
+  position: fixed;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  pointer-events: none;
+  max-width: 420px;
+  width: 100%;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--color-gray-200);
+  pointer-events: auto;
+  animation: slideInRight var(--transition-slow) ease-out;
+}
+
+.toast.exiting {
+  animation: fadeOut var(--transition-fast) ease-in forwards;
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.success .icon { color: var(--color-success); }
+.error .icon { color: var(--color-error); }
+.warning .icon { color: var(--color-warning); }
+.info .icon { color: var(--color-info); }
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.message {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-gray-800);
+  line-height: var(--leading-snug);
+}
+
+.closeBtn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  color: var(--color-gray-400);
+  transition: all var(--transition-fast);
+}
+
+.closeBtn:hover {
+  background: var(--color-gray-100);
+  color: var(--color-gray-600);
+}
+
+.progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  animation: progress 4s linear forwards;
+}
+
+.success .progress { background: var(--color-success); }
+.error .progress { background: var(--color-error); }
+.warning .progress { background: var(--color-warning); }
+.info .progress { background: var(--color-info); }
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; transform: translateX(50%); }
+}
+
+@keyframes progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+@media (max-width: 640px) {
+  .toastContainer {
+    right: var(--space-2);
+    left: var(--space-2);
+    max-width: none;
+  }
+}

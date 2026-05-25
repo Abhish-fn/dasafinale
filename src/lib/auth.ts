@@ -1,0 +1,50 @@
+import NextAuth from 'next-auth';
+import authConfig from './auth.config';
+import dbConnect from './db';
+import User from '@/models/User';
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
+  session: { strategy: 'jwt' },
+  pages: {
+    signIn: '/login',
+    error: '/login',
+  },
+  callbacks: {
+    signIn: async ({ user }) => {
+      try {
+        await dbConnect();
+        let dbUser = await User.findOne({ email: user.email });
+        if (!dbUser) {
+          dbUser = await User.create({
+            name: user.name ?? '',
+            email: user.email ?? '',
+            image: user.image ?? '',
+            provider: 'google',
+            role: 'user',
+          });
+        }
+        // Cache DB data on user object — jwt callback reads this, NO second DB call
+        (user as Record<string, unknown>).dbId = dbUser._id.toString();
+        (user as Record<string, unknown>).dbRole = dbUser.role;
+        return true;
+      } catch (error) {
+        console.error('Auth signIn error:', error);
+        return '/login?error=db';
+      }
+    },
+    jwt: async ({ token, user }) => {
+      // Only present on first sign-in — reads cached data from signIn callback
+      if (user) {
+        token.role = (user as Record<string, unknown>).dbRole as string || 'user';
+        token.userId = (user as Record<string, unknown>).dbId as string;
+      }
+      return token;
+    },
+    session: async ({ session, token }) => {
+      session.user.role = token.role as string;
+      session.user.id = token.userId as string;
+      return session;
+    },
+  },
+});

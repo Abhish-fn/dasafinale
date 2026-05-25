@@ -1,0 +1,99 @@
+import Link from 'next/link';
+import Image from 'next/image';
+import { formatPrice } from '@/lib/utils';
+import styles from './ProductCard.module.css';
+
+interface ProductCardProps {
+  product: {
+    _id: string;
+    slug: string;
+    title: string;
+    images: string[];
+    price: number;
+    compareAtPrice?: number;
+    category: string;
+    packagingSize: string;
+    stock: number;
+    isMustTry?: boolean;
+    isBestSeller?: boolean;
+    tags?: string[];
+    foodType: string;
+  };
+}
+
+export default function ProductCard({ product }: ProductCardProps) {
+  const discount = product.compareAtPrice
+    ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
+    : 0;
+
+  const categoryEmojis: Record<string, string> = {
+    'Clay Pot Roasted Seeds & Superfoods': '🫘',
+    'Millet Munchies': '🌾',
+    'Trail Mixes': '🥜',
+    'Healthy Cookies': '🍪',
+    'Protein Bars': '💪',
+    'Granola': '🥣',
+  };
+
+  return (
+    <Link href={`/products/${product.slug}`} className={styles.card}>
+      <div className={styles.imageWrapper}>
+        {product.images[0] ? (
+          <Image
+            src={product.images[0]}
+            alt={product.title}
+            fill
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className={styles.image}
+          />
+        ) : (
+          <div className={styles.placeholder}>
+            {categoryEmojis[product.category] || '🌿'}
+          </div>
+        )}
+
+        <div className={styles.badges}>
+          {product.isMustTry && <span className={`${styles.badge} ${styles.mustTry}`}>Must Try</span>}
+          {product.isBestSeller && <span className={`${styles.badge} ${styles.bestSeller}`}>Best Seller</span>}
+          {discount > 0 && <span className={`${styles.badge} ${styles.discount}`}>{discount}% OFF</span>}
+        </div>
+
+        <button
+          className={styles.wishlistBtn}
+          onClick={(e) => { e.preventDefault(); /* TODO: wire up wishlist */ }}
+          aria-label="Add to wishlist"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+        </button>
+      </div>
+
+      <div className={styles.body}>
+        <div className={styles.category}>{product.foodType}</div>
+        <h3 className={styles.title}>{product.title}</h3>
+        <div className={styles.size}>{product.packagingSize}</div>
+
+        <div className={styles.priceRow}>
+          <span className={styles.price}>{formatPrice(product.price)}</span>
+          {product.compareAtPrice && product.compareAtPrice > product.price && (
+            <>
+              <span className={styles.comparePrice}>{formatPrice(product.compareAtPrice)}</span>
+              <span className={styles.discountPercent}>{discount}% off</span>
+            </>
+          )}
+        </div>
+
+        {product.stock === 0 && <div className={styles.outOfStock}>Out of Stock</div>}
+
+        {product.tags && product.tags.length > 0 && (
+          <div className={styles.tags}>
+            {product.tags.slice(0, 3).map((tag) => (
+              <span key={tag} className={styles.tag}>{tag}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    </Link>
+  );
+}
