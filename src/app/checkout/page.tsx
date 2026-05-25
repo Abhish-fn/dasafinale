@@ -1,0 +1,419 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { useSession } from 'next-auth/react';
+import { useCart } from '@/context/CartContext';
+import { useToast } from '@/components/ui/Toast';
+import { formatPrice, calculateShippingFee } from '@/lib/utils';
+import styles from './checkout.module.css';
+
+interface Address {
+  _id: string;
+  label: string;
+  fullName: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  isDefault: boolean;
+}
+
+interface CouponInfo {
+  code: string;
+  discount: number;
+  description?: string;
+}
+
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Razorpay: any;
+  }
+}
+
+export default function CheckoutPage() {
+  const router = useRouter();
+  const { data: session, status: authStatus } = useSession();
+  const { items, total, refreshCart } = useCart();
+  const { toast } = useToast();
+
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<string>('');
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [coupon, setCoupon] = useState<CouponInfo | null>(null);
+  const [couponError, setCouponError] = useState('');
+  const [notes, setNotes] = useState('');
+  const [processing, setProcessing] = useState(false);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
+
+  // Address form state
+  const [form, setForm] = useState({
+    label: 'Home', fullName: '', phone: '', addressLine1: '', addressLine2: '',
+    city: '', state: '', pincode: '', isDefault: false,
+  });
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (authStatus === 'unauthenticated') router.push('/login');
+  }, [authStatus, router]);
+
+  // Fetch addresses
+  const fetchAddresses = useCallback(async () => {
+    try {
+      const res = await fetch('/api/addresses');
+      const data = await res.json();
+      setAddresses(data.addresses || []);
+      const defaultAddr = (data.addresses || []).find((a: Address) => a.isDefault);
+      if (defaultAddr) setSelectedAddress(defaultAddr._id);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingAddresses(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchAddresses(); }, [fetchAddresses]);
+
+  // Load Razorpay SDK
+  useEffect(() => {
+    if (!document.getElementById('razorpay-sdk')) {
+      const script = document.createElement('script');
+      script.id = 'razorpay-sdk';
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Save address
+  const handleSaveAddress = async () => {
+    try {
+      const res = await fetch('/api/addresses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error('Failed to save address');
+      const data = await res.json();
+      toast('Address saved!', 'success');
+      setShowAddressForm(false);
+      setForm({ label: 'Home', fullName: '', phone: '', addressLine1: '', addressLine2: '', city: '', state: '', pincode: '', isDefault: false });
+      await fetchAddresses();
+      setSelectedAddress(data.address._id);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to save', 'error');
+    }
+  };
+
+  // Apply coupon
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponError('');
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: couponCode, cartTotal: total }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCouponError(data.error);
+        return;
+      }
+      setCoupon({ code: data.code, discount: data.discount, description: data.description });
+      toast(`Coupon applied! You save ${formatPrice(data.discount)}`, 'success');
+    } catch {
+      setCouponError('Failed to validate coupon');
+    }
+  };
+
+  // Pricing
+  const discount = coupon?.discount || 0;
+  const subtotalAfterDiscount = total - discount;
+  const shipping = calculateShippingFee(subtotalAfterDiscount);
+  const grandTotal = subtotalAfterDiscount + shipping;
+
+  // Place order
+  const handlePlaceOrder = async () => {
+    if (!selectedAddress) {
+      toast('Please select a delivery address', 'warning');
+      return;
+    }
+    if (items.length === 0) {
+      toast('Your cart is empty', 'warning');
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      // 1. Create order
+      const res = await fetch('/api/checkout/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          addressId: selectedAddress,
+          couponCode: coupon?.code,
+          notes,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create order');
+
+      // 2. Open Razorpay modal
+      const options = {
+        key: data.key,
+        amount: data.amount,
+        currency: data.currency,
+        name: 'DasaDinusulu',
+        description: `Order ${data.orderId}`,
+        order_id: data.razorpayOrderId,
+        handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+          try {
+            const verifyRes = await fetch('/api/checkout/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              await refreshCart();
+              router.push(`/orders/${verifyData.orderId}?new=true`);
+            } else {
+              router.push(`/orders/${data.orderId}?failed=true`);
+            }
+          } catch {
+            router.push(`/orders/${data.orderId}?failed=true`);
+          }
+        },
+        prefill: {
+          name: session?.user?.name || '',
+          email: session?.user?.email || '',
+        },
+        theme: { color: '#6b8c3e' },
+        modal: {
+          ondismiss: () => {
+            setProcessing(false);
+            toast('Payment cancelled', 'warning');
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', () => {
+        setProcessing(false);
+        toast('Payment failed. Please try again.', 'error');
+      });
+      rzp.open();
+    } catch (err) {
+      setProcessing(false);
+      toast(err instanceof Error ? err.message : 'Failed to create order', 'error');
+    }
+  };
+
+  if (authStatus === 'loading' || loadingAddresses) {
+    return (
+      <div className={styles.container}>
+        <h1 className={styles.pageTitle}>Checkout</h1>
+        <div style={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className={styles.spinner} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.container}>
+      <h1 className={styles.pageTitle}>Checkout</h1>
+      <div className={styles.layout}>
+        <div>
+          {/* 1. Delivery Address */}
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>
+              <span className={styles.sectionNum}>1</span> Delivery Address
+            </h2>
+            <div className={styles.addressGrid}>
+              {addresses.map((addr) => (
+                <div
+                  key={addr._id}
+                  className={`${styles.addressCard} ${selectedAddress === addr._id ? styles.addressCardSelected : ''}`}
+                  onClick={() => setSelectedAddress(addr._id)}
+                >
+                  <div className={styles.addressLabel}>
+                    {addr.label}
+                    {addr.isDefault && <span className={styles.addressDefault}>Default</span>}
+                  </div>
+                  <div className={styles.addressName}>{addr.fullName}</div>
+                  <div className={styles.addressText}>
+                    {addr.addressLine1}{addr.addressLine2 ? `, ${addr.addressLine2}` : ''}<br />
+                    {addr.city}, {addr.state} - {addr.pincode}
+                  </div>
+                  <div className={styles.addressPhone}>📱 {addr.phone}</div>
+                </div>
+              ))}
+              <button className={styles.addAddressBtn} onClick={() => setShowAddressForm(!showAddressForm)}>
+                + Add New Address
+              </button>
+            </div>
+
+            {showAddressForm && (
+              <div className={styles.formGrid} style={{ marginTop: 'var(--space-4)' }}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Label</label>
+                  <select className={styles.formInput} value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })}>
+                    <option>Home</option><option>Work</option><option>Other</option>
+                  </select>
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Full Name</label>
+                  <input className={styles.formInput} value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} placeholder="Full name" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Phone</label>
+                  <input className={styles.formInput} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="10-digit mobile" />
+                </div>
+                <div className={`${styles.formGroup} ${styles.formFull}`}>
+                  <label className={styles.formLabel}>Address Line 1</label>
+                  <input className={styles.formInput} value={form.addressLine1} onChange={(e) => setForm({ ...form, addressLine1: e.target.value })} placeholder="House no, building, street" />
+                </div>
+                <div className={`${styles.formGroup} ${styles.formFull}`}>
+                  <label className={styles.formLabel}>Address Line 2 (Optional)</label>
+                  <input className={styles.formInput} value={form.addressLine2} onChange={(e) => setForm({ ...form, addressLine2: e.target.value })} placeholder="Area, landmark" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>City</label>
+                  <input className={styles.formInput} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="City" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>State</label>
+                  <input className={styles.formInput} value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} placeholder="State" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Pincode</label>
+                  <input className={styles.formInput} value={form.pincode} onChange={(e) => setForm({ ...form, pincode: e.target.value })} placeholder="6-digit pincode" />
+                </div>
+                <div className={`${styles.formActions} ${styles.formFull}`}>
+                  <button className={styles.formCancel} onClick={() => setShowAddressForm(false)}>Cancel</button>
+                  <button className={styles.formSave} onClick={handleSaveAddress}>Save Address</button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 2. Coupon */}
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>
+              <span className={styles.sectionNum}>2</span> Apply Coupon
+            </h2>
+            {!coupon ? (
+              <>
+                <div className={styles.couponRow}>
+                  <input
+                    className={styles.couponInput}
+                    placeholder="Enter coupon code"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  />
+                  <button className={styles.couponApply} onClick={handleApplyCoupon} disabled={!couponCode.trim()}>
+                    Apply
+                  </button>
+                </div>
+                {couponError && <p className={styles.couponError}>{couponError}</p>}
+              </>
+            ) : (
+              <div className={styles.couponSuccess}>
+                <span className={styles.couponSuccessText}>
+                  ✅ {coupon.code} — You save {formatPrice(coupon.discount)}
+                </span>
+                <button className={styles.couponRemove} onClick={() => { setCoupon(null); setCouponCode(''); }}>
+                  Remove
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 3. Notes */}
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>
+              <span className={styles.sectionNum}>3</span> Order Notes (Optional)
+            </h2>
+            <textarea
+              className={styles.notesInput}
+              placeholder="Any special instructions..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              maxLength={500}
+            />
+          </div>
+        </div>
+
+        {/* Order Summary */}
+        <div className={styles.summary}>
+          <h2 className={styles.summaryTitle}>Order Summary</h2>
+          <div className={styles.summaryItems}>
+            {items.map((item) => (
+              <div key={item._id} className={styles.summaryItem}>
+                <div className={styles.summaryItemImage}>
+                  {item.product.images?.[0] && (
+                    <Image src={item.product.images[0]} alt="" fill sizes="48px" />
+                  )}
+                </div>
+                <div className={styles.summaryItemInfo}>
+                  <div className={styles.summaryItemName}>{item.product.title}</div>
+                  <div className={styles.summaryItemMeta}>{item.product.packagingSize} × {item.quantity}</div>
+                </div>
+                <div className={styles.summaryItemPrice}>{formatPrice(item.product.price * item.quantity)}</div>
+              </div>
+            ))}
+          </div>
+
+          <hr className={styles.summaryDivider} />
+          <div className={styles.summaryRow}>
+            <span>Subtotal</span>
+            <span className={styles.summaryValue}>{formatPrice(total)}</span>
+          </div>
+          {discount > 0 && (
+            <div className={styles.summaryRow}>
+              <span>Discount ({coupon?.code})</span>
+              <span className={styles.summaryDiscount}>-{formatPrice(discount)}</span>
+            </div>
+          )}
+          <div className={styles.summaryRow}>
+            <span>Shipping</span>
+            <span className={styles.summaryValue}>{shipping === 0 ? 'FREE' : formatPrice(shipping)}</span>
+          </div>
+          <hr className={styles.summaryDivider} />
+          <div className={styles.summaryTotal}>
+            <span>Total</span>
+            <span>{formatPrice(grandTotal)}</span>
+          </div>
+
+          <button className={styles.payBtn} onClick={handlePlaceOrder} disabled={processing || !selectedAddress || items.length === 0}>
+            {processing ? 'Processing...' : `Pay ${formatPrice(grandTotal)}`}
+          </button>
+
+          <div className={styles.secureNote}>
+            🔒 Secured by Razorpay
+          </div>
+        </div>
+      </div>
+
+      {processing && (
+        <div className={styles.loadingOverlay}>
+          <div className={styles.loadingCard}>
+            <div className={styles.spinner} />
+            <p>Processing your order...</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

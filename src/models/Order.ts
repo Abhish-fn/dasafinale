@@ -28,7 +28,7 @@ export interface IShippingAddress {
 export interface ITrackingEntry {
   status: string;
   timestamp: Date;
-  description: string;
+  note?: string;
   location?: string;
 }
 
@@ -67,7 +67,7 @@ export interface IOrder extends Document {
     statusHistory: ITrackingEntry[];
   };
   isBuyNow: boolean;
-  expiresAt: Date;
+  expiresAt?: Date;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -111,7 +111,7 @@ const trackingEntrySchema = new Schema<ITrackingEntry>(
   {
     status: { type: String, required: true },
     timestamp: { type: Date, default: Date.now },
-    description: { type: String, required: true },
+    note: String,
     location: String,
   },
   { _id: false }
@@ -161,7 +161,7 @@ const orderSchema = new Schema<IOrder>(
       statusHistory: { type: [trackingEntrySchema], default: [] },
     },
     isBuyNow: { type: Boolean, default: false },
-    expiresAt: { type: Date, required: true },
+    expiresAt: Date,
     notes: String,
   },
   { timestamps: true }

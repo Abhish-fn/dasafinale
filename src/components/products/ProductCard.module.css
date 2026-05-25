@@ -88,6 +88,11 @@
   box-shadow: var(--shadow-md);
 }
 
+.wishlisted {
+  opacity: 1;
+  color: var(--color-error);
+}
+
 .body {
   padding: var(--space-4);
 }

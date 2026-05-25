@@ -6,12 +6,14 @@ import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useCart } from '@/context/CartContext';
 import MobileMenu from './MobileMenu';
 import styles from './Navbar.module.css';
 
 export default function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const { itemCount } = useCart();
   const [scrolled, setScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -72,7 +74,7 @@ export default function Navbar() {
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <path d="M16 10a4 4 0 0 1-8 0" />
               </svg>
-              <span className={styles.cartBadge}>0</span>
+              <span className={styles.cartBadge}>{itemCount}</span>
             </Link>
 
             {session?.user ? (
