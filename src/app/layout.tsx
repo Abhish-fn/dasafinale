@@ -18,10 +18,23 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: 'DasaDinusulu — Healthy Snacking, Reimagined',
+  title: {
+    default: 'DasaDinusulu — Healthy Snacking, Reimagined',
+    template: '%s | DasaDinusulu',
+  },
   description:
-    'Premium healthy snacks made with millets, seeds, and superfoods. No maida, no refined sugar — just pure, wholesome goodness.',
-  keywords: ['healthy snacks', 'millet snacks', 'no maida', 'organic', 'DasaDinusulu'],
+    'Premium healthy snacks made with millets, seeds, and superfoods. No maida, no refined sugar — just pure, wholesome goodness. Free delivery above ₹499.',
+  keywords: ['healthy snacks', 'millet snacks', 'no maida', 'organic', 'DasaDinusulu', 'protein bars', 'superfoods', 'clay pot roasted seeds'],
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://dasadinusulu.com'),
+  openGraph: {
+    title: 'DasaDinusulu — Healthy Snacking, Reimagined',
+    description: 'Premium healthy snacks made with millets, seeds, and superfoods. No maida, no refined sugar.',
+    siteName: 'DasaDinusulu',
+    locale: 'en_IN',
+    type: 'website',
+  },
+  robots: { index: true, follow: true },
+  icons: { icon: '/favicon.ico' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

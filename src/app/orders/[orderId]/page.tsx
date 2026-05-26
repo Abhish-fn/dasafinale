@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { formatPrice } from '@/lib/utils';
+import { useCart } from '@/context/CartContext';
+import { useToast } from '@/components/ui/Toast';
 import styles from '../orders.module.css';
 
 interface OrderDetail {
@@ -40,9 +42,13 @@ const statusMap: Record<string, string> = {
 export default function OrderDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { data: session } = useSession();
+  const { addToCart } = useCart();
+  const { toast } = useToast();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
   const isNew = searchParams.get('new') === 'true';
 
   useEffect(() => {
@@ -53,6 +59,31 @@ export default function OrderDetailPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [session?.user, params.orderId]);
+
+  const handleCancel = async () => {
+    if (!order || !confirm('Are you sure you want to cancel this order?')) return;
+    setCancelling(true);
+    try {
+      const res = await fetch(`/api/orders/${order.orderId}/cancel`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toast('Order cancelled', 'success');
+      setOrder({ ...order, status: 'cancelled' });
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to cancel', 'error');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleReorder = async () => {
+    if (!order) return;
+    for (const item of order.items) {
+      await addToCart(item.productSnapshot.productId, item.quantity);
+    }
+    toast('Items added to cart!', 'success');
+    router.push('/cart');
+  };
 
   if (loading) {
     return (
@@ -205,6 +236,26 @@ export default function OrderDetailPage() {
             <p>Payment: <strong style={{ color: order.payment.status === 'paid' ? 'var(--color-success)' : 'var(--color-gray-900)' }}>{order.payment.status}</strong></p>
             {order.payment.method && <p>Method: {order.payment.method}</p>}
             {order.payment.paidAt && <p>Paid: {new Date(order.payment.paidAt).toLocaleString('en-IN')}</p>}
+          </div>
+
+          <div style={{ marginTop: 'var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            {['delivered', 'cancelled'].includes(order.status) && (
+              <button
+                onClick={handleReorder}
+                style={{ width: '100%', padding: 'var(--space-3)', fontWeight: 600, color: 'white', background: 'var(--color-primary-500)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontSize: 'var(--text-sm)' }}
+              >
+                🔄 Reorder
+              </button>
+            )}
+            {['placed', 'confirmed'].includes(order.status) && (
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                style={{ width: '100%', padding: 'var(--space-3)', fontWeight: 600, color: 'var(--color-error)', background: 'transparent', border: '1.5px solid var(--color-error)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontSize: 'var(--text-sm)', opacity: cancelling ? 0.5 : 1 }}
+              >
+                {cancelling ? 'Cancelling...' : '✕ Cancel Order'}
+              </button>
+            )}
           </div>
         </div>
       </div>

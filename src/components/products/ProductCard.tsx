@@ -36,11 +36,11 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const categoryEmojis: Record<string, string> = {
     'Clay Pot Roasted Seeds & Superfoods': '🫘',
-    'Millet Munchies': '🌾',
-    'Trail Mixes': '🥜',
-    'Healthy Cookies': '🍪',
-    'Protein Bars': '💪',
-    'Granola': '🥣',
+    'Protein & Energy Snacks': '💪',
+    'Palm Jaggery Millet Biscuits': '🍪',
+    'Traditional Millet Savoury Snacks': '🌾',
+    'Healthy Chips & Crisps': '🥜',
+    'Premium Healthy Sweets': '🍬',
   };
 
   return (

@@ -38,6 +38,8 @@ export default function Navbar() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/products', label: 'Products' },
+    { href: '/about', label: 'About' },
+    { href: '/contact', label: 'Contact' },
   ];
 
   return (
@@ -103,6 +105,15 @@ export default function Navbar() {
 
                 {dropdownOpen && (
                   <div className={styles.dropdown}>
+                    {session.user.role === 'admin' && (
+                      <Link href="/admin" className={styles.dropdownItem} onClick={() => setDropdownOpen(false)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+                          <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+                        </svg>
+                        Admin Panel
+                      </Link>
+                    )}
                     <Link href="/orders" className={styles.dropdownItem} onClick={() => setDropdownOpen(false)}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />

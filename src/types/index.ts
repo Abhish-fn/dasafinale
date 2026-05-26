@@ -4,13 +4,13 @@ export type UserRole = 'user' | 'admin';
 
 export type ProductCategory =
   | 'Clay Pot Roasted Seeds & Superfoods'
-  | 'Millet Munchies'
-  | 'Trail Mixes'
-  | 'Healthy Cookies'
-  | 'Protein Bars'
-  | 'Granola';
+  | 'Protein & Energy Snacks'
+  | 'Palm Jaggery Millet Biscuits'
+  | 'Traditional Millet Savoury Snacks'
+  | 'Healthy Chips & Crisps'
+  | 'Premium Healthy Sweets';
 
-export type FoodType = 'Seeds' | 'Millet' | 'Nuts' | 'Cookies' | 'Bars' | 'Mix';
+export type FoodType = 'Seeds' | 'Superfood' | 'Biscuits' | 'Snacks' | 'Chips' | 'Sweets' | 'Protein';
 
 export type OrderStatus =
   | 'placed'
@@ -115,7 +115,7 @@ export interface IPricing {
 export interface ITrackingEntry {
   status: string;
   timestamp: string;
-  description: string;
+  note?: string;
   location?: string;
 }
 

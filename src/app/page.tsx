@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import FeaturedProducts from '@/components/home/FeaturedProducts';
 import styles from './page.module.css';
 
 const values = [
@@ -88,6 +89,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Featured Products */}
+      <FeaturedProducts />
 
       {/* Categories Section */}
       <section className={styles.categories}>

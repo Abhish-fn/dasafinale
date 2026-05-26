@@ -11,6 +11,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: '/login',
   },
   callbacks: {
+    ...authConfig.callbacks,
     signIn: async ({ user }) => {
       try {
         await dbConnect();
@@ -32,19 +33,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         console.error('Auth signIn error:', error);
         return '/login?error=db';
       }
-    },
-    jwt: async ({ token, user }) => {
-      // Only present on first sign-in — reads cached data from signIn callback
-      if (user) {
-        token.role = (user as Record<string, unknown>).dbRole as string || 'user';
-        token.userId = (user as Record<string, unknown>).dbId as string;
-      }
-      return token;
-    },
-    session: async ({ session, token }) => {
-      session.user.role = token.role as string;
-      session.user.id = token.userId as string;
-      return session;
     },
   },
 });

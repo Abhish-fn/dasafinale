@@ -10,6 +10,7 @@ import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useToast } from '@/components/ui/Toast';
 import ProductCard from '@/components/products/ProductCard';
+import ProductReviews from '@/components/products/Reviews';
 import styles from './productDetail.module.css';
 
 interface Variant {
@@ -340,6 +341,9 @@ export default function ProductDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Reviews */}
+      {product && <ProductReviews productId={product._id} />}
     </div>
   );
 }

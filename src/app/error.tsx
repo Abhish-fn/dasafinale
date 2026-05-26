@@ -1,77 +1,23 @@
 'use client';
 
-export default function Error({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 'calc(100dvh - 64px)',
-        padding: 'var(--space-8)',
-        textAlign: 'center',
-      }}
-    >
-      <span style={{ fontSize: '4rem', marginBottom: 'var(--space-4)' }}>⚠️</span>
-      <h2
-        style={{
-          fontFamily: 'var(--font-heading)',
-          fontSize: 'var(--text-2xl)',
-          fontWeight: 600,
-          color: 'var(--color-gray-900)',
-          marginBottom: 'var(--space-3)',
-        }}
-      >
+    <div style={{ maxWidth: 'var(--max-width)', margin: '0 auto', padding: 'var(--space-16) var(--space-4)', textAlign: 'center' }}>
+      <div style={{ fontSize: '5rem', marginBottom: 'var(--space-4)' }}>😵</div>
+      <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-gray-900)', marginBottom: 'var(--space-2)' }}>
         Something went wrong
-      </h2>
-      <p
-        style={{
-          fontSize: 'var(--text-base)',
-          color: 'var(--color-gray-500)',
-          marginBottom: 'var(--space-2)',
-          maxWidth: '400px',
-        }}
-      >
-        {error.message || 'An unexpected error occurred. Please try again.'}
+      </h1>
+      <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-gray-500)', marginBottom: 'var(--space-6)', maxWidth: 400, margin: '0 auto var(--space-6)' }}>
+        {error.message || "We're having trouble loading this page. Please try again."}
       </p>
-      {error.digest && (
-        <p
-          style={{
-            fontSize: 'var(--text-sm)',
-            color: 'var(--color-gray-400)',
-            marginBottom: 'var(--space-6)',
-          }}
-        >
-          Error ID: {error.digest}
-        </p>
-      )}
-      <button
-        onClick={reset}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 'var(--space-2)',
-          padding: 'var(--space-3) var(--space-8)',
-          fontFamily: 'var(--font-heading)',
-          fontWeight: 600,
-          fontSize: 'var(--text-base)',
-          color: 'white',
-          background: 'linear-gradient(135deg, var(--color-accent-500), var(--color-accent-600))',
-          borderRadius: 'var(--radius-full)',
-          border: 'none',
-          cursor: 'pointer',
-          transition: 'all 200ms ease',
-        }}
-      >
-        Try Again
-      </button>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'center' }}>
+        <button onClick={reset} style={{ padding: 'var(--space-3) var(--space-8)', fontWeight: 600, color: 'white', background: 'var(--color-primary-500)', borderRadius: 'var(--radius-full)', cursor: 'pointer' }}>
+          Try Again
+        </button>
+        <a href="/" style={{ padding: 'var(--space-3) var(--space-8)', fontWeight: 500, color: 'var(--color-gray-600)', border: '1px solid var(--color-gray-300)', borderRadius: 'var(--radius-full)' }}>
+          Go Home
+        </a>
+      </div>
     </div>
   );
 }

@@ -23,8 +23,9 @@ interface Product {
 }
 
 const categories = [
-  '', 'Clay Pot Roasted Seeds & Superfoods', 'Millet Munchies', 'Trail Mixes',
-  'Healthy Cookies', 'Protein Bars', 'Granola',
+  '', 'Clay Pot Roasted Seeds & Superfoods', 'Protein & Energy Snacks',
+  'Palm Jaggery Millet Biscuits', 'Traditional Millet Savoury Snacks',
+  'Healthy Chips & Crisps', 'Premium Healthy Sweets',
 ];
 
 export default function AdminProductsPage() {
