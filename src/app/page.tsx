@@ -20,12 +20,12 @@ const values = [
 ];
 
 const categories = [
-  { name: 'Clay Pot Seeds', emoji: '🫘', slug: 'Clay Pot Roasted Seeds & Superfoods' },
-  { name: 'Millet Munchies', emoji: '🌾', slug: 'Millet Munchies' },
-  { name: 'Trail Mixes', emoji: '🥜', slug: 'Trail Mixes' },
-  { name: 'Healthy Cookies', emoji: '🍪', slug: 'Healthy Cookies' },
-  { name: 'Protein Bars', emoji: '💪', slug: 'Protein Bars' },
-  { name: 'Granola', emoji: '🥣', slug: 'Granola' },
+  { name: 'Clay Pot Seeds & Superfoods', emoji: '🫘', slug: 'Clay Pot Roasted Seeds & Superfoods' },
+  { name: 'Protein & Energy', emoji: '💪', slug: 'Protein & Energy Snacks' },
+  { name: 'Palm Jaggery Biscuits', emoji: '🍪', slug: 'Palm Jaggery Millet Biscuits' },
+  { name: 'Traditional Snacks', emoji: '🌾', slug: 'Traditional Millet Savoury Snacks' },
+  { name: 'Chips & Crisps', emoji: '🥔', slug: 'Healthy Chips & Crisps' },
+  { name: 'Premium Sweets', emoji: '🍯', slug: 'Premium Healthy Sweets' },
 ];
 
 export default function HomePage() {

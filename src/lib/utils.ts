@@ -55,11 +55,11 @@ export function calculateShippingFee(subtotalPaisa: number): number {
 export function getCategoryPrefix(category: string): string {
   const prefixes: Record<string, string> = {
     'Clay Pot Roasted Seeds & Superfoods': 'CPS',
-    'Millet Munchies': 'MLM',
-    'Trail Mixes': 'TRM',
-    'Healthy Cookies': 'HCK',
-    'Protein Bars': 'PRB',
-    'Granola': 'GRN',
+    'Protein & Energy Snacks': 'PES',
+    'Palm Jaggery Millet Biscuits': 'PJB',
+    'Traditional Millet Savoury Snacks': 'TMS',
+    'Healthy Chips & Crisps': 'HCC',
+    'Premium Healthy Sweets': 'PHS',
   };
   return prefixes[category] || 'DSN';
 }

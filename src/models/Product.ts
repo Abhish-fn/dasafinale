@@ -36,14 +36,14 @@ export interface IProduct extends Document {
 
 const CATEGORIES = [
   'Clay Pot Roasted Seeds & Superfoods',
-  'Millet Munchies',
-  'Trail Mixes',
-  'Healthy Cookies',
-  'Protein Bars',
-  'Granola',
+  'Protein & Energy Snacks',
+  'Palm Jaggery Millet Biscuits',
+  'Traditional Millet Savoury Snacks',
+  'Healthy Chips & Crisps',
+  'Premium Healthy Sweets',
 ] as const;
 
-const FOOD_TYPES = ['Seeds', 'Millet', 'Nuts', 'Cookies', 'Bars', 'Mix'] as const;
+const FOOD_TYPES = ['Seeds', 'Superfood', 'Biscuits', 'Snacks', 'Chips', 'Sweets', 'Protein'] as const;
 
 const nutritionInfoSchema = new Schema(
   {

@@ -8,13 +8,13 @@ export const productSchema = z.object({
   compareAtPrice: z.number().int().positive().optional(),
   category: z.enum([
     'Clay Pot Roasted Seeds & Superfoods',
-    'Millet Munchies',
-    'Trail Mixes',
-    'Healthy Cookies',
-    'Protein Bars',
-    'Granola',
+    'Protein & Energy Snacks',
+    'Palm Jaggery Millet Biscuits',
+    'Traditional Millet Savoury Snacks',
+    'Healthy Chips & Crisps',
+    'Premium Healthy Sweets',
   ]),
-  foodType: z.enum(['Seeds', 'Millet', 'Nuts', 'Cookies', 'Bars', 'Mix']),
+  foodType: z.enum(['Seeds', 'Superfood', 'Biscuits', 'Snacks', 'Chips', 'Sweets', 'Protein']),
   tags: z.array(z.string()).max(10).default([]),
   packagingSize: z.string().min(1).max(20),
   parentProduct: z.string().optional(),
@@ -72,7 +72,7 @@ export const couponSchema = z.object({
   maxDiscountAmount: z.number().int().positive().optional(),
   usageLimit: z.number().int().positive().default(100),
   perUserLimit: z.number().int().positive().default(1),
-  expiresAt: z.string().datetime(),
+  expiresAt: z.string().datetime().optional(),
   isActive: z.boolean().default(true),
 });
 
