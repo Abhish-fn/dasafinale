@@ -64,6 +64,7 @@ export interface IProduct {
   packagingSize: string;
   parentProduct?: string;
   variantGroup?: string;
+  variantCount?: number;
   stock: number;
   isActive: boolean;
   isMustTry: boolean;

@@ -44,13 +44,15 @@ interface BuyNowProduct {
   images: string[];
   packagingSize: string;
   stock: number;
+  slug?: string;
+  variantGroup?: string;
 }
 
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status: authStatus } = useSession();
-  const { items, total, refreshCart } = useCart();
+  const { items, total, refreshCart, swapVariant } = useCart();
   const { toast } = useToast();
 
   // Buy Now params
@@ -80,10 +82,49 @@ function CheckoutContent() {
   const [pincodeValid, setPincodeValid] = useState(false);
   const pincodeAbortRef = useRef<AbortController | null>(null);
 
+  // Pack-size variant switching state
+  const [variantCache, setVariantCache] = useState<Record<string, { _id: string; packagingSize: string; price: number; stock: number; slug: string }[]>>({});
+  const [swapping, setSwapping] = useState<string | null>(null);
+
+  // Auto-fetch variants for checkout items
+  const fetchCheckoutVariants = useCallback(async (variantGroup: string, productSlug: string) => {
+    if (variantCache[variantGroup]) return;
+    try {
+      const res = await fetch(`/api/products/${productSlug}`);
+      const data = await res.json();
+      if (res.ok && data.product) {
+        const all = [
+          { _id: data.product._id, packagingSize: data.product.packagingSize, price: data.product.price, stock: data.product.stock, slug: data.product.slug },
+          ...(data.variants || []).map((v: Record<string, unknown>) => ({
+            _id: v._id as string, packagingSize: v.packagingSize as string,
+            price: v.price as number, stock: v.stock as number, slug: v.slug as string,
+          })),
+        ].sort((a, b) => a.price - b.price);
+        setVariantCache(prev => ({ ...prev, [variantGroup]: all }));
+      }
+    } catch (err) {
+      console.error('Failed to fetch variants:', err);
+    }
+  }, [variantCache]);
+
   // Redirect if not logged in
   useEffect(() => {
     if (authStatus === 'unauthenticated') router.push('/login');
   }, [authStatus, router]);
+
+  // Auto-fetch variants for all checkout items
+  useEffect(() => {
+    if (isBuyNow) return;
+    for (const item of items) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const vg = (item.product as any).variantGroup as string | undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const slug = (item.product as any).slug as string | undefined;
+      if (vg && slug && !variantCache[vg]) {
+        fetchCheckoutVariants(vg, slug);
+      }
+    }
+  }, [items, isBuyNow, fetchCheckoutVariants, variantCache]);
 
   // Fetch buy-now product
   useEffect(() => {
@@ -563,20 +604,66 @@ function CheckoutContent() {
         <div className={styles.summary}>
           <h2 className={styles.summaryTitle}>Order Summary</h2>
           <div className={styles.summaryItems}>
-            {displayItems.map((item) => (
-              <div key={item._id} className={styles.summaryItem}>
-                <div className={styles.summaryItemImage}>
-                  {item.product.images?.[0] && (
-                    <Image src={item.product.images[0]} alt="" fill sizes="48px" />
-                  )}
+            {displayItems.map((item) => {
+              const product = item.product;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const hasVariants = !!(product as any).variantGroup;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const vg = (product as any).variantGroup as string | undefined;
+              const variants = vg ? variantCache[vg] : undefined;
+
+              return (
+                <div key={item._id} className={styles.summaryItem}>
+                  <div className={styles.summaryItemImage}>
+                    {item.product.images?.[0] && (
+                      <Image src={item.product.images[0]} alt="" fill sizes="48px" />
+                    )}
+                  </div>
+                  <div className={styles.summaryItemInfo}>
+                    <div className={styles.summaryItemName}>{item.product.title}</div>
+                    <div className={styles.summaryItemMeta}>
+                      {/* Inline variant pill toggle */}
+                      {hasVariants && variants && variants.length > 1 && !isBuyNow ? (
+                        <span style={{ display: 'inline-flex', gap: '1px', border: '1px solid var(--color-gray-300)', borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginRight: 'var(--space-2)' }}>
+                          {variants.map((v) => (
+                            <button
+                              key={v._id}
+                              disabled={v._id === item.product._id || v.stock === 0 || swapping === item._id}
+                              onClick={async () => {
+                                if (v._id === item.product._id) return;
+                                setSwapping(item._id);
+                                try {
+                                  await swapVariant(item._id, v._id);
+                                  toast('Pack size updated!', 'success');
+                                } catch (err) {
+                                  toast(err instanceof Error ? err.message : 'Failed', 'error');
+                                } finally {
+                                  setSwapping(null);
+                                }
+                              }}
+                              style={{
+                                padding: '2px 8px', fontSize: '10px', fontWeight: 600, border: 'none',
+                                background: v._id === item.product._id ? 'var(--maroon)' : 'transparent',
+                                color: v._id === item.product._id ? 'white' : 'var(--color-gray-600)',
+                                cursor: v._id === item.product._id ? 'default' : 'pointer',
+                                opacity: v.stock === 0 && v._id !== item.product._id ? 0.35 : 1,
+                                transition: 'all 0.15s ease',
+                              }}
+                            >
+                              {v.packagingSize}
+                            </button>
+                          ))}
+                        </span>
+                      ) : (
+                        <span>{item.product.packagingSize} </span>
+                      )}
+                      × {item.quantity}
+                    </div>
+                  </div>
+                  <div className={styles.summaryItemPrice}>{formatPrice(item.product.price * item.quantity)}</div>
                 </div>
-                <div className={styles.summaryItemInfo}>
-                  <div className={styles.summaryItemName}>{item.product.title}</div>
-                  <div className={styles.summaryItemMeta}>{item.product.packagingSize} × {item.quantity}</div>
-                </div>
-                <div className={styles.summaryItemPrice}>{formatPrice(item.product.price * item.quantity)}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <hr className={styles.summaryDivider} />

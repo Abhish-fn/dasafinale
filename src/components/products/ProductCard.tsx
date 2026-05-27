@@ -22,6 +22,7 @@ interface ProductCardProps {
     isBestSeller?: boolean;
     tags?: string[];
     foodType: string;
+    variantCount?: number;
   };
 }
 
@@ -97,6 +98,12 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {product.stock === 0 && <div className={styles.outOfStock}>Out of Stock</div>}
+
+        {product.variantCount && product.variantCount > 1 && (
+          <div className={styles.packSizes}>
+            📦 {product.variantCount} pack sizes
+          </div>
+        )}
 
         {product.tags && product.tags.length > 0 && (
           <div className={styles.tags}>

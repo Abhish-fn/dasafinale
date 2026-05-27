@@ -22,6 +22,7 @@ interface ProductData {
   isBestSeller?: boolean;
   tags?: string[];
   foodType: string;
+  variantCount?: number;
 }
 
 interface FetchResult {

@@ -192,25 +192,46 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Size Variants */}
-          {variants.length > 0 && (
-            <div className={styles.variantsSection}>
-              <div className={styles.variantsLabel}>Size</div>
-              <div className={styles.variantsList}>
-                <button className={`${styles.variantBtn} ${styles.variantBtnActive}`}>
-                  {product.packagingSize} — {formatPrice(product.price)}
-                </button>
-                {variants.map((v) => (
-                  <Link
-                    key={v.productId}
-                    href={`/products/${v.slug}`}
-                    className={styles.variantBtn}
-                  >
-                    {v.packagingSize} — {formatPrice(v.price)}
-                  </Link>
-                ))}
+          {variants.length > 0 && (() => {
+            // Build a stable sorted list of ALL variants (current + others) by price
+            const allVariants = [
+              { productId: product.productId, slug: product.slug, packagingSize: product.packagingSize, price: product.price, isCurrent: true },
+              ...variants.map((v) => ({ ...v, isCurrent: false })),
+            ].sort((a, b) => a.price - b.price);
+
+            return (
+              <div className={styles.variantsSection}>
+                <div className={styles.variantsLabel}>Pack Size</div>
+                <div className={styles.variantsList}>
+                  {allVariants.map((v) => (
+                    <button
+                      key={v.productId}
+                      className={`${styles.variantBtn} ${v.isCurrent ? styles.variantBtnActive : ''}`}
+                      disabled={v.isCurrent}
+                      onClick={async () => {
+                        if (v.isCurrent) return;
+                        try {
+                          const res = await fetch(`/api/products/${v.slug}`);
+                          const data = await res.json();
+                          if (res.ok && data.product) {
+                            setProduct(data.product);
+                            setVariants(data.variants || []);
+                            setSelectedImage(0);
+                            setQuantity(1);
+                            window.history.replaceState(null, '', `/products/${v.slug}`);
+                          }
+                        } catch (err) {
+                          console.error('Failed to switch variant:', err);
+                        }
+                      }}
+                    >
+                      {v.packagingSize} — {formatPrice(v.price)}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           <div className={`${styles.stockInfo} ${styles[stockStatus]}`}>
             {stockText}

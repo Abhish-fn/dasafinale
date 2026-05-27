@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
     // Build filter query
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filter: Record<string, any> = { isActive: true };
+    const showAll = searchParams.get('showAll') === 'true';
 
     const category = searchParams.get('category');
     if (category) filter.category = category;
@@ -115,8 +116,50 @@ export async function GET(req: NextRequest) {
       Product.distinct('tags', { isActive: true }),
     ]);
 
+    // Deduplicate products by variantGroup (skip for admin/showAll)
+    // For products sharing the same variantGroup, keep only the cheapest (smallest pack)
+    // and attach a variantCount so the card can show "X pack sizes"
+    let finalProducts = products;
+    if (!showAll) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const variantGroupMap = new Map<string, { product: any; count: number }>();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const deduped: any[] = [];
+
+      for (const p of products) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const vg = (p as any).variantGroup as string | undefined;
+        if (vg) {
+          const existing = variantGroupMap.get(vg);
+          if (existing) {
+            existing.count++;
+            // Keep the cheaper one (smallest pack)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if ((p as any).price < (existing.product as any).price) {
+              existing.product = p;
+            }
+          } else {
+            variantGroupMap.set(vg, { product: p, count: 1 });
+          }
+        } else {
+          deduped.push(p);
+        }
+      }
+
+      // Append variant group representatives with counts
+      for (const { product: rep, count } of variantGroupMap.values()) {
+        let totalVariants = count;
+        if (count >= 1) {
+          const vg = (rep as Record<string, unknown>).variantGroup as string;
+          totalVariants = await Product.countDocuments({ variantGroup: vg, isActive: true });
+        }
+        deduped.push({ ...rep, variantCount: totalVariants > 1 ? totalVariants : undefined });
+      }
+      finalProducts = deduped;
+    }
+
     return NextResponse.json({
-      products,
+      products: finalProducts,
       pagination: {
         page,
         limit,

@@ -13,6 +13,7 @@ interface CartProduct {
   packagingSize: string;
   stock: number;
   category: string;
+  variantGroup?: string;
 }
 
 interface CartItem {
@@ -29,6 +30,7 @@ interface CartContextValue {
   addToCart: (productId: string, quantity?: number) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
+  swapVariant: (itemId: string, newProductId: string) => Promise<void>;
   refreshCart: () => Promise<void>;
 }
 
@@ -143,10 +145,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
     await fetchCart();
   }, [session?.user, fetchCart]);
 
+  const swapVariant = useCallback(async (itemId: string, newProductId: string) => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (!session?.user) {
+      headers['x-session-id'] = getSessionId();
+    }
+    const res = await fetch('/api/cart/swap-variant', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ itemId, newProductId }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to swap variant');
+    }
+    await fetchCart();
+  }, [session?.user, fetchCart]);
+
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, total, itemCount, loading, addToCart, updateQuantity, removeItem, refreshCart: fetchCart }}>
+    <CartContext.Provider value={{ items, total, itemCount, loading, addToCart, updateQuantity, removeItem, swapVariant, refreshCart: fetchCart }}>
       {children}
     </CartContext.Provider>
   );
