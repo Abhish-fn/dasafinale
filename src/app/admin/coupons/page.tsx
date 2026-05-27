@@ -23,11 +23,11 @@ interface Coupon {
 const emptyForm: {
   code: string; description: string; discountType: 'percentage' | 'flat'; discountValue: number;
   minOrderAmount: number; maxDiscountAmount: number; usageLimit: number; perUserLimit: number;
-  expiresAt: string; isActive: boolean;
+  expiresAt: string; expiresTime: string; isActive: boolean;
 } = {
   code: '', description: '', discountType: 'percentage', discountValue: 0,
   minOrderAmount: 0, maxDiscountAmount: 0, usageLimit: 100, perUserLimit: 1,
-  expiresAt: '', isActive: true,
+  expiresAt: '', expiresTime: '23:59', isActive: true,
 };
 
 export default function AdminCouponsPage() {
@@ -61,32 +61,46 @@ export default function AdminCouponsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
-          maxDiscountAmount: form.maxDiscountAmount || undefined,
-          expiresAt: form.expiresAt || undefined,
+          // Convert rupee inputs to paise for the API
+          discountValue: form.discountType === 'flat' ? Math.round(form.discountValue * 100) : form.discountValue,
+          minOrderAmount: Math.round(form.minOrderAmount * 100),
+          maxDiscountAmount: form.maxDiscountAmount ? Math.round(form.maxDiscountAmount * 100) : undefined,
+          // Combine date + time in local timezone so the coupon works through the full expiry day
+          expiresAt: form.expiresAt ? new Date(`${form.expiresAt}T${form.expiresTime || '23:59'}:00`).toISOString() : undefined,
+          expiresTime: undefined, // strip from payload
         }),
       });
-      if (!res.ok) throw new Error('Failed');
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed');
+      }
       toast(editingId ? 'Coupon updated' : 'Coupon created', 'success');
       setShowForm(false);
       setForm(emptyForm);
       setEditingId(null);
       fetchCoupons();
-    } catch {
-      toast('Failed to save coupon', 'error');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to save coupon', 'error');
     }
   };
 
   const handleEdit = (coupon: Coupon) => {
+    // Extract date and time from the stored ISO datetime
+    const expiryDate = coupon.expiresAt ? new Date(coupon.expiresAt) : null;
+    const datePart = expiryDate ? `${expiryDate.getFullYear()}-${String(expiryDate.getMonth() + 1).padStart(2, '0')}-${String(expiryDate.getDate()).padStart(2, '0')}` : '';
+    const timePart = expiryDate ? `${String(expiryDate.getHours()).padStart(2, '0')}:${String(expiryDate.getMinutes()).padStart(2, '0')}` : '23:59';
+
     setForm({
       code: coupon.code,
       description: coupon.description,
       discountType: coupon.discountType,
-      discountValue: coupon.discountValue,
-      minOrderAmount: coupon.minOrderAmount,
-      maxDiscountAmount: coupon.maxDiscountAmount || 0,
+      discountValue: coupon.discountType === 'flat' ? coupon.discountValue / 100 : coupon.discountValue,
+      minOrderAmount: coupon.minOrderAmount / 100,
+      maxDiscountAmount: coupon.maxDiscountAmount ? coupon.maxDiscountAmount / 100 : 0,
       usageLimit: coupon.usageLimit,
       perUserLimit: coupon.perUserLimit,
-      expiresAt: coupon.expiresAt ? new Date(coupon.expiresAt).toISOString().split('T')[0] : '',
+      expiresAt: datePart,
+      expiresTime: timePart,
       isActive: coupon.isActive,
     });
     setEditingId(coupon._id);
@@ -143,20 +157,20 @@ export default function AdminCouponsPage() {
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 'var(--text-sm)', fontWeight: 500, display: 'block', marginBottom: 'var(--space-1)' }}>Value {form.discountType === 'percentage' ? '(%)' : '(₹ paisa)'}</label>
-              <input className={styles.searchInput} style={{ width: '100%' }} type="number" value={form.discountValue} onChange={(e) => setForm({ ...form, discountValue: Number(e.target.value) })} />
+              <label style={{ fontSize: 'var(--text-sm)', fontWeight: 500, display: 'block', marginBottom: 'var(--space-1)' }}>Value {form.discountType === 'percentage' ? '(%)' : '(₹)'}</label>
+              <input className={styles.searchInput} style={{ width: '100%' }} type="number" step={form.discountType === 'flat' ? '0.01' : '1'} value={form.discountValue} onChange={(e) => setForm({ ...form, discountValue: Number(e.target.value) })} />
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={{ fontSize: 'var(--text-sm)', fontWeight: 500, display: 'block', marginBottom: 'var(--space-1)' }}>Description</label>
               <input className={styles.searchInput} style={{ width: '100%' }} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Get 10% off on your order" />
             </div>
             <div>
-              <label style={{ fontSize: 'var(--text-sm)', fontWeight: 500, display: 'block', marginBottom: 'var(--space-1)' }}>Min Order (paisa)</label>
-              <input className={styles.searchInput} style={{ width: '100%' }} type="number" value={form.minOrderAmount} onChange={(e) => setForm({ ...form, minOrderAmount: Number(e.target.value) })} />
+              <label style={{ fontSize: 'var(--text-sm)', fontWeight: 500, display: 'block', marginBottom: 'var(--space-1)' }}>Min Order (₹)</label>
+              <input className={styles.searchInput} style={{ width: '100%' }} type="number" step="0.01" value={form.minOrderAmount} onChange={(e) => setForm({ ...form, minOrderAmount: Number(e.target.value) })} />
             </div>
             <div>
-              <label style={{ fontSize: 'var(--text-sm)', fontWeight: 500, display: 'block', marginBottom: 'var(--space-1)' }}>Max Discount (paisa)</label>
-              <input className={styles.searchInput} style={{ width: '100%' }} type="number" value={form.maxDiscountAmount} onChange={(e) => setForm({ ...form, maxDiscountAmount: Number(e.target.value) })} />
+              <label style={{ fontSize: 'var(--text-sm)', fontWeight: 500, display: 'block', marginBottom: 'var(--space-1)' }}>Max Discount (₹)</label>
+              <input className={styles.searchInput} style={{ width: '100%' }} type="number" step="0.01" value={form.maxDiscountAmount} onChange={(e) => setForm({ ...form, maxDiscountAmount: Number(e.target.value) })} />
             </div>
             <div>
               <label style={{ fontSize: 'var(--text-sm)', fontWeight: 500, display: 'block', marginBottom: 'var(--space-1)' }}>Usage Limit</label>
@@ -167,8 +181,12 @@ export default function AdminCouponsPage() {
               <input className={styles.searchInput} style={{ width: '100%' }} type="number" value={form.perUserLimit} onChange={(e) => setForm({ ...form, perUserLimit: Number(e.target.value) })} />
             </div>
             <div>
-              <label style={{ fontSize: 'var(--text-sm)', fontWeight: 500, display: 'block', marginBottom: 'var(--space-1)' }}>Expires At</label>
+              <label style={{ fontSize: 'var(--text-sm)', fontWeight: 500, display: 'block', marginBottom: 'var(--space-1)' }}>Expiry Date</label>
               <input className={styles.searchInput} style={{ width: '100%' }} type="date" value={form.expiresAt} onChange={(e) => setForm({ ...form, expiresAt: e.target.value })} />
+            </div>
+            <div>
+              <label style={{ fontSize: 'var(--text-sm)', fontWeight: 500, display: 'block', marginBottom: 'var(--space-1)' }}>Expiry Time (24h)</label>
+              <input className={styles.searchInput} style={{ width: '100%' }} type="time" value={form.expiresTime} onChange={(e) => setForm({ ...form, expiresTime: e.target.value })} />
             </div>
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end', marginTop: 'var(--space-4)' }}>
@@ -207,7 +225,7 @@ export default function AdminCouponsPage() {
                   <td>{formatPrice(c.minOrderAmount)}</td>
                   <td>{c.usedCount} / {c.usageLimit}</td>
                   <td style={{ fontSize: 'var(--text-xs)' }}>
-                    {c.expiresAt ? new Date(c.expiresAt).toLocaleDateString('en-IN') : '—'}
+                    {c.expiresAt ? new Date(c.expiresAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', hour12: true }) : '—'}
                   </td>
                   <td>
                     <button
