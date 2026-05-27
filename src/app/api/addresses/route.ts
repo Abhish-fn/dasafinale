@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import dbConnect from '@/lib/db';
 import Address from '@/models/Address';
 import { auth } from '@/lib/auth';
@@ -56,6 +57,16 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ address }, { status: 201 });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      const fieldErrors: Record<string, string> = {};
+      error.issues.forEach((e) => {
+        fieldErrors[e.path.join('.')] = e.message;
+      });
+      return NextResponse.json(
+        { error: 'Validation failed', fieldErrors },
+        { status: 400 }
+      );
+    }
     console.error('POST /api/addresses error:', error);
     return NextResponse.json({ error: 'Failed to create address' }, { status: 500 });
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Suspense } from 'react';
@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/components/ui/Toast';
 import { formatPrice, calculateShippingFee } from '@/lib/utils';
+import { INDIAN_STATES } from '@/lib/indianStates';
 import styles from './checkout.module.css';
 
 interface Address {
@@ -74,6 +75,10 @@ function CheckoutContent() {
     label: 'Home', fullName: '', phone: '', addressLine1: '', addressLine2: '',
     city: '', state: '', pincode: '', isDefault: false,
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [pincodeValid, setPincodeValid] = useState(false);
+  const pincodeAbortRef = useRef<AbortController | null>(null);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -127,19 +132,107 @@ function CheckoutContent() {
     }
   }, []);
 
+  // Numeric-only input handler
+  const handleNumericInput = (field: string, maxLen: number) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, maxLen);
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (formErrors[field]) setFormErrors((prev) => ({ ...prev, [field]: '' }));
+  };
+
+  // Clear field error on change
+  const handleFieldChange = (field: string, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (formErrors[field]) setFormErrors((prev) => ({ ...prev, [field]: '' }));
+  };
+
+  // Pincode auto-fill
+  const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setForm((prev) => ({ ...prev, pincode: value }));
+    if (formErrors.pincode) setFormErrors((prev) => ({ ...prev, pincode: '' }));
+    setPincodeValid(false);
+
+    // Abort previous request
+    if (pincodeAbortRef.current) pincodeAbortRef.current.abort();
+
+    if (value.length < 6) {
+      setPincodeLoading(false);
+      return;
+    }
+
+    // Fetch pincode data
+    const controller = new AbortController();
+    pincodeAbortRef.current = controller;
+    setPincodeLoading(true);
+
+    fetch(`/api/pincode/${value}`, { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setForm((prev) => ({
+            ...prev,
+            state: data.state,
+            city: data.district,
+          }));
+          setPincodeValid(true);
+          setFormErrors((prev) => ({ ...prev, pincode: '', state: '', city: '' }));
+        } else {
+          setFormErrors((prev) => ({ ...prev, pincode: data.error || 'Invalid pincode' }));
+        }
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') {
+          setFormErrors((prev) => ({ ...prev, pincode: 'Could not verify pincode' }));
+        }
+      })
+      .finally(() => setPincodeLoading(false));
+  };
+
+  // Client-side validation
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!form.fullName || form.fullName.length < 2) errors.fullName = 'Name is required';
+    if (!form.phone || !/^[6-9]\d{9}$/.test(form.phone)) errors.phone = 'Enter valid 10-digit mobile number';
+    if (!form.addressLine1 || form.addressLine1.length < 5) errors.addressLine1 = 'Address is too short';
+    if (!form.pincode || !/^\d{6}$/.test(form.pincode)) errors.pincode = 'Enter valid 6-digit pincode';
+    if (!form.city || form.city.length < 2) errors.city = 'City is required';
+    if (!form.state) errors.state = 'Select a state';
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   // Save address
   const handleSaveAddress = async () => {
+    if (!validateForm()) return;
+
     try {
       const res = await fetch('/api/addresses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error('Failed to save address');
       const data = await res.json();
+
+      if (!res.ok) {
+        // Surface field-level Zod errors from the API
+        if (data.fieldErrors) {
+          setFormErrors(data.fieldErrors);
+          toast('Please fix the errors below', 'error');
+        } else {
+          toast(data.error || 'Failed to save address', 'error');
+        }
+        return;
+      }
+
       toast('Address saved!', 'success');
       setShowAddressForm(false);
       setForm({ label: 'Home', fullName: '', phone: '', addressLine1: '', addressLine2: '', city: '', state: '', pincode: '', isDefault: false });
+      setFormErrors({});
+      setPincodeValid(false);
       await fetchAddresses();
       setSelectedAddress(data.address._id);
     } catch (err) {
@@ -328,40 +421,91 @@ function CheckoutContent() {
               <div className={styles.formGrid} style={{ marginTop: 'var(--space-4)' }}>
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>Label</label>
-                  <select className={styles.formInput} value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })}>
+                  <select className={styles.formSelect} value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })}>
                     <option>Home</option><option>Work</option><option>Other</option>
                   </select>
                 </div>
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>Full Name</label>
-                  <input className={styles.formInput} value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} placeholder="Full name" />
+                  <input
+                    className={`${styles.formInput} ${formErrors.fullName ? styles.formInputError : ''}`}
+                    value={form.fullName}
+                    onChange={(e) => handleFieldChange('fullName', e.target.value)}
+                    placeholder="Full name"
+                  />
+                  {formErrors.fullName && <span className={styles.formError}>{formErrors.fullName}</span>}
                 </div>
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>Phone</label>
-                  <input className={styles.formInput} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="10-digit mobile" />
+                  <input
+                    className={`${styles.formInput} ${formErrors.phone ? styles.formInputError : ''}`}
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    value={form.phone}
+                    onChange={handleNumericInput('phone', 10)}
+                    placeholder="10-digit mobile"
+                  />
+                  {formErrors.phone && <span className={styles.formError}>{formErrors.phone}</span>}
                 </div>
                 <div className={`${styles.formGroup} ${styles.formFull}`}>
                   <label className={styles.formLabel}>Address Line 1</label>
-                  <input className={styles.formInput} value={form.addressLine1} onChange={(e) => setForm({ ...form, addressLine1: e.target.value })} placeholder="House no, building, street" />
+                  <input
+                    className={`${styles.formInput} ${formErrors.addressLine1 ? styles.formInputError : ''}`}
+                    value={form.addressLine1}
+                    onChange={(e) => handleFieldChange('addressLine1', e.target.value)}
+                    placeholder="House no, building, street"
+                  />
+                  {formErrors.addressLine1 && <span className={styles.formError}>{formErrors.addressLine1}</span>}
                 </div>
                 <div className={`${styles.formGroup} ${styles.formFull}`}>
                   <label className={styles.formLabel}>Address Line 2 (Optional)</label>
                   <input className={styles.formInput} value={form.addressLine2} onChange={(e) => setForm({ ...form, addressLine2: e.target.value })} placeholder="Area, landmark" />
                 </div>
                 <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Pincode</label>
+                  <div className={styles.pincodeWrapper}>
+                    <input
+                      className={`${styles.formInput} ${formErrors.pincode ? styles.formInputError : ''}`}
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={form.pincode}
+                      onChange={handlePincodeChange}
+                      placeholder="6-digit pincode"
+                    />
+                    <div className={styles.pincodeIndicator}>
+                      {pincodeLoading && <div className={styles.pincodeSpinner} />}
+                      {pincodeValid && !pincodeLoading && <span className={styles.pincodeSuccess}>✓</span>}
+                    </div>
+                  </div>
+                  {formErrors.pincode && <span className={styles.formError}>{formErrors.pincode}</span>}
+                </div>
+                <div className={styles.formGroup}>
                   <label className={styles.formLabel}>City</label>
-                  <input className={styles.formInput} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="City" />
+                  <input
+                    className={`${styles.formInput} ${formErrors.city ? styles.formInputError : ''}`}
+                    value={form.city}
+                    onChange={(e) => handleFieldChange('city', e.target.value)}
+                    placeholder="City"
+                  />
+                  {formErrors.city && <span className={styles.formError}>{formErrors.city}</span>}
                 </div>
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>State</label>
-                  <input className={styles.formInput} value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} placeholder="State" />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Pincode</label>
-                  <input className={styles.formInput} value={form.pincode} onChange={(e) => setForm({ ...form, pincode: e.target.value })} placeholder="6-digit pincode" />
+                  <select
+                    className={`${styles.formSelect} ${formErrors.state ? styles.formInputError : ''}`}
+                    value={form.state}
+                    onChange={(e) => handleFieldChange('state', e.target.value)}
+                  >
+                    <option value="">Select state</option>
+                    {INDIAN_STATES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  {formErrors.state && <span className={styles.formError}>{formErrors.state}</span>}
                 </div>
                 <div className={`${styles.formActions} ${styles.formFull}`}>
-                  <button className={styles.formCancel} onClick={() => setShowAddressForm(false)}>Cancel</button>
+                  <button className={styles.formCancel} onClick={() => { setShowAddressForm(false); setFormErrors({}); setPincodeValid(false); }}>Cancel</button>
                   <button className={styles.formSave} onClick={handleSaveAddress}>Save Address</button>
                 </div>
               </div>

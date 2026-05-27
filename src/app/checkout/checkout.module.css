@@ -28,7 +28,18 @@
 .formLabel { font-size: var(--text-sm); font-weight: 500; color: var(--color-gray-700); }
 .formInput { padding: var(--space-3); border: 1.5px solid var(--color-gray-300); border-radius: var(--radius-lg); font-size: var(--text-sm); transition: border-color var(--transition-fast); }
 .formInput:focus { outline: none; border-color: var(--maroon); }
-.formError { font-size: var(--text-xs); color: var(--color-error); }
+.formInputError { border-color: var(--color-error) !important; }
+.formError { font-size: var(--text-xs); color: var(--color-error); margin-top: 2px; }
+.formSelect { padding: var(--space-3); border: 1.5px solid var(--color-gray-300); border-radius: var(--radius-lg); font-size: var(--text-sm); transition: border-color var(--transition-fast); background: white; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; cursor: pointer; }
+.formSelect:focus { outline: none; border-color: var(--maroon); }
+
+/* Pincode field */
+.pincodeWrapper { position: relative; }
+.pincodeWrapper input { padding-right: 40px; }
+.pincodeIndicator { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; }
+.pincodeSpinner { width: 18px; height: 18px; border: 2px solid var(--color-gray-200); border-top-color: var(--maroon); border-radius: 50%; animation: spin 0.7s linear infinite; }
+.pincodeSuccess { color: var(--color-success); font-size: 18px; line-height: 1; }
+
 .formActions { display: flex; gap: var(--space-3); justify-content: flex-end; margin-top: var(--space-4); }
 .formSave { padding: var(--space-2) var(--space-6); font-weight: 600; color: white; background: var(--maroon); border-radius: var(--radius-lg); font-size: var(--text-sm); }
 .formCancel { padding: var(--space-2) var(--space-6); font-weight: 500; color: var(--color-gray-600); border: 1px solid var(--color-gray-300); border-radius: var(--radius-lg); font-size: var(--text-sm); }
