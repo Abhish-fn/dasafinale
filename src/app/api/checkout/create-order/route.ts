@@ -10,7 +10,7 @@ import Address from '@/models/Address';
 import { auth } from '@/lib/auth';
 import { createOrderSchema } from '@/lib/validations';
 import { sanitize } from '@/lib/sanitize';
-import { razorpay } from '@/lib/razorpay';
+import { getRazorpay } from '@/lib/razorpay';
 import { generateOrderId, calculateShippingFee } from '@/lib/utils';
 
 // POST /api/checkout/create-order — Create order with atomic stock reservation
@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
     const total = subtotal - discount + shippingFee;
 
     // 7. Create Razorpay order
-    const razorpayOrder = await razorpay.orders.create({
+    const razorpayOrder = await getRazorpay().orders.create({
       amount: total,
       currency: 'INR',
       receipt: `order_${Date.now()}`,
