@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description:
     'Rooted in the rich culinary traditions of Andhra Pradesh, Dasa Dinusulu brings you ten treasured snacks crafted with love, purity, and the finest natural ingredients.',
   keywords: ['healthy snacks', 'Andhra snacks', 'dry fruit laddu', 'roasted snacks', 'DasaDinusulu', 'millet snacks', 'natural ingredients', 'traditional recipes'],
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://dasadinusulu.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://dasaf.up.railway.app'),
   openGraph: {
     title: 'Dasa Dinusulu — A Product by VDF',
     description: 'Ten traditional treasures from Andhra Pradesh. Crafted with love, purity, and the finest natural ingredients.',
