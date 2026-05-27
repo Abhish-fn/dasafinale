@@ -53,8 +53,8 @@
 }
 
 .input:focus {
-  border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgba(107, 140, 62, 0.15);
+  border-color: var(--maroon);
+  box-shadow: 0 0 0 3px rgba(107, 30, 43, 0.15);
 }
 
 .hasIcon {

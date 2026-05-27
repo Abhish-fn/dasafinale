@@ -169,7 +169,7 @@ export default function AdminProductsPage() {
                       >🔥</button>
                       <button
                         className={styles.badge}
-                        style={{ cursor: 'pointer', background: p.isBestSeller ? 'rgba(107,140,62,0.15)' : 'var(--color-gray-100)', color: p.isBestSeller ? 'var(--color-primary-600)' : 'var(--color-gray-400)' }}
+                        style={{ cursor: 'pointer', background: p.isBestSeller ? 'rgba(107,30,43,0.15)' : 'var(--color-gray-100)', color: p.isBestSeller ? 'var(--color-primary-600)' : 'var(--color-gray-400)' }}
                         onClick={() => updateProduct(p.productId, { isBestSeller: !p.isBestSeller })}
                         title="Toggle Best Seller"
                       >⭐</button>

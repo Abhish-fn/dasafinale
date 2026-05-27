@@ -43,35 +43,35 @@
 
 /* Variants */
 .primary {
-  background: linear-gradient(135deg, var(--color-accent-500), var(--color-accent-600));
+  background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
   color: white;
-  box-shadow: 0 2px 8px rgba(212, 102, 60, 0.3);
+  box-shadow: 0 2px 8px rgba(107, 30, 43, 0.3);
 }
 .primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--color-accent-400), var(--color-accent-500));
-  box-shadow: 0 4px 16px rgba(212, 102, 60, 0.4);
+  background: linear-gradient(135deg, var(--maroon-light), var(--maroon));
+  box-shadow: 0 4px 16px rgba(107, 30, 43, 0.4);
   transform: translateY(-1px);
 }
 
 .secondary {
-  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
-  color: white;
-  box-shadow: 0 2px 8px rgba(107, 140, 62, 0.3);
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--maroon-dark);
+  box-shadow: 0 2px 8px rgba(212, 160, 23, 0.3);
 }
 .secondary:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-500));
-  box-shadow: 0 4px 16px rgba(107, 140, 62, 0.4);
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  box-shadow: 0 4px 16px rgba(212, 160, 23, 0.4);
   transform: translateY(-1px);
 }
 
 .outline {
-  border-color: var(--color-primary-500);
-  color: var(--color-primary-600);
+  border-color: var(--maroon);
+  color: var(--maroon);
   background: transparent;
 }
 .outline:hover:not(:disabled) {
-  background: var(--color-primary-50);
-  border-color: var(--color-primary-600);
+  background: rgba(107, 30, 43, 0.05);
+  border-color: var(--maroon);
 }
 
 .ghost {
@@ -79,7 +79,7 @@
   background: transparent;
 }
 .ghost:hover:not(:disabled) {
-  background: var(--color-gray-100);
+  background: var(--beige-dark);
 }
 
 .danger {
@@ -109,7 +109,7 @@
 .outline .spinner,
 .ghost .spinner {
   border-color: rgba(0, 0, 0, 0.15);
-  border-top-color: var(--color-primary-500);
+  border-top-color: var(--maroon);
 }
 
 @keyframes spin {

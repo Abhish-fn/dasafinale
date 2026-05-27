@@ -13,7 +13,7 @@
   bottom: 0;
   width: 300px;
   max-width: 85vw;
-  background: var(--color-surface);
+  background: var(--beige);
   z-index: calc(var(--z-overlay) + 1);
   display: flex;
   flex-direction: column;
@@ -26,17 +26,29 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--color-gray-100);
+  border-bottom: 1px solid rgba(107, 30, 43, 0.1);
 }
 
 .brand {
   font-family: var(--font-heading);
   font-size: var(--text-lg);
   font-weight: 700;
-  color: var(--color-primary-600);
+  color: var(--maroon);
   display: flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+.brandMonogram {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 900;
+  color: var(--gold);
+  background: var(--maroon);
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 1px;
+  line-height: 1;
 }
 
 .closeBtn {
@@ -46,13 +58,13 @@
   width: 36px;
   height: 36px;
   border-radius: var(--radius-full);
-  color: var(--color-gray-500);
+  color: var(--maroon-light);
   transition: all var(--transition-fast);
 }
 
 .closeBtn:hover {
-  background: var(--color-gray-100);
-  color: var(--color-gray-700);
+  background: var(--beige-dark);
+  color: var(--maroon);
 }
 
 .links {
@@ -69,24 +81,23 @@
   font-size: var(--text-base);
   font-weight: 500;
   color: var(--color-gray-700);
-  border-bottom: 1px solid var(--color-gray-50);
+  border-bottom: 1px solid rgba(107, 30, 43, 0.05);
   transition: all var(--transition-fast);
 }
 
 .link:hover {
-  background: var(--color-gray-50);
-  color: var(--color-accent-500);
+  background: var(--beige-dark);
+  color: var(--maroon);
 }
 
 .linkActive {
-  color: var(--color-accent-500);
-  background: var(--color-accent-500);
-  background: rgba(212, 102, 60, 0.05);
+  color: var(--maroon);
+  background: rgba(107, 30, 43, 0.05);
 }
 
 .footer {
   padding: var(--space-4) var(--space-5);
-  border-top: 1px solid var(--color-gray-100);
+  border-top: 1px solid rgba(107, 30, 43, 0.1);
 }
 
 .userInfo {
@@ -107,8 +118,8 @@
   width: 40px;
   height: 40px;
   border-radius: var(--radius-full);
-  background: var(--color-primary-100);
-  color: var(--color-primary-700);
+  background: rgba(107, 30, 43, 0.1);
+  color: var(--maroon);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,15 +148,15 @@
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-gray-600);
-  border: 1px solid var(--color-gray-200);
+  border: 1px solid rgba(107, 30, 43, 0.15);
   border-radius: var(--radius-lg);
   text-align: center;
   transition: all var(--transition-fast);
 }
 
 .signOutBtn:hover {
-  background: var(--color-gray-50);
-  border-color: var(--color-gray-300);
+  background: var(--beige-dark);
+  border-color: rgba(107, 30, 43, 0.25);
 }
 
 .signInBtnMobile {
@@ -154,7 +165,7 @@
   font-size: var(--text-sm);
   font-weight: 600;
   color: white;
-  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+  background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
   border-radius: var(--radius-lg);
   text-align: center;
   transition: all var(--transition-fast);

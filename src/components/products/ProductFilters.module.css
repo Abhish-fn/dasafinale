@@ -1,7 +1,7 @@
 .filters {
   padding: var(--space-6);
   background: var(--color-surface);
-  border: 1px solid var(--color-gray-200);
+  border: 1px solid rgba(107,30,43,0.08);
   border-radius: var(--radius-xl);
   position: sticky;
   top: 80px;
@@ -23,18 +23,18 @@
 
 .clearBtn {
   font-size: var(--text-sm);
-  color: var(--color-accent-500);
+  color: var(--maroon);
   font-weight: 500;
   cursor: pointer;
   transition: color var(--transition-fast);
 }
 
-.clearBtn:hover { color: var(--color-accent-600); }
+.clearBtn:hover { color: var(--maroon-dark); }
 
 .section {
   margin-bottom: var(--space-6);
   padding-bottom: var(--space-6);
-  border-bottom: 1px solid var(--color-gray-100);
+  border-bottom: 1px solid rgba(107,30,43,0.06);
 }
 
 .section:last-child {
@@ -74,8 +74,8 @@
 }
 
 .active {
-  background: var(--color-primary-50);
-  color: var(--color-primary-700);
+  background: rgba(107,30,43,0.05);
+  color: var(--maroon);
   font-weight: 600;
 }
 
@@ -102,7 +102,7 @@
 }
 
 .tagActive {
-  background: var(--color-primary-100);
-  color: var(--color-primary-700);
-  border-color: var(--color-primary-300);
+  background: rgba(107,30,43,0.1);
+  color: var(--maroon);
+  border-color: rgba(107,30,43,0.2);
 }

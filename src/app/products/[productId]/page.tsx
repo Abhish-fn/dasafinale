@@ -61,6 +61,7 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [buyingNow, setBuyingNow] = useState(false);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -234,28 +235,47 @@ export default function ProductDetailPage() {
                 +
               </button>
             </div>
-            <button
-              className={styles.addToCartBtn}
-              disabled={product.stock === 0 || addingToCart}
-              onClick={async () => {
-                try {
-                  setAddingToCart(true);
-                  await addToCart(product._id, quantity);
-                  toast(`${product.title} added to cart!`, 'success');
-                } catch (err) {
-                  toast(err instanceof Error ? err.message : 'Failed to add to cart', 'error');
-                } finally {
-                  setAddingToCart(false);
-                }
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <path d="M16 10a4 4 0 0 1-8 0" />
-              </svg>
-              {addingToCart ? 'Adding...' : product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-            </button>
+            <div className={styles.actionsButtons}>
+              <button
+                className={styles.addToCartBtn}
+                disabled={product.stock === 0 || addingToCart}
+                onClick={async () => {
+                  try {
+                    setAddingToCart(true);
+                    await addToCart(product._id, quantity);
+                    toast(`${product.title} added to cart!`, 'success');
+                  } catch (err) {
+                    toast(err instanceof Error ? err.message : 'Failed to add to cart', 'error');
+                  } finally {
+                    setAddingToCart(false);
+                  }
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <path d="M16 10a4 4 0 0 1-8 0" />
+                </svg>
+                {addingToCart ? 'Adding...' : product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+              </button>
+              <button
+                className={styles.buyNowBtn}
+                disabled={product.stock === 0 || buyingNow}
+                onClick={async () => {
+                  if (!session?.user) {
+                    router.push(`/login?callbackUrl=${encodeURIComponent(`/products/${params.productId}`)}`);
+                    return;
+                  }
+                  setBuyingNow(true);
+                  router.push(`/checkout?buyNow=true&productId=${product.slug}&quantity=${quantity}`);
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
+                {buyingNow ? 'Redirecting...' : product.stock === 0 ? 'Out of Stock' : 'Buy Now'}
+              </button>
+            </div>
             <button
               className={`${styles.wishlistBtn} ${session?.user && isInWishlist(product._id) ? styles.wishlisted : ''}`}
               aria-label={session?.user && isInWishlist(product._id) ? 'Remove from wishlist' : 'Add to wishlist'}

@@ -60,12 +60,12 @@ export default function FeaturedProducts() {
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-gray-900)' }}>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--maroon)' }}>
               {section.title}
             </h2>
             <Link
               href="/products"
-              style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-primary-600)' }}
+              style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)' }}
             >
               View All →
             </Link>

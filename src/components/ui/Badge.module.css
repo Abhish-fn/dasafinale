@@ -13,5 +13,5 @@
 .warning { background: var(--color-warning-light); color: #92400e; }
 .error { background: var(--color-error-light); color: #b91c1c; }
 .info { background: var(--color-info-light); color: #1d4ed8; }
-.neutral { background: var(--color-gray-100); color: var(--color-gray-700); }
-.primary { background: var(--color-primary-100); color: var(--color-primary-700); }
+.neutral { background: var(--beige-dark); color: var(--color-gray-700); }
+.primary { background: rgba(107, 30, 43, 0.1); color: var(--maroon); }

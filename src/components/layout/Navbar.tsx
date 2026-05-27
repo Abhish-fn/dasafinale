@@ -37,9 +37,9 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/', label: 'Home' },
-    { href: '/products', label: 'Products' },
+    { href: '/products', label: 'Shop' },
     { href: '/about', label: 'About' },
-    { href: '/contact', label: 'Contact' },
+    { href: '/track', label: 'Track Order' },
   ];
 
   return (
@@ -47,8 +47,9 @@ export default function Navbar() {
       <nav className={cn(styles.nav, scrolled && styles.scrolled)}>
         <div className={styles.container}>
           <Link href="/" className={styles.brand}>
-            <span className={styles.brandIcon}>🌿</span>
-            DasaDinusulu
+            <span className={styles.brandIcon}>DD</span>
+            Dasa Dinusulu
+            <span className={styles.brandSub}>A Product by VDF</span>
           </Link>
 
           <div className={styles.desktopNav}>

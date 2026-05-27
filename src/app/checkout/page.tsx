@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import { Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/components/ui/Toast';
@@ -35,11 +36,28 @@ declare global {
   }
 }
 
-export default function CheckoutPage() {
+interface BuyNowProduct {
+  _id: string;
+  title: string;
+  price: number;
+  images: string[];
+  packagingSize: string;
+  stock: number;
+}
+
+function CheckoutContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status: authStatus } = useSession();
   const { items, total, refreshCart } = useCart();
   const { toast } = useToast();
+
+  // Buy Now params
+  const isBuyNow = searchParams.get('buyNow') === 'true';
+  const buyNowProductId = searchParams.get('productId') || '';
+  const buyNowQuantity = parseInt(searchParams.get('quantity') || '1', 10);
+  const [buyNowProduct, setBuyNowProduct] = useState<BuyNowProduct | null>(null);
+  const [loadingBuyNow, setLoadingBuyNow] = useState(isBuyNow);
 
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<string>('');
@@ -61,6 +79,25 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (authStatus === 'unauthenticated') router.push('/login');
   }, [authStatus, router]);
+
+  // Fetch buy-now product
+  useEffect(() => {
+    if (!isBuyNow || !buyNowProductId) return;
+    async function fetchBuyNowProduct() {
+      try {
+        const res = await fetch(`/api/products/${buyNowProductId}`);
+        if (!res.ok) throw new Error('Product not found');
+        const data = await res.json();
+        setBuyNowProduct(data.product);
+      } catch {
+        toast('Could not load product. Redirecting to cart.', 'error');
+        router.push('/cart');
+      } finally {
+        setLoadingBuyNow(false);
+      }
+    }
+    fetchBuyNowProduct();
+  }, [isBuyNow, buyNowProductId, router, toast]);
 
   // Fetch addresses
   const fetchAddresses = useCallback(async () => {
@@ -132,9 +169,21 @@ export default function CheckoutPage() {
     }
   };
 
-  // Pricing
+  // Pricing — use buy-now product or cart
+  const displayItems = isBuyNow && buyNowProduct
+    ? [{
+        _id: buyNowProduct._id,
+        quantity: buyNowQuantity,
+        product: buyNowProduct,
+      }]
+    : items;
+
+  const displayTotal = isBuyNow && buyNowProduct
+    ? buyNowProduct.price * buyNowQuantity
+    : total;
+
   const discount = coupon?.discount || 0;
-  const subtotalAfterDiscount = total - discount;
+  const subtotalAfterDiscount = displayTotal - discount;
   const shipping = calculateShippingFee(subtotalAfterDiscount);
   const grandTotal = subtotalAfterDiscount + shipping;
 
@@ -144,8 +193,12 @@ export default function CheckoutPage() {
       toast('Please select a delivery address', 'warning');
       return;
     }
-    if (items.length === 0) {
+    if (!isBuyNow && items.length === 0) {
       toast('Your cart is empty', 'warning');
+      return;
+    }
+    if (isBuyNow && !buyNowProduct) {
+      toast('Product not loaded', 'warning');
       return;
     }
 
@@ -159,6 +212,13 @@ export default function CheckoutPage() {
           addressId: selectedAddress,
           couponCode: coupon?.code,
           notes,
+          ...(isBuyNow ? {
+            isBuyNow: true,
+            buyNowItem: {
+              productId: buyNowProduct!._id,
+              quantity: buyNowQuantity,
+            },
+          } : {}),
         }),
       });
       const data = await res.json();
@@ -219,7 +279,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (authStatus === 'loading' || loadingAddresses) {
+  if (authStatus === 'loading' || loadingAddresses || loadingBuyNow) {
     return (
       <div className={styles.container}>
         <h1 className={styles.pageTitle}>Checkout</h1>
@@ -359,7 +419,7 @@ export default function CheckoutPage() {
         <div className={styles.summary}>
           <h2 className={styles.summaryTitle}>Order Summary</h2>
           <div className={styles.summaryItems}>
-            {items.map((item) => (
+            {displayItems.map((item) => (
               <div key={item._id} className={styles.summaryItem}>
                 <div className={styles.summaryItemImage}>
                   {item.product.images?.[0] && (
@@ -378,7 +438,7 @@ export default function CheckoutPage() {
           <hr className={styles.summaryDivider} />
           <div className={styles.summaryRow}>
             <span>Subtotal</span>
-            <span className={styles.summaryValue}>{formatPrice(total)}</span>
+            <span className={styles.summaryValue}>{formatPrice(displayTotal)}</span>
           </div>
           {discount > 0 && (
             <div className={styles.summaryRow}>
@@ -396,7 +456,7 @@ export default function CheckoutPage() {
             <span>{formatPrice(grandTotal)}</span>
           </div>
 
-          <button className={styles.payBtn} onClick={handlePlaceOrder} disabled={processing || !selectedAddress || items.length === 0}>
+          <button className={styles.payBtn} onClick={handlePlaceOrder} disabled={processing || !selectedAddress || (!isBuyNow && items.length === 0)}>
             {processing ? 'Processing...' : `Pay ${formatPrice(grandTotal)}`}
           </button>
 
@@ -415,5 +475,20 @@ export default function CheckoutPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className={styles.container}>
+        <h1 className={styles.pageTitle}>Checkout</h1>
+        <div style={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className={styles.spinner} />
+        </div>
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   );
 }

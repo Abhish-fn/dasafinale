@@ -1,28 +1,30 @@
 /* ===================================================================
    DasaDinusulu Design System — globals.css
-   Healthy Snacking E-Commerce — Earthy, Natural, Premium
+   Traditional Andhra Snacks — Maroon, Gold, Beige — Premium Heritage
    =================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&display=swap');
 
 /* --- CSS Custom Properties (Design Tokens) --- */
 :root {
-  /* Primary — Earthy Olive Green */
-  --color-primary-50: #f4f7f0;
-  --color-primary-100: #e4ebd9;
-  --color-primary-200: #c9d7b3;
-  --color-primary-300: #a8bf85;
-  --color-primary-400: #8fb05a;
-  --color-primary-500: #6b8c3e;
-  --color-primary-600: #557030;
-  --color-primary-700: #3f5424;
-  --color-primary-800: #2a3918;
-  --color-primary-900: #1a2410;
+  /* Primary — Rich Maroon */
+  --color-primary-50: #fdf2f4;
+  --color-primary-100: #f9dce2;
+  --color-primary-200: #f0b3c0;
+  --color-primary-300: #d8899a;
+  --color-primary-400: #8B2E3F;
+  --color-primary-500: #6B1E2B;
+  --color-primary-600: #5a1924;
+  --color-primary-700: #4A1019;
+  --color-primary-800: #380c13;
+  --color-primary-900: #28080d;
 
-  /* Accent — Warm Terracotta */
-  --color-accent-300: #f0a882;
-  --color-accent-400: #e8845a;
-  --color-accent-500: #d4663c;
-  --color-accent-600: #b8522e;
-  --color-accent-700: #8f3f23;
+  /* Accent — Warm Gold */
+  --color-accent-300: #F0C040;
+  --color-accent-400: #E8B520;
+  --color-accent-500: #D4A017;
+  --color-accent-600: #B8890F;
+  --color-accent-700: #8f6a0a;
 
   /* Neutrals — Warm Stone */
   --color-gray-50: #fafaf9;
@@ -36,6 +38,16 @@
   --color-gray-800: #292524;
   --color-gray-900: #1c1917;
 
+  /* Beige Surface Colors */
+  --beige: #F7F1E3;
+  --beige-dark: #EDE5D0;
+  --beige-light: #FBF8F0;
+  --maroon: #6B1E2B;
+  --maroon-dark: #4A1019;
+  --maroon-light: #8B2E3F;
+  --gold: #D4A017;
+  --gold-light: #F0C040;
+
   /* Semantic */
   --color-success: #22c55e;
   --color-success-light: #dcfce7;
@@ -48,9 +60,9 @@
 
   /* Surface */
   --color-surface: #ffffff;
-  --color-surface-elevated: #fafaf9;
+  --color-surface-elevated: var(--beige-light);
   --color-backdrop: rgba(0, 0, 0, 0.5);
-  --color-backdrop-blur: rgba(255, 255, 255, 0.8);
+  --color-backdrop-blur: rgba(247, 241, 227, 0.85);
 
   /* Spacing Scale */
   --space-0: 0;
@@ -76,12 +88,12 @@
   --radius-full: 9999px;
 
   /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
+  --shadow-xs: 0 1px 2px rgba(107, 30, 43, 0.04);
+  --shadow-sm: 0 1px 3px rgba(107, 30, 43, 0.06), 0 1px 2px rgba(107, 30, 43, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(107, 30, 43, 0.07), 0 2px 4px -2px rgba(107, 30, 43, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(107, 30, 43, 0.08), 0 4px 6px -4px rgba(107, 30, 43, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(107, 30, 43, 0.1), 0 8px 10px -6px rgba(107, 30, 43, 0.05);
+  --shadow-2xl: 0 25px 50px -12px rgba(107, 30, 43, 0.2);
 
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -89,9 +101,10 @@
   --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Font Families (variables set by next/font in layout.tsx) */
-  --font-heading: var(--font-outfit), 'Segoe UI', system-ui, sans-serif;
-  --font-body: var(--font-inter), 'Segoe UI', system-ui, sans-serif;
+  /* Font Families */
+  --font-display: 'Playfair Display', serif;
+  --font-heading: 'Playfair Display', serif;
+  --font-body: system-ui, -apple-system, sans-serif;
 
   /* Font Sizes */
   --text-xs: 0.75rem;
@@ -143,8 +156,8 @@ body {
   font-family: var(--font-body);
   font-size: var(--text-base);
   line-height: var(--leading-normal);
-  color: var(--color-gray-900);
-  background-color: var(--color-surface);
+  color: #333;
+  background-color: var(--beige);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100dvh;
@@ -173,6 +186,11 @@ button {
   background: none;
 }
 
+button,
+a {
+  touch-action: manipulation;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -185,9 +203,9 @@ ol {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
-  font-weight: 600;
+  font-weight: 700;
   line-height: var(--leading-tight);
-  color: var(--color-gray-900);
+  color: var(--maroon);
 }
 
 h1 { font-size: var(--text-4xl); }
@@ -203,12 +221,12 @@ p {
 }
 
 ::selection {
-  background-color: var(--color-primary-200);
-  color: var(--color-primary-900);
+  background-color: rgba(107, 30, 43, 0.15);
+  color: var(--maroon-dark);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-primary-500);
+  outline: 2px solid var(--maroon);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
@@ -237,6 +255,10 @@ p {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+.font-display {
+  font-family: 'Playfair Display', serif;
 }
 
 /* --- Keyframe Animations --- */
@@ -303,19 +325,19 @@ p {
 
 /* --- Scrollbar Styling --- */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-gray-100);
+  background: var(--beige);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-gray-300);
-  border-radius: var(--radius-full);
+  background: var(--maroon-light);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-gray-400);
+  background: var(--maroon);
 }

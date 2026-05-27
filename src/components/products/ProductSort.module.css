@@ -40,7 +40,7 @@
 }
 
 .select:hover { border-color: var(--color-gray-400); }
-.select:focus { border-color: var(--color-primary-500); outline: none; }
+.select:focus { border-color: var(--maroon); outline: none; }
 
 .searchWrapper {
   display: flex;
@@ -54,7 +54,7 @@
   max-width: 320px;
   transition: border-color var(--transition-fast);
 }
-.searchWrapper:focus-within { border-color: var(--color-primary-500); }
+.searchWrapper:focus-within { border-color: var(--maroon); }
 
 .searchInput {
   border: none;
@@ -69,4 +69,3 @@
 @media (max-width: 640px) {
   .searchWrapper { max-width: 100%; }
 }
-

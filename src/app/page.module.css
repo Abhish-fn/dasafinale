@@ -1,6 +1,6 @@
 .hero {
   position: relative;
-  background: linear-gradient(135deg, var(--color-primary-900) 0%, var(--color-primary-700) 50%, var(--color-primary-600) 100%);
+  background: linear-gradient(135deg, var(--maroon-dark) 0%, var(--maroon) 50%, var(--maroon-light) 100%);
   overflow: hidden;
   padding: var(--space-20) 0;
 }
@@ -12,7 +12,7 @@
   right: -10%;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(143, 176, 90, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(212, 160, 23, 0.15) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -24,7 +24,7 @@
   left: -5%;
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, rgba(212, 102, 60, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(240, 192, 64, 0.1) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -50,16 +50,16 @@
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
-  color: var(--color-primary-200);
+  color: var(--gold-light);
   margin-bottom: var(--space-6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(212, 160, 23, 0.2);
   animation: slideUp var(--transition-slow) ease-out;
 }
 
 .heroTitle {
-  font-family: var(--font-heading);
+  font-family: var(--font-display);
   font-size: var(--text-5xl);
-  font-weight: 700;
+  font-weight: 900;
   color: white;
   line-height: 1.1;
   margin-bottom: var(--space-6);
@@ -67,12 +67,12 @@
 }
 
 .heroTitleAccent {
-  color: var(--color-accent-400);
+  color: var(--gold-light);
 }
 
 .heroSubtitle {
   font-size: var(--text-lg);
-  color: var(--color-primary-200);
+  color: rgba(247, 241, 227, 0.85);
   line-height: var(--leading-relaxed);
   margin-bottom: var(--space-8);
   max-width: 520px;
@@ -92,17 +92,17 @@
   padding: var(--space-4) var(--space-8);
   font-family: var(--font-heading);
   font-size: var(--text-lg);
-  font-weight: 600;
-  color: white;
-  background: linear-gradient(135deg, var(--color-accent-500), var(--color-accent-600));
+  font-weight: 700;
+  color: var(--maroon-dark);
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
   border-radius: var(--radius-full);
-  box-shadow: 0 4px 20px rgba(212, 102, 60, 0.4);
+  box-shadow: 0 4px 20px rgba(212, 160, 23, 0.4);
   transition: all var(--transition-base);
 }
 
 .ctaPrimary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(212, 102, 60, 0.5);
+  box-shadow: 0 8px 30px rgba(212, 160, 23, 0.5);
 }
 
 .ctaSecondary {
@@ -113,15 +113,15 @@
   font-family: var(--font-heading);
   font-size: var(--text-lg);
   font-weight: 600;
-  color: var(--color-primary-200);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: var(--beige);
+  border: 2px solid rgba(247, 241, 227, 0.3);
   border-radius: var(--radius-full);
   transition: all var(--transition-base);
 }
 
 .ctaSecondary:hover {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(247, 241, 227, 0.5);
+  background: rgba(247, 241, 227, 0.08);
 }
 
 .heroVisual {
@@ -146,7 +146,7 @@
 .circle1 {
   width: 280px;
   height: 280px;
-  background: linear-gradient(135deg, rgba(143, 176, 90, 0.3), rgba(107, 140, 62, 0.2));
+  background: linear-gradient(135deg, rgba(212, 160, 23, 0.25), rgba(240, 192, 64, 0.15));
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -156,7 +156,7 @@
 .circle2 {
   width: 200px;
   height: 200px;
-  background: linear-gradient(135deg, rgba(232, 132, 90, 0.3), rgba(212, 102, 60, 0.15));
+  background: linear-gradient(135deg, rgba(247, 241, 227, 0.15), rgba(237, 229, 208, 0.1));
   top: 10%;
   right: 5%;
   animation: pulse 4s ease-in-out infinite 1s;
@@ -165,7 +165,7 @@
 .circle3 {
   width: 120px;
   height: 120px;
-  background: linear-gradient(135deg, rgba(201, 215, 179, 0.4), rgba(143, 176, 90, 0.2));
+  background: linear-gradient(135deg, rgba(212, 160, 23, 0.3), rgba(240, 192, 64, 0.15));
   bottom: 15%;
   left: 10%;
   animation: pulse 4s ease-in-out infinite 2s;
@@ -184,7 +184,7 @@
 
 /* Values Section */
 .values {
-  background: var(--color-gray-50);
+  background: var(--beige-dark);
   padding: var(--space-20) 0;
 }
 
@@ -195,11 +195,11 @@
 }
 
 .sectionTitle {
-  font-family: var(--font-heading);
+  font-family: var(--font-display);
   font-size: var(--text-3xl);
-  font-weight: 700;
+  font-weight: 900;
   text-align: center;
-  color: var(--color-gray-900);
+  color: var(--maroon);
   margin-bottom: var(--space-3);
 }
 
@@ -221,7 +221,7 @@
 
 .valueCard {
   background: var(--color-surface);
-  border: 1px solid var(--color-gray-200);
+  border: 1px solid rgba(107, 30, 43, 0.1);
   border-radius: var(--radius-xl);
   padding: var(--space-8);
   text-align: center;
@@ -231,7 +231,7 @@
 .valueCard:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
-  border-color: var(--color-primary-200);
+  border-color: rgba(212, 160, 23, 0.3);
 }
 
 .valueIcon {
@@ -243,8 +243,8 @@
 .valueTitle {
   font-family: var(--font-heading);
   font-size: var(--text-xl);
-  font-weight: 600;
-  color: var(--color-gray-900);
+  font-weight: 700;
+  color: var(--maroon);
   margin-bottom: var(--space-3);
 }
 
@@ -257,6 +257,7 @@
 /* Categories Section */
 .categories {
   padding: var(--space-20) 0;
+  background: var(--beige);
 }
 
 .categoriesGrid {
@@ -278,7 +279,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--color-gray-200);
+  border: 1px solid rgba(107, 30, 43, 0.1);
 }
 
 .categoryCard:hover {
@@ -286,12 +287,12 @@
   box-shadow: var(--shadow-lg);
 }
 
-.cat0 { background: linear-gradient(135deg, #f0f4e8, #e4ebd9); }
-.cat1 { background: linear-gradient(135deg, #fef3cd, #fde68a); }
-.cat2 { background: linear-gradient(135deg, #fce7d8, #f5d0b7); }
-.cat3 { background: linear-gradient(135deg, #e8f0e4, #d4e6cc); }
-.cat4 { background: linear-gradient(135deg, #f3e8f0, #e8d4e4); }
-.cat5 { background: linear-gradient(135deg, #e4ebf0, #d1dde8); }
+.cat0 { background: linear-gradient(135deg, #fdf2f4, #f9dce2); }
+.cat1 { background: linear-gradient(135deg, #fef8e7, #f9edc5); }
+.cat2 { background: linear-gradient(135deg, #f7f1e3, #ede5d0); }
+.cat3 { background: linear-gradient(135deg, #fdf2f4, #f0b3c0); }
+.cat4 { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+.cat5 { background: linear-gradient(135deg, #f9dce2, #f0b3c0); }
 
 .categoryEmoji {
   font-size: 2.5rem;
@@ -301,13 +302,13 @@
 .categoryName {
   font-family: var(--font-heading);
   font-size: var(--text-lg);
-  font-weight: 600;
-  color: var(--color-gray-800);
+  font-weight: 700;
+  color: var(--maroon);
 }
 
 /* CTA Banner */
 .ctaBanner {
-  background: linear-gradient(135deg, var(--color-accent-500) 0%, var(--color-accent-600) 50%, var(--color-accent-700) 100%);
+  background: linear-gradient(135deg, var(--maroon-dark) 0%, var(--maroon) 50%, var(--maroon-light) 100%);
   padding: var(--space-16) 0;
   text-align: center;
   position: relative;
@@ -321,14 +322,14 @@
   right: -10%;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(212, 160, 23, 0.08) 0%, transparent 70%);
   border-radius: 50%;
 }
 
 .ctaBannerTitle {
-  font-family: var(--font-heading);
+  font-family: var(--font-display);
   font-size: var(--text-4xl);
-  font-weight: 700;
+  font-weight: 900;
   color: white;
   margin-bottom: var(--space-4);
   position: relative;
@@ -337,7 +338,7 @@
 
 .ctaBannerSubtitle {
   font-size: var(--text-lg);
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(247, 241, 227, 0.85);
   margin-bottom: var(--space-8);
   position: relative;
   z-index: 1;
@@ -350,11 +351,11 @@
   padding: var(--space-4) var(--space-10);
   font-family: var(--font-heading);
   font-size: var(--text-lg);
-  font-weight: 600;
-  color: var(--color-accent-600);
-  background: white;
+  font-weight: 700;
+  color: var(--maroon-dark);
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
   border-radius: var(--radius-full);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 4px 20px rgba(212, 160, 23, 0.4);
   transition: all var(--transition-base);
   position: relative;
   z-index: 1;
@@ -362,7 +363,7 @@
 
 .ctaBannerBtn:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-xl);
+  box-shadow: 0 8px 30px rgba(212, 160, 23, 0.5);
 }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
