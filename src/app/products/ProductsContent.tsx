@@ -35,6 +35,7 @@ export default function ProductsContent() {
   const searchParams = useSearchParams();
   const [data, setData] = useState<FetchResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -55,10 +56,32 @@ export default function ProductsContent() {
     fetchProducts();
   }, [fetchProducts]);
 
+  // Close mobile filters when filters change (user selected something)
+  useEffect(() => {
+    setMobileFiltersOpen(false);
+  }, [searchParams]);
+
+  // Lock body scroll when mobile filters are open
+  useEffect(() => {
+    if (mobileFiltersOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileFiltersOpen]);
+
   const currentPage = parseInt(searchParams.get('page') || '1');
+
+  const activeFilterCount = [
+    searchParams.get('category'),
+    searchParams.get('foodType'),
+    searchParams.get('tags'),
+  ].filter(Boolean).length;
 
   return (
     <div className={styles.content}>
+      {/* Desktop sidebar filters */}
       {data?.filters && (
         <ProductFilters
           categories={data.filters.categories}
@@ -68,6 +91,50 @@ export default function ProductsContent() {
       )}
 
       <div>
+        {/* Mobile filter button */}
+        <button
+          className={styles.mobileFilterBtn}
+          onClick={() => setMobileFiltersOpen(true)}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="20" y2="12" /><line x1="12" y1="18" x2="20" y2="18" />
+          </svg>
+          Filters
+          {activeFilterCount > 0 && (
+            <span className={styles.filterBadge}>{activeFilterCount}</span>
+          )}
+        </button>
+
+        {/* Mobile filter overlay */}
+        {mobileFiltersOpen && (
+          <>
+            <div className={styles.filterOverlay} onClick={() => setMobileFiltersOpen(false)} />
+            <div className={styles.filterPanel}>
+              <div className={styles.filterPanelHeader}>
+                <h3 className={styles.filterPanelTitle}>Filters</h3>
+                <button
+                  className={styles.filterPanelClose}
+                  onClick={() => setMobileFiltersOpen(false)}
+                  aria-label="Close filters"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+              <div className={styles.filterPanelBody}>
+                {data?.filters && (
+                  <ProductFilters
+                    categories={data.filters.categories}
+                    foodTypes={data.filters.foodTypes}
+                    tags={data.filters.tags}
+                  />
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
         <ProductSort total={data?.pagination.total || 0} />
 
         {loading ? (

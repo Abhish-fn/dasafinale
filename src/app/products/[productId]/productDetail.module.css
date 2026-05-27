@@ -180,10 +180,17 @@
 }
 
 /* Quantity & Actions */
-.actions {
+.actionsWrapper {
   display: flex;
+  flex-direction: column;
   gap: var(--space-4);
   margin-bottom: var(--space-8);
+}
+
+.actionsTop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .quantitySelector {
@@ -219,13 +226,18 @@
   border-right: 1px solid var(--color-gray-200);
 }
 
+.actionsButtons {
+  display: flex;
+  gap: var(--space-3);
+}
+
 .addToCartBtn {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-8);
+  padding: var(--space-3) var(--space-6);
   font-family: var(--font-heading);
   font-size: var(--text-base);
   font-weight: 600;
@@ -233,6 +245,7 @@
   background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
   border-radius: var(--radius-lg);
   transition: all var(--transition-base);
+  cursor: pointer;
 }
 
 .addToCartBtn:hover {
@@ -252,7 +265,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-8);
+  padding: var(--space-3) var(--space-6);
   font-family: var(--font-heading);
   font-size: var(--text-base);
   font-weight: 600;
@@ -260,6 +273,7 @@
   background: linear-gradient(135deg, var(--gold), var(--gold-dark, #b8860b));
   border-radius: var(--radius-lg);
   transition: all var(--transition-base);
+  cursor: pointer;
 }
 
 .buyNowBtn:hover {
@@ -273,16 +287,10 @@
   transform: none;
 }
 
-.actionsButtons {
-  display: flex;
-  gap: var(--space-3);
-  flex: 1;
-  min-width: 0;
-}
-
 .wishlistBtn {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -290,6 +298,7 @@
   border-radius: var(--radius-lg);
   color: var(--color-gray-500);
   transition: all var(--transition-fast);
+  cursor: pointer;
 }
 
 .wishlistBtn:hover {
@@ -397,7 +406,7 @@
 
 .relatedGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--space-6);
 }
 
@@ -409,8 +418,19 @@
   .title { font-size: var(--text-2xl); }
   .price { font-size: var(--text-2xl); }
   .nutritionGrid { grid-template-columns: repeat(3, 1fr); }
-  .actions { flex-wrap: wrap; }
   .container { padding: var(--space-4); }
+
+  .actionsButtons {
+    flex-direction: column;
+  }
+  .addToCartBtn,
+  .buyNowBtn {
+    padding: var(--space-4);
+  }
+  .relatedGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+  }
 }
 
 @media (min-width: 768px) {

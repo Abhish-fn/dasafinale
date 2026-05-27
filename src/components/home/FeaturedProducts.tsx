@@ -27,60 +27,75 @@ interface FeaturedData {
 }
 
 export default function FeaturedProducts() {
-  const [data, setData] = useState<FeaturedData | null>(null);
+  const [products, setProducts] = useState<ProductData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/products/featured')
       .then((r) => r.json())
-      .then(setData)
+      .then((data: FeaturedData) => {
+        // Merge all products, deduplicate by _id, and take the top 6
+        const all = [...(data.bestSellers || []), ...(data.mustTry || []), ...(data.newArrivals || [])];
+        const seen = new Set<string>();
+        const unique = all.filter((p) => {
+          if (seen.has(p._id)) return false;
+          seen.add(p._id);
+          return true;
+        });
+        setProducts(unique.slice(0, 6));
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
-  const sections = [
-    { key: 'mustTry', title: '🔥 Must Try', products: data?.mustTry },
-    { key: 'bestSellers', title: '⭐ Best Sellers', products: data?.bestSellers },
-    { key: 'newArrivals', title: '✨ New Arrivals', products: data?.newArrivals },
-  ].filter((s) => !data || (s.products && s.products.length > 0));
-
-  if (!loading && (!data || sections.every((s) => !s.products?.length))) {
+  if (!loading && products.length === 0) {
     return null;
   }
 
   return (
-    <div>
-      {sections.map((section) => (
-        <section
-          key={section.key}
-          style={{
-            maxWidth: 'var(--max-width)',
-            margin: '0 auto',
-            padding: 'var(--space-12) var(--space-4) var(--space-4)',
-          }}
+    <section
+      style={{
+        maxWidth: 'var(--max-width)',
+        margin: '0 auto',
+        padding: 'var(--space-12) var(--space-4) var(--space-4)',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
+        <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--maroon)' }}>
+          Featured Products
+        </h2>
+        <Link
+          href="/products"
+          style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)' }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--maroon)' }}>
-              {section.title}
-            </h2>
-            <Link
-              href="/products"
-              style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)' }}
-            >
-              View All →
-            </Link>
-          </div>
+          View All →
+        </Link>
+      </div>
+      <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-gray-500)', marginBottom: 'var(--space-8)', marginTop: 'calc(-1 * var(--space-4))' }}>
+        Handpicked favourites from Andhra&apos;s finest
+      </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 'var(--space-4)' }}>
-            {loading
-              ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
-              : section.products?.map((product) => (
-                  <ProductCard key={product._id} product={product} />
-                ))
+      <div className="featured-grid">
+        <style>{`
+          .featured-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-4);
+          }
+          @media (min-width: 768px) {
+            .featured-grid {
+              grid-template-columns: repeat(6, 1fr);
+              gap: var(--space-4);
             }
-          </div>
-        </section>
-      ))}
-    </div>
+          }
+        `}</style>
+        {loading
+          ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+          : products.map((product) => (
+              <ProductCard key={product._id} product={product} />
+            ))
+        }
+      </div>
+    </section>
   );
 }

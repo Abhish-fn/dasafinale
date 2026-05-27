@@ -122,16 +122,24 @@ export default function ProductDetailPage() {
 
   const stockStatus =
     product.stock === 0 ? 'outOfStock' :
-    product.stock <= 10 ? 'lowStock' : 'inStock';
+      product.stock <= 10 ? 'lowStock' : 'inStock';
 
   const stockText =
     product.stock === 0 ? 'Out of Stock' :
-    product.stock <= 10 ? `Only ${product.stock} left!` : 'In Stock';
+      product.stock <= 10 ? `Only ${product.stock} left!` : 'In Stock';
 
   return (
     <div className={styles.container}>
+      <div className={styles.breadcrumb}>
+        <Link href="/">Home</Link>
+        <span>/</span>
+        <Link href="/products">Products</Link>
+        <span>/</span>
+        <span>{product.category}</span>
+      </div>
       <div className={styles.productGrid}>
         {/* Image Gallery */}
+
         <div className={styles.gallery}>
           <div className={styles.mainImage}>
             {product.images[selectedImage] ? (
@@ -164,81 +172,75 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Product Info */}
+
         <div className={styles.info}>
-          <div className={styles.breadcrumb}>
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/products">Products</Link>
-            <span>/</span>
-            <span>{product.category}</span>
-          </div>
-
           <div className={styles.badgesRow}>
-            {product.isMustTry && <span className={`${styles.badge} ${styles.mustTry}`}>🔥 Must Try</span>}
-            {product.isBestSeller && <span className={`${styles.badge} ${styles.bestSeller}`}>⭐ Best Seller</span>}
-          </div>
+          {product.isMustTry && <span className={`${styles.badge} ${styles.mustTry}`}>🔥 Must Try</span>}
+          {product.isBestSeller && <span className={`${styles.badge} ${styles.bestSeller}`}>⭐ Best Seller</span>}
+        </div>
 
-          <h1 className={styles.title}>{product.title}</h1>
-          <p className={styles.sizeLabel}>{product.packagingSize}</p>
+        <h1 className={styles.title}>{product.title}</h1>
+        <p className={styles.sizeLabel}>{product.packagingSize}</p>
 
-          <div className={styles.priceBlock}>
-            <span className={styles.price}>{formatPrice(product.price)}</span>
-            {product.compareAtPrice && product.compareAtPrice > product.price && (
-              <>
-                <span className={styles.comparePrice}>{formatPrice(product.compareAtPrice)}</span>
-                <span className={styles.discountBadge}>{discount}% off</span>
-              </>
-            )}
-          </div>
+        <div className={styles.priceBlock}>
+          <span className={styles.price}>{formatPrice(product.price)}</span>
+          {product.compareAtPrice && product.compareAtPrice > product.price && (
+            <>
+              <span className={styles.comparePrice}>{formatPrice(product.compareAtPrice)}</span>
+              <span className={styles.discountBadge}>{discount}% off</span>
+            </>
+          )}
+        </div>
 
-          {/* Size Variants */}
-          {variants.length > 0 && (() => {
-            // Build a stable sorted list of ALL variants (current + others) by price
-            const allVariants = [
-              { productId: product.productId, slug: product.slug, packagingSize: product.packagingSize, price: product.price, isCurrent: true },
-              ...variants.map((v) => ({ ...v, isCurrent: false })),
-            ].sort((a, b) => a.price - b.price);
+        {/* Size Variants */}
+        {variants.length > 0 && (() => {
+          // Build a stable sorted list of ALL variants (current + others) by price
+          const allVariants = [
+            { productId: product.productId, slug: product.slug, packagingSize: product.packagingSize, price: product.price, isCurrent: true },
+            ...variants.map((v) => ({ ...v, isCurrent: false })),
+          ].sort((a, b) => a.price - b.price);
 
-            return (
-              <div className={styles.variantsSection}>
-                <div className={styles.variantsLabel}>Pack Size</div>
-                <div className={styles.variantsList}>
-                  {allVariants.map((v) => (
-                    <button
-                      key={v.productId}
-                      className={`${styles.variantBtn} ${v.isCurrent ? styles.variantBtnActive : ''}`}
-                      disabled={v.isCurrent}
-                      onClick={async () => {
-                        if (v.isCurrent) return;
-                        try {
-                          const res = await fetch(`/api/products/${v.slug}`);
-                          const data = await res.json();
-                          if (res.ok && data.product) {
-                            setProduct(data.product);
-                            setVariants(data.variants || []);
-                            setSelectedImage(0);
-                            setQuantity(1);
-                            window.history.replaceState(null, '', `/products/${v.slug}`);
-                          }
-                        } catch (err) {
-                          console.error('Failed to switch variant:', err);
+          return (
+            <div className={styles.variantsSection}>
+              <div className={styles.variantsLabel}>Pack Size</div>
+              <div className={styles.variantsList}>
+                {allVariants.map((v) => (
+                  <button
+                    key={v.productId}
+                    className={`${styles.variantBtn} ${v.isCurrent ? styles.variantBtnActive : ''}`}
+                    disabled={v.isCurrent}
+                    onClick={async () => {
+                      if (v.isCurrent) return;
+                      try {
+                        const res = await fetch(`/api/products/${v.slug}`);
+                        const data = await res.json();
+                        if (res.ok && data.product) {
+                          setProduct(data.product);
+                          setVariants(data.variants || []);
+                          setSelectedImage(0);
+                          setQuantity(1);
+                          window.history.replaceState(null, '', `/products/${v.slug}`);
                         }
-                      }}
-                    >
-                      {v.packagingSize} — {formatPrice(v.price)}
-                    </button>
-                  ))}
-                </div>
+                      } catch (err) {
+                        console.error('Failed to switch variant:', err);
+                      }
+                    }}
+                  >
+                    {v.packagingSize} — {formatPrice(v.price)}
+                  </button>
+                ))}
               </div>
-            );
-          })()}
+            </div>
+          );
+        })()}
 
-          <div className={`${styles.stockInfo} ${styles[stockStatus]}`}>
-            {stockText}
-          </div>
+        <div className={`${styles.stockInfo} ${styles[stockStatus]}`}>
+          {stockText}
+        </div>
 
-          {/* Actions */}
-          <div className={styles.actions}>
+        {/* Actions */}
+        <div className={styles.actionsWrapper}>
+          <div className={styles.actionsTop}>
             <div className={styles.quantitySelector}>
               <button
                 className={styles.qtyBtn}
@@ -254,47 +256,6 @@ export default function ProductDetailPage() {
                 disabled={quantity >= product.stock}
               >
                 +
-              </button>
-            </div>
-            <div className={styles.actionsButtons}>
-              <button
-                className={styles.addToCartBtn}
-                disabled={product.stock === 0 || addingToCart}
-                onClick={async () => {
-                  try {
-                    setAddingToCart(true);
-                    await addToCart(product._id, quantity);
-                    toast(`${product.title} added to cart!`, 'success');
-                  } catch (err) {
-                    toast(err instanceof Error ? err.message : 'Failed to add to cart', 'error');
-                  } finally {
-                    setAddingToCart(false);
-                  }
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <path d="M16 10a4 4 0 0 1-8 0" />
-                </svg>
-                {addingToCart ? 'Adding...' : product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-              </button>
-              <button
-                className={styles.buyNowBtn}
-                disabled={product.stock === 0 || buyingNow}
-                onClick={async () => {
-                  if (!session?.user) {
-                    router.push(`/login?callbackUrl=${encodeURIComponent(`/products/${params.productId}`)}`);
-                    return;
-                  }
-                  setBuyingNow(true);
-                  router.push(`/checkout?buyNow=true&productId=${product.slug}&quantity=${quantity}`);
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                </svg>
-                {buyingNow ? 'Redirecting...' : product.stock === 0 ? 'Out of Stock' : 'Buy Now'}
               </button>
             </div>
             <button
@@ -314,60 +275,102 @@ export default function ProductDetailPage() {
               </svg>
             </button>
           </div>
-
-          {/* Description */}
-          <div className={styles.description}>
-            <h2 className={styles.descTitle}>About this product</h2>
-            <p className={styles.descText}>{product.description}</p>
+          <div className={styles.actionsButtons}>
+            <button
+              className={styles.addToCartBtn}
+              disabled={product.stock === 0 || addingToCart}
+              onClick={async () => {
+                try {
+                  setAddingToCart(true);
+                  await addToCart(product._id, quantity);
+                  toast(`${product.title} added to cart!`, 'success');
+                } catch (err) {
+                  toast(err instanceof Error ? err.message : 'Failed to add to cart', 'error');
+                } finally {
+                  setAddingToCart(false);
+                }
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+              {addingToCart ? 'Adding...' : product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+            </button>
+            <button
+              className={styles.buyNowBtn}
+              disabled={product.stock === 0 || buyingNow}
+              onClick={async () => {
+                if (!session?.user) {
+                  router.push(`/login?callbackUrl=${encodeURIComponent(`/products/${params.productId}`)}`);
+                  return;
+                }
+                setBuyingNow(true);
+                router.push(`/checkout?buyNow=true&productId=${product.slug}&quantity=${quantity}`);
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+              </svg>
+              {buyingNow ? 'Redirecting...' : product.stock === 0 ? 'Out of Stock' : 'Buy Now'}
+            </button>
           </div>
+        </div>
 
-          {/* Nutrition Info */}
-          {product.nutritionInfo && Object.values(product.nutritionInfo).some(Boolean) && (
-            <div className={styles.nutrition}>
-              <h3 className={styles.descTitle}>Nutrition Facts</h3>
-              <div className={styles.nutritionGrid}>
-                {product.nutritionInfo.calories && (
-                  <div className={styles.nutriCard}>
-                    <div className={styles.nutriValue}>{product.nutritionInfo.calories}</div>
-                    <div className={styles.nutriLabel}>Calories</div>
-                  </div>
-                )}
-                {product.nutritionInfo.protein && (
-                  <div className={styles.nutriCard}>
-                    <div className={styles.nutriValue}>{product.nutritionInfo.protein}</div>
-                    <div className={styles.nutriLabel}>Protein</div>
-                  </div>
-                )}
-                {product.nutritionInfo.carbs && (
-                  <div className={styles.nutriCard}>
-                    <div className={styles.nutriValue}>{product.nutritionInfo.carbs}</div>
-                    <div className={styles.nutriLabel}>Carbs</div>
-                  </div>
-                )}
-                {product.nutritionInfo.fat && (
-                  <div className={styles.nutriCard}>
-                    <div className={styles.nutriValue}>{product.nutritionInfo.fat}</div>
-                    <div className={styles.nutriLabel}>Fat</div>
-                  </div>
-                )}
-                {product.nutritionInfo.fiber && (
-                  <div className={styles.nutriCard}>
-                    <div className={styles.nutriValue}>{product.nutritionInfo.fiber}</div>
-                    <div className={styles.nutriLabel}>Fiber</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+        {/* Description */}
+        <div className={styles.description}>
+          <h2 className={styles.descTitle}>About this product</h2>
+          <p className={styles.descText}>{product.description}</p>
+        </div>
 
-          {/* Tags */}
-          {product.tags.length > 0 && (
-            <div className={styles.tagsList}>
-              {product.tags.map((tag) => (
-                <span key={tag} className={styles.tagItem}>{tag}</span>
-              ))}
+        {/* Nutrition Info */}
+        {product.nutritionInfo && Object.values(product.nutritionInfo).some(Boolean) && (
+          <div className={styles.nutrition}>
+            <h3 className={styles.descTitle}>Nutrition Facts</h3>
+            <div className={styles.nutritionGrid}>
+              {product.nutritionInfo.calories && (
+                <div className={styles.nutriCard}>
+                  <div className={styles.nutriValue}>{product.nutritionInfo.calories}</div>
+                  <div className={styles.nutriLabel}>Calories</div>
+                </div>
+              )}
+              {product.nutritionInfo.protein && (
+                <div className={styles.nutriCard}>
+                  <div className={styles.nutriValue}>{product.nutritionInfo.protein}</div>
+                  <div className={styles.nutriLabel}>Protein</div>
+                </div>
+              )}
+              {product.nutritionInfo.carbs && (
+                <div className={styles.nutriCard}>
+                  <div className={styles.nutriValue}>{product.nutritionInfo.carbs}</div>
+                  <div className={styles.nutriLabel}>Carbs</div>
+                </div>
+              )}
+              {product.nutritionInfo.fat && (
+                <div className={styles.nutriCard}>
+                  <div className={styles.nutriValue}>{product.nutritionInfo.fat}</div>
+                  <div className={styles.nutriLabel}>Fat</div>
+                </div>
+              )}
+              {product.nutritionInfo.fiber && (
+                <div className={styles.nutriCard}>
+                  <div className={styles.nutriValue}>{product.nutritionInfo.fiber}</div>
+                  <div className={styles.nutriLabel}>Fiber</div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
+        )}
+
+        {/* Tags */}
+        {product.tags.length > 0 && (
+          <div className={styles.tagsList}>
+            {product.tags.map((tag) => (
+              <span key={tag} className={styles.tagItem}>{tag}</span>
+            ))}
+          </div>
+        )}
         </div>
       </div>
 

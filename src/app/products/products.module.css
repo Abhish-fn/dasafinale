@@ -98,14 +98,93 @@
   display: none;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-5);
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--color-gray-700);
-  border: 1px solid var(--color-gray-300);
-  border-radius: var(--radius-lg);
+  color: var(--maroon);
+  background: var(--color-surface);
+  border: 1.5px solid rgba(107, 30, 43, 0.2);
+  border-radius: var(--radius-full);
   margin-bottom: var(--space-4);
   cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mobileFilterBtn:hover {
+  background: rgba(107, 30, 43, 0.05);
+  border-color: var(--maroon);
+}
+
+.filterBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+  background: var(--maroon);
+  border-radius: var(--radius-full);
+  line-height: 1;
+}
+
+/* Mobile filter overlay */
+.filterOverlay {
+  display: none;
+}
+
+.filterPanel {
+  display: none;
+}
+
+.filterPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid rgba(107, 30, 43, 0.1);
+  position: sticky;
+  top: 0;
+  background: var(--color-surface);
+  z-index: 1;
+}
+
+.filterPanelTitle {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--maroon);
+}
+
+.filterPanelClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  color: var(--color-gray-500);
+  transition: all var(--transition-fast);
+}
+
+.filterPanelClose:hover {
+  background: var(--beige-dark);
+  color: var(--maroon);
+}
+
+.filterPanelBody {
+  padding: var(--space-2);
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Inside the panel, the filter aside should have no border/sticky */
+.filterPanelBody aside {
+  border: none;
+  position: static;
+  padding: var(--space-2);
+  background: transparent;
 }
 
 @media (max-width: 768px) {
@@ -117,9 +196,43 @@
   .grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
   .mobileFilterBtn { display: flex; }
   .headerContainer { padding: 0 var(--space-4); }
+
+  .filterOverlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: var(--z-overlay);
+    animation: fadeIn var(--transition-fast) ease-out;
+  }
+
+  .filterPanel {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 85vh;
+    background: var(--color-surface);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    z-index: calc(var(--z-overlay) + 1);
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
+    animation: slideUp var(--transition-slow) ease-out;
+  }
 }
 
 @media (min-width: 768px) {
   .headerContainer { padding: 0 var(--space-8); }
   .content { padding: var(--space-8); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }

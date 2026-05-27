@@ -93,21 +93,6 @@ export default function ProductFilters({ categories, foodTypes, tags }: ProductF
         </div>
       </div>
 
-      {/* Tags */}
-      <div className={styles.section}>
-        <h4 className={styles.sectionTitle}>Tags</h4>
-        <div className={styles.tags}>
-          {tags.map((tag) => (
-            <button
-              key={tag}
-              className={cn(styles.tag, activeTags.includes(tag) && styles.tagActive)}
-              onClick={() => toggleTag(tag)}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-      </div>
     </aside>
   );
 }
