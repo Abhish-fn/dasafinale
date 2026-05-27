@@ -39,10 +39,12 @@ export default function ProductsContent() {
     setLoading(true);
     try {
       const res = await fetch(`/api/products?${searchParams.toString()}`);
+      if (!res.ok) throw new Error('API error');
       const json = await res.json();
       setData(json);
     } catch (err) {
       console.error('Failed to fetch products:', err);
+      setData(null);
     } finally {
       setLoading(false);
     }
