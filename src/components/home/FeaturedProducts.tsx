@@ -71,7 +71,7 @@ export default function FeaturedProducts() {
             </Link>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 'var(--space-6)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 'var(--space-4)' }}>
             {loading
               ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
               : section.products?.map((product) => (
