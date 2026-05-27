@@ -1,14 +1,23 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
-import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { signIn, useSession } from 'next-auth/react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
 import styles from './login.module.css';
 
 function LoginContent() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
   const callbackUrl = searchParams.get('callbackUrl') || '/';
+
+  // Redirect logged-in users to home
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace('/');
+    }
+  }, [status, router]);
 
   const errorMessages: Record<string, string> = {
     db: 'Unable to connect to the database. Please try again later.',
@@ -16,6 +25,15 @@ function LoginContent() {
     OAuthCallback: 'Error during Google authentication. Please try again.',
     default: 'An error occurred during sign-in. Please try again.',
   };
+
+  if (status === 'loading' || status === 'authenticated') {
+    return (
+      <div className={styles.card}>
+        <span className={styles.brandIcon}>🌿</span>
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.card}>

@@ -8,10 +8,6 @@ export default {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
-  pages: {
-    signIn: '/login',
-    error: '/login',
-  },
   callbacks: {
     jwt({ token, user }) {
       // On first sign-in, the full auth.ts signIn callback caches dbRole on user
