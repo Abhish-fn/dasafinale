@@ -19,6 +19,15 @@ function LoginContent() {
     }
   }, [status, router]);
 
+  // Clear error from URL so reload gives a fresh login page
+  useEffect(() => {
+    if (error) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('error');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [error]);
+
   const errorMessages: Record<string, string> = {
     db: 'Unable to connect to the database. Please try again later.',
     OAuthSignin: 'Error starting Google sign-in. Please try again.',
