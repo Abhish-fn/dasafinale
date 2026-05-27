@@ -88,8 +88,8 @@ export default function AdminProductsPage() {
     setEditForm({
       title: product.title,
       description: product.description,
-      price: product.price,
-      compareAtPrice: product.compareAtPrice || undefined,
+      price: product.price / 100,
+      compareAtPrice: product.compareAtPrice ? product.compareAtPrice / 100 : undefined,
       category: product.category,
       foodType: product.foodType,
       packagingSize: product.packagingSize,
@@ -117,19 +117,33 @@ export default function AdminProductsPage() {
     if (!editingProduct) return;
     setSaving(true);
     try {
-      // Build only changed fields
+      // Build only changed fields, comparing form values (in rupees) against original (converted to rupees)
       const updates: Record<string, unknown> = {};
       const fields: (keyof Product)[] = [
         'title', 'description', 'price', 'compareAtPrice', 'category',
         'foodType', 'packagingSize', 'weight', 'stock', 'images', 'tags',
         'isMustTry', 'isBestSeller', 'isSpecialItem', 'nutritionInfo',
       ];
+
+      // Build original values in the same units as the form (rupees for prices)
+      const originalInFormUnits: Record<string, unknown> = { ...editingProduct };
+      originalInFormUnits.price = editingProduct.price / 100;
+      originalInFormUnits.compareAtPrice = editingProduct.compareAtPrice ? editingProduct.compareAtPrice / 100 : undefined;
+
       for (const field of fields) {
         const newVal = editForm[field];
-        const oldVal = editingProduct[field];
+        const oldVal = (originalInFormUnits as Record<string, unknown>)[field];
         if (JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
           updates[field] = newVal;
         }
+      }
+
+      // Convert price fields from rupees back to paise for the API
+      if ('price' in updates) {
+        updates.price = Math.round((updates.price as number) * 100);
+      }
+      if ('compareAtPrice' in updates) {
+        updates.compareAtPrice = updates.compareAtPrice ? Math.round((updates.compareAtPrice as number) * 100) : undefined;
       }
 
       if (Object.keys(updates).length === 0) {
@@ -357,25 +371,27 @@ export default function AdminProductsPage() {
               {/* Price Row */}
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Price (₹ in paise)</label>
+                  <label className={styles.formLabel}>Price (₹)</label>
                   <input
                     className={styles.formInput}
                     type="number"
                     min={0}
+                    step="0.01"
                     value={editForm.price ?? ''}
-                    onChange={(e) => setEditForm((f) => ({ ...f, price: parseInt(e.target.value) || 0 }))}
+                    onChange={(e) => setEditForm((f) => ({ ...f, price: parseFloat(e.target.value) || 0 }))}
                   />
                 </div>
                 <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Compare At Price</label>
+                  <label className={styles.formLabel}>Compare At Price (₹)</label>
                   <input
                     className={styles.formInput}
                     type="number"
                     min={0}
+                    step="0.01"
                     value={editForm.compareAtPrice ?? ''}
                     onChange={(e) => {
                       const val = e.target.value;
-                      setEditForm((f) => ({ ...f, compareAtPrice: val ? parseInt(val) : undefined }));
+                      setEditForm((f) => ({ ...f, compareAtPrice: val ? parseFloat(val) : undefined }));
                     }}
                   />
                 </div>
