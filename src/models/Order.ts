@@ -76,7 +76,7 @@ export interface IOrder extends Document {
 const productSnapshotSchema = new Schema<IProductSnapshot>(
   {
     title: { type: String, required: true },
-    image: { type: String, required: true },
+    image: { type: String, default: '' },
     price: { type: Number, required: true },
     packagingSize: { type: String, required: true },
     productId: { type: String, required: true },
@@ -87,7 +87,7 @@ const productSnapshotSchema = new Schema<IProductSnapshot>(
 const orderItemSchema = new Schema<IOrderItem>(
   {
     productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
-    productSnapshot: { type: productSnapshotSchema, required: true },
+    productSnapshot: { type: productSnapshotSchema, default: [] },
     quantity: { type: Number, required: true, min: 1 },
     priceAtOrder: { type: Number, required: true },
   },
