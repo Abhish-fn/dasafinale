@@ -87,7 +87,7 @@ const productSnapshotSchema = new Schema<IProductSnapshot>(
 const orderItemSchema = new Schema<IOrderItem>(
   {
     productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
-    productSnapshot: { type: productSnapshotSchema, default: [] },
+    productSnapshot: { type: productSnapshotSchema, required: true },
     quantity: { type: Number, required: true, min: 1 },
     priceAtOrder: { type: Number, required: true },
   },
