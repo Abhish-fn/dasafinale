@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
       razorpayOrderId: razorpayOrder.id,
       amount: total,
       currency: 'INR',
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      key: process.env.RAZORPAY_KEY_ID,
     });
   } catch (error) {
     console.error('POST /api/checkout/create-order error:', error);
