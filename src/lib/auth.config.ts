@@ -14,6 +14,7 @@ export default {
       if (user) {
         token.role = (user as Record<string, unknown>).dbRole as string || 'user';
         token.userId = (user as Record<string, unknown>).dbId as string;
+        token.roleRefreshedAt = Date.now();
       }
       return token;
     },
