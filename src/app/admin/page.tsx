@@ -104,6 +104,7 @@ export default function AdminDashboard() {
           {stats.recentOrders.length === 0 ? (
             <div className={styles.empty}>No orders yet</div>
           ) : (
+            <div className={styles.tableWrap}>
             <table className={styles.table}>
               <thead>
                 <tr>
@@ -128,6 +129,7 @@ export default function AdminDashboard() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
 

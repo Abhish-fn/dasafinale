@@ -526,6 +526,7 @@ export default function AdminProductsPage() {
         ) : products.length === 0 ? (
           <div className={styles.empty}>No products found</div>
         ) : (
+          <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
               <tr>
@@ -552,6 +553,7 @@ export default function AdminProductsPage() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

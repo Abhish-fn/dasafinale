@@ -25,28 +25,67 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     else if (status === 'authenticated' && session?.user?.role !== 'admin') router.push('/');
   }, [status, session, router]);
 
+  // Close sidebar on route change
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
+  // Lock body scroll when sidebar open on mobile
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [sidebarOpen]);
+
   if (status === 'loading' || session?.user?.role !== 'admin') {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <div style={{ width: 40, height: 40, border: '3px solid var(--color-gray-200)', borderTopColor: 'var(--color-primary-500)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <div style={{ width: 40, height: 40, border: '3px solid var(--color-gray-200)', borderTopColor: 'var(--maroon)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       </div>
     );
   }
 
+  // Get current page title for mobile header
+  const currentPage = navItems.find(
+    (item) => item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)
+  );
+
   return (
     <div className={styles.adminLayout}>
-      {/* Mobile overlay */}
-      {sidebarOpen && <div className={styles.overlay} onClick={() => setSidebarOpen(false)} />}
+      {/* Mobile top bar */}
+      <header className={styles.mobileHeader}>
+        <button
+          className={styles.mobileToggle}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label="Toggle sidebar"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+        <span className={styles.mobileTitle}>
+          {currentPage?.icon} {currentPage?.label || 'Admin'}
+        </span>
+        <Link href="/" className={styles.mobileStoreLink}>
+          Store →
+        </Link>
+      </header>
 
-      {/* Mobile toggle */}
-      <button className={styles.mobileToggle} onClick={() => setSidebarOpen(!sidebarOpen)}>
-        ☰
-      </button>
+      {/* Sidebar overlay */}
+      {sidebarOpen && <div className={styles.overlay} onClick={() => setSidebarOpen(false)} />}
 
       {/* Sidebar */}
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
         <div className={styles.sidebarHeader}>
-          <div className={styles.sidebarBrand}>DasaDinusulu</div>
+          <div className={styles.sidebarBrand}>
+            <span className={styles.brandMonogram}>DD</span>
+            Dasa Dinusulu
+          </div>
           <div className={styles.sidebarTag}>Admin Panel</div>
         </div>
 

@@ -94,6 +94,7 @@ export default function AdminOrdersPage() {
         ) : orders.length === 0 ? (
           <div className={styles.empty}>No orders found</div>
         ) : (
+          <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
               <tr>
@@ -144,6 +145,7 @@ export default function AdminOrdersPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
 
         {totalPages > 1 && (

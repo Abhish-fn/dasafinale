@@ -144,7 +144,7 @@ export default function AdminCouponsPage() {
       {showForm && (
         <div className={styles.sectionCard} style={{ marginBottom: 'var(--space-6)' }}>
           <h2 className={styles.sectionTitle}>{editingId ? 'Edit Coupon' : 'Create Coupon'}</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-4)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--space-4)' }}>
             <div>
               <label style={{ fontSize: 'var(--text-sm)', fontWeight: 500, display: 'block', marginBottom: 'var(--space-1)' }}>Code</label>
               <input className={styles.searchInput} style={{ width: '100%' }} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} placeholder="SAVE10" />
@@ -202,6 +202,7 @@ export default function AdminCouponsPage() {
         ) : coupons.length === 0 ? (
           <div className={styles.empty}>No coupons yet</div>
         ) : (
+          <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
               <tr>
@@ -246,6 +247,7 @@ export default function AdminCouponsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

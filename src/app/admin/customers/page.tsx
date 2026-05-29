@@ -63,6 +63,7 @@ export default function AdminCustomersPage() {
         ) : customers.length === 0 ? (
           <div className={styles.empty}>No customers found</div>
         ) : (
+          <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
               <tr>
@@ -106,6 +107,7 @@ export default function AdminCustomersPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
 
         {totalPages > 1 && (
