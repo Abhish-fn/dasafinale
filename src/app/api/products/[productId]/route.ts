@@ -16,10 +16,10 @@ export async function GET(
     await dbConnect();
     const { productId } = await ctx.params;
 
-    // Try by slug first, then by productId
-    let product = await Product.findOne({ slug: productId, isActive: true }).lean();
+    // Try by productId first, then by slug
+    let product = await Product.findOne({ productId, isActive: true }).lean();
     if (!product) {
-      product = await Product.findOne({ productId, isActive: true }).lean();
+      product = await Product.findOne({ slug: productId, isActive: true }).lean();
     }
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });

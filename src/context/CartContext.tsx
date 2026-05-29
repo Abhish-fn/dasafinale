@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 
 interface CartProduct {
   _id: string;
+  productId: string;
   title: string;
   slug: string;
   images: string[];

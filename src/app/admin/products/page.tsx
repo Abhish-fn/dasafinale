@@ -471,6 +471,7 @@ export default function AdminProductsPage() {
           </div>
         </div>
       </td>
+      <td style={{ fontSize: 'var(--text-xs)', fontFamily: 'monospace', color: 'var(--color-gray-600)', letterSpacing: '0.02em' }}>{p.productId}</td>
       <td style={{ fontSize: 'var(--text-xs)' }}>{isVariant ? '' : p.category}</td>
       <td style={{ fontWeight: 600 }}>{formatPrice(p.price)}</td>
       <td>
@@ -529,6 +530,7 @@ export default function AdminProductsPage() {
             <thead>
               <tr>
                 <th>Product</th>
+                <th>ID</th>
                 <th>Category</th>
                 <th>Price</th>
                 <th>Stock</th>

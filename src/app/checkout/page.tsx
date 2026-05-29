@@ -39,12 +39,12 @@ declare global {
 
 interface BuyNowProduct {
   _id: string;
+  productId: string;
   title: string;
   price: number;
   images: string[];
   packagingSize: string;
   stock: number;
-  slug?: string;
   variantGroup?: string;
 }
 
@@ -83,21 +83,21 @@ function CheckoutContent() {
   const pincodeAbortRef = useRef<AbortController | null>(null);
 
   // Pack-size variant switching state
-  const [variantCache, setVariantCache] = useState<Record<string, { _id: string; packagingSize: string; price: number; stock: number; slug: string }[]>>({});
+  const [variantCache, setVariantCache] = useState<Record<string, { _id: string; packagingSize: string; price: number; stock: number; productId: string }[]>>({});
   const [swapping, setSwapping] = useState<string | null>(null);
 
   // Auto-fetch variants for checkout items
-  const fetchCheckoutVariants = useCallback(async (variantGroup: string, productSlug: string) => {
+  const fetchCheckoutVariants = useCallback(async (variantGroup: string, productId: string) => {
     if (variantCache[variantGroup]) return;
     try {
-      const res = await fetch(`/api/products/${productSlug}`);
+      const res = await fetch(`/api/products/${productId}`);
       const data = await res.json();
       if (res.ok && data.product) {
         const all = [
-          { _id: data.product._id, packagingSize: data.product.packagingSize, price: data.product.price, stock: data.product.stock, slug: data.product.slug },
+          { _id: data.product._id, packagingSize: data.product.packagingSize, price: data.product.price, stock: data.product.stock, productId: data.product.productId },
           ...(data.variants || []).map((v: Record<string, unknown>) => ({
             _id: v._id as string, packagingSize: v.packagingSize as string,
-            price: v.price as number, stock: v.stock as number, slug: v.slug as string,
+            price: v.price as number, stock: v.stock as number, productId: v.productId as string,
           })),
         ].sort((a, b) => a.price - b.price);
         setVariantCache(prev => ({ ...prev, [variantGroup]: all }));
@@ -119,9 +119,9 @@ function CheckoutContent() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const vg = (item.product as any).variantGroup as string | undefined;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const slug = (item.product as any).slug as string | undefined;
-      if (vg && slug && !variantCache[vg]) {
-        fetchCheckoutVariants(vg, slug);
+      const pid = (item.product as any).productId as string | undefined;
+      if (vg && pid && !variantCache[vg]) {
+        fetchCheckoutVariants(vg, pid);
       }
     }
   }, [items, isBuyNow, fetchCheckoutVariants, variantCache]);

@@ -10,7 +10,7 @@ import styles from './products.module.css';
 
 interface ProductData {
   _id: string;
-  slug: string;
+  productId: string;
   title: string;
   images: string[];
   price: number;

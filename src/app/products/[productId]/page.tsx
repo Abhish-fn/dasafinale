@@ -196,7 +196,7 @@ export default function ProductDetailPage() {
         {variants.length > 0 && (() => {
           // Build a stable sorted list of ALL variants (current + others) by price
           const allVariants = [
-            { productId: product.productId, slug: product.slug, packagingSize: product.packagingSize, price: product.price, isCurrent: true },
+            { productId: product.productId, packagingSize: product.packagingSize, price: product.price, isCurrent: true },
             ...variants.map((v) => ({ ...v, isCurrent: false })),
           ].sort((a, b) => a.price - b.price);
 
@@ -212,14 +212,14 @@ export default function ProductDetailPage() {
                     onClick={async () => {
                       if (v.isCurrent) return;
                       try {
-                        const res = await fetch(`/api/products/${v.slug}`);
+                        const res = await fetch(`/api/products/${v.productId}`);
                         const data = await res.json();
                         if (res.ok && data.product) {
                           setProduct(data.product);
                           setVariants(data.variants || []);
                           setSelectedImage(0);
                           setQuantity(1);
-                          window.history.replaceState(null, '', `/products/${v.slug}`);
+                          window.history.replaceState(null, '', `/products/${v.productId}`);
                         }
                       } catch (err) {
                         console.error('Failed to switch variant:', err);
@@ -307,7 +307,7 @@ export default function ProductDetailPage() {
                   return;
                 }
                 setBuyingNow(true);
-                router.push(`/checkout?buyNow=true&productId=${product.slug}&quantity=${quantity}`);
+                router.push(`/checkout?buyNow=true&productId=${product.productId}&quantity=${quantity}`);
               }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -10,7 +10,7 @@ import styles from './ProductCard.module.css';
 interface ProductCardProps {
   product: {
     _id: string;
-    slug: string;
+    productId: string;
     title: string;
     images: string[];
     price: number;
@@ -45,7 +45,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <Link href={`/products/${product.slug}`} className={styles.card}>
+    <Link href={`/products/${product.productId}`} className={styles.card}>
       <div className={styles.imageWrapper}>
         {product.images[0] ? (
           <Image

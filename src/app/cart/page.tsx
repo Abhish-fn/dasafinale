@@ -13,7 +13,7 @@ interface VariantOption {
   packagingSize: string;
   price: number;
   stock: number;
-  slug: string;
+  productId: string;
 }
 
 export default function CartPage() {
@@ -28,10 +28,10 @@ export default function CartPage() {
   const shipping = calculateShippingFee(total);
   const grandTotal = total + shipping;
 
-  const fetchVariants = useCallback(async (variantGroup: string, currentProductSlug: string) => {
+  const fetchVariants = useCallback(async (variantGroup: string, currentProductId: string) => {
     if (variantCache[variantGroup]) return;
     try {
-      const res = await fetch(`/api/products/${currentProductSlug}`);
+      const res = await fetch(`/api/products/${currentProductId}`);
       const data = await res.json();
       if (res.ok) {
         const allVariants: VariantOption[] = [
@@ -40,14 +40,14 @@ export default function CartPage() {
             packagingSize: data.product.packagingSize,
             price: data.product.price,
             stock: data.product.stock,
-            slug: data.product.slug,
+            productId: data.product.productId,
           },
           ...(data.variants || []).map((v: VariantOption & { productId: string }) => ({
             _id: v._id,
             packagingSize: v.packagingSize,
             price: v.price,
             stock: v.stock,
-            slug: v.slug,
+            productId: v.productId,
           })),
         ].sort((a, b) => a.price - b.price);
         setVariantCache((prev) => ({ ...prev, [variantGroup]: allVariants }));
@@ -61,7 +61,7 @@ export default function CartPage() {
   useEffect(() => {
     for (const item of items) {
       if (item.product.variantGroup && !variantCache[item.product.variantGroup]) {
-        fetchVariants(item.product.variantGroup, item.product.slug);
+        fetchVariants(item.product.variantGroup, item.product.productId);
       }
     }
   }, [items, fetchVariants, variantCache]);
@@ -127,7 +127,7 @@ export default function CartPage() {
             return (
               <div key={item._id} className={styles.cartItem}>
                 {/* Column 1: Product Image */}
-                <Link href={`/products/${item.product.slug}`} className={styles.itemImage}>
+                <Link href={`/products/${item.product.productId}`} className={styles.itemImage}>
                   {item.product.images?.[0] ? (
                     <Image src={item.product.images[0]} alt={item.product.title} fill sizes="88px" />
                   ) : (
@@ -139,7 +139,7 @@ export default function CartPage() {
 
                 {/* Column 2: Title + Controls */}
                 <div className={styles.itemContent}>
-                  <Link href={`/products/${item.product.slug}`} className={styles.itemTitle}>
+                  <Link href={`/products/${item.product.productId}`} className={styles.itemTitle}>
                     {item.product.title}
                   </Link>
 
