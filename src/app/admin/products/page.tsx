@@ -114,6 +114,20 @@ export default function AdminProductsPage() {
   const [tagInput, setTagInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Add product modal state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState<Partial<Product>>({
+    title: '', description: '', category: categories[1], foodType: foodTypes[0],
+    packagingSize: '', weight: 0, price: 0, compareAtPrice: undefined,
+    stock: 0, images: [], tags: [],
+    isMustTry: false, isBestSeller: false, isSpecialItem: false,
+    nutritionInfo: { calories: '', protein: '', carbs: '', fat: '', fiber: '' },
+  });
+  const [addTagInput, setAddTagInput] = useState('');
+  const [addSaving, setAddSaving] = useState(false);
+  const [addUploading, setAddUploading] = useState(false);
+  const addFileInputRef = useRef<HTMLInputElement>(null);
+
   // Variant editing state — all variants editable in one modal
   const [variantEdits, setVariantEdits] = useState<VariantEdit[]>([]);
   const [loadingVariants, setLoadingVariants] = useState(false);
@@ -442,6 +456,115 @@ export default function AdminProductsPage() {
     }));
   };
 
+  // --- Add Product Modal Logic ---
+  const openAddModal = () => {
+    setAddForm({
+      title: '', description: '', category: categories[1], foodType: foodTypes[0],
+      packagingSize: '', weight: 0, price: 0, compareAtPrice: undefined,
+      stock: 0, images: [], tags: [],
+      isMustTry: false, isBestSeller: false, isSpecialItem: false,
+      nutritionInfo: { calories: '', protein: '', carbs: '', fat: '', fiber: '' },
+    });
+    setAddTagInput('');
+    setShowAddModal(true);
+  };
+
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setAddForm({});
+    setAddTagInput('');
+  };
+
+  const handleAddImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const currentImages = addForm.images || [];
+    if (currentImages.length >= 5) { toast('Maximum 5 images allowed', 'error'); return; }
+    setAddUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      setAddForm((prev) => ({ ...prev, images: [...(prev.images || []), data.url] }));
+      toast('Image uploaded', 'success');
+    } catch {
+      toast('Failed to upload image', 'error');
+    } finally {
+      setAddUploading(false);
+      if (addFileInputRef.current) addFileInputRef.current.value = '';
+    }
+  };
+
+  const removeAddImage = (index: number) => {
+    setAddForm((prev) => ({ ...prev, images: (prev.images || []).filter((_, i) => i !== index) }));
+  };
+
+  const addAddTag = () => {
+    const tag = addTagInput.trim();
+    if (!tag) return;
+    const current = addForm.tags || [];
+    if (current.includes(tag)) { toast('Tag already exists', 'error'); return; }
+    if (current.length >= 10) { toast('Maximum 10 tags allowed', 'error'); return; }
+    setAddForm((prev) => ({ ...prev, tags: [...(prev.tags || []), tag] }));
+    setAddTagInput('');
+  };
+
+  const removeAddTag = (index: number) => {
+    setAddForm((prev) => ({ ...prev, tags: (prev.tags || []).filter((_, i) => i !== index) }));
+  };
+
+  const updateAddNutrition = (field: keyof NutritionInfo, value: string) => {
+    setAddForm((prev) => ({ ...prev, nutritionInfo: { ...(prev.nutritionInfo || {}), [field]: value } }));
+  };
+
+  const handleCreateProduct = async () => {
+    if (!addForm.title?.trim()) { toast('Title is required', 'error'); return; }
+    if (!addForm.description?.trim() || (addForm.description?.trim().length || 0) < 10) { toast('Description must be at least 10 characters', 'error'); return; }
+    if (!addForm.packagingSize?.trim()) { toast('Packaging size is required', 'error'); return; }
+    if (!addForm.price || addForm.price <= 0) { toast('Price must be greater than 0', 'error'); return; }
+    if (!addForm.weight || addForm.weight <= 0) { toast('Weight must be greater than 0', 'error'); return; }
+
+    setAddSaving(true);
+    try {
+      const payload = {
+        title: addForm.title,
+        description: addForm.description,
+        category: addForm.category,
+        foodType: addForm.foodType,
+        packagingSize: addForm.packagingSize,
+        weight: addForm.weight,
+        price: Math.round((addForm.price as number) * 100),
+        compareAtPrice: addForm.compareAtPrice ? Math.round((addForm.compareAtPrice as number) * 100) : undefined,
+        stock: addForm.stock || 0,
+        images: addForm.images || [],
+        tags: addForm.tags || [],
+        isMustTry: addForm.isMustTry || false,
+        isBestSeller: addForm.isBestSeller || false,
+        isSpecialItem: addForm.isSpecialItem || false,
+        nutritionInfo: addForm.nutritionInfo,
+      };
+
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to create product');
+      }
+      toast('Product created successfully!', 'success');
+      closeAddModal();
+      fetchProducts();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to create product', 'error');
+    } finally {
+      setAddSaving(false);
+    }
+  };
+
   const groupedItems = groupProducts(products);
 
   // --- Render a product row in the table ---
@@ -506,9 +629,18 @@ export default function AdminProductsPage() {
 
   return (
     <div>
-      <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-2xl)', fontWeight: 700, marginBottom: 'var(--space-6)' }}>
-        Products
-      </h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
+        <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-2xl)', fontWeight: 700 }}>
+          Products
+        </h1>
+        <button
+          className={`${styles.actionBtn} ${styles.actionPrimary}`}
+          style={{ padding: 'var(--space-2) var(--space-4)', fontSize: 'var(--text-sm)' }}
+          onClick={openAddModal}
+        >
+          + Add Product
+        </button>
+      </div>
 
       <div className={styles.toolbar}>
         <input className={styles.searchInput} placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -795,6 +927,156 @@ export default function AdminProductsPage() {
               <button className={`${styles.actionBtn} ${styles.actionDanger}`} onClick={closeEditModal}>Cancel</button>
               <button className={`${styles.actionBtn} ${styles.actionPrimary}`} onClick={handleEditSave} disabled={saving}>
                 {saving ? 'Saving...' : 'Save All Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Add Product Modal ===== */}
+      {showAddModal && (
+        <div className={styles.modalOverlay} onClick={closeAddModal}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Add New Product</h2>
+              <button className={styles.modalClose} onClick={closeAddModal} aria-label="Close modal">✕</button>
+            </div>
+
+            <div className={styles.modalBody}>
+              {/* Title */}
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Title *</label>
+                <input className={styles.formInput} value={addForm.title || ''} onChange={(e) => setAddForm((f) => ({ ...f, title: e.target.value }))} placeholder="Product name" />
+              </div>
+
+              {/* Description */}
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Description *</label>
+                <textarea className={styles.formTextarea} rows={3} value={addForm.description || ''} onChange={(e) => setAddForm((f) => ({ ...f, description: e.target.value }))} placeholder="Product description (min 10 characters)" />
+              </div>
+
+              {/* Category & Food Type */}
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Category *</label>
+                  <select className={styles.formSelect} value={addForm.category || ''} onChange={(e) => setAddForm((f) => ({ ...f, category: e.target.value }))}>
+                    {categories.filter(Boolean).map((c) => (<option key={c} value={c}>{c}</option>))}
+                  </select>
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Food Type *</label>
+                  <select className={styles.formSelect} value={addForm.foodType || ''} onChange={(e) => setAddForm((f) => ({ ...f, foodType: e.target.value }))}>
+                    {foodTypes.map((ft) => (<option key={ft} value={ft}>{ft}</option>))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Packaging, Weight, Stock */}
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Packaging Size *</label>
+                  <input className={styles.formInput} value={addForm.packagingSize || ''} onChange={(e) => setAddForm((f) => ({ ...f, packagingSize: e.target.value }))} placeholder="e.g. 250g" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Weight (g) *</label>
+                  <input className={styles.formInput} type="number" min={0} value={addForm.weight ?? ''} onChange={(e) => setAddForm((f) => ({ ...f, weight: parseFloat(e.target.value) || 0 }))} />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Stock</label>
+                  <input className={styles.formInput} type="number" min={0} value={addForm.stock ?? ''} onChange={(e) => setAddForm((f) => ({ ...f, stock: parseInt(e.target.value) || 0 }))} />
+                </div>
+              </div>
+
+              {/* Price Row */}
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Price (₹) *</label>
+                  <input className={styles.formInput} type="number" min={0} step="0.01" value={addForm.price ?? ''} onChange={(e) => setAddForm((f) => ({ ...f, price: parseFloat(e.target.value) || 0 }))} />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Compare At Price (₹)</label>
+                  <input className={styles.formInput} type="number" min={0} step="0.01" value={addForm.compareAtPrice ?? ''} onChange={(e) => { const val = e.target.value; setAddForm((f) => ({ ...f, compareAtPrice: val ? parseFloat(val) : undefined })); }} />
+                </div>
+              </div>
+
+              {/* Tags */}
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Tags</label>
+                <div className={styles.tagContainer}>
+                  {(addForm.tags || []).map((tag, i) => (
+                    <span key={i} className={styles.tag}>
+                      {tag}
+                      <button className={styles.tagRemove} onClick={() => removeAddTag(i)} aria-label={`Remove tag ${tag}`}>×</button>
+                    </span>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
+                  <input className={styles.formInput} placeholder="Add a tag..." value={addTagInput} onChange={(e) => setAddTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addAddTag(); } }} />
+                  <button className={`${styles.actionBtn} ${styles.actionPrimary}`} onClick={addAddTag} type="button">Add</button>
+                </div>
+              </div>
+
+              {/* Images */}
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Images ({(addForm.images || []).length}/5)</label>
+                <div className={styles.imageGrid}>
+                  {(addForm.images || []).map((img, i) => (
+                    <div key={i} className={styles.imageThumb}>
+                      <Image src={img} alt={`Product image ${i + 1}`} fill sizes="80px" style={{ objectFit: 'cover' }} />
+                      <button className={styles.imageRemove} onClick={() => removeAddImage(i)} aria-label="Remove image">×</button>
+                    </div>
+                  ))}
+                  {(addForm.images || []).length < 5 && (
+                    <button className={styles.imageAdd} onClick={() => addFileInputRef.current?.click()} disabled={addUploading}>
+                      {addUploading ? (
+                        <span className={styles.spinner} />
+                      ) : (
+                        <>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                          <span style={{ fontSize: '11px', marginTop: '2px' }}>Upload</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+                <input ref={addFileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" style={{ display: 'none' }} onChange={handleAddImageUpload} />
+              </div>
+
+              {/* Nutrition Info */}
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Nutrition Info</label>
+                <div className={styles.formRow}>
+                  {(['calories', 'protein', 'carbs', 'fat', 'fiber'] as const).map((field) => (
+                    <div key={field} className={styles.formGroup} style={{ flex: '1 1 0' }}>
+                      <label className={styles.formLabelSmall}>{field.charAt(0).toUpperCase() + field.slice(1)}</label>
+                      <input className={styles.formInput} placeholder="e.g. 120 kcal" value={addForm.nutritionInfo?.[field] || ''} onChange={(e) => updateAddNutrition(field, e.target.value)} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Boolean Flags */}
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Flags</label>
+                <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
+                  {([
+                    { key: 'isMustTry' as const, label: '🔥 Must Try' },
+                    { key: 'isBestSeller' as const, label: '⭐ Best Seller' },
+                    { key: 'isSpecialItem' as const, label: '✨ Special Item' },
+                  ]).map(({ key, label }) => (
+                    <label key={key} className={styles.checkboxLabel}>
+                      <input type="checkbox" checked={!!addForm[key]} onChange={(e) => setAddForm((f) => ({ ...f, [key]: e.target.checked }))} />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <button className={`${styles.actionBtn} ${styles.actionDanger}`} onClick={closeAddModal}>Cancel</button>
+              <button className={`${styles.actionBtn} ${styles.actionPrimary}`} onClick={handleCreateProduct} disabled={addSaving}>
+                {addSaving ? 'Creating...' : 'Create Product'}
               </button>
             </div>
           </div>
