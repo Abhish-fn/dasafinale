@@ -33,7 +33,7 @@ export async function GET(
         isActive: true,
         _id: { $ne: product._id },
       })
-        .select('productId slug title packagingSize price images')
+        .select('productId slug title packagingSize price compareAtPrice stock weight images')
         .lean();
     }
 
