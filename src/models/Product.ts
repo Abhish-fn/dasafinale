@@ -83,8 +83,6 @@ const productSchema = new Schema<IProduct>(
   { timestamps: true }
 );
 
-productSchema.index({ productId: 1 }, { unique: true });
-productSchema.index({ slug: 1 }, { unique: true });
 productSchema.index({ category: 1 });
 productSchema.index({ foodType: 1 });
 productSchema.index({ tags: 1 });

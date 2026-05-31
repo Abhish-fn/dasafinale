@@ -35,7 +35,6 @@ const couponSchema = new Schema<ICoupon>(
   { timestamps: true }
 );
 
-couponSchema.index({ code: 1 }, { unique: true });
 couponSchema.index({ expiresAt: 1 });
 couponSchema.index({ isActive: 1 });
 
