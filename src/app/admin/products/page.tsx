@@ -568,7 +568,9 @@ export default function AdminProductsPage() {
   const groupedItems = groupProducts(products);
 
   // --- Render a product row in the table ---
-  const renderProductRow = (p: Product, isVariant: boolean, isLast: boolean) => (
+  const renderProductRow = (p: Product, isVariant: boolean, isLast: boolean, fallbackImage?: string) => {
+    const displayImage = p.images[0] || fallbackImage;
+    return (
     <tr key={p._id} style={isVariant ? { background: 'rgba(107,140,62,0.03)' } : undefined}>
       <td>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', paddingLeft: isVariant ? 'var(--space-6)' : 0 }}>
@@ -576,7 +578,7 @@ export default function AdminProductsPage() {
             <span style={{ color: 'var(--color-gray-300)', fontSize: '14px', marginLeft: '-20px' }}>└</span>
           )}
           <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', overflow: 'hidden', background: 'var(--color-gray-100)', flexShrink: 0, position: 'relative' }}>
-            {p.images[0] && <Image src={p.images[0]} alt="" fill sizes="40px" />}
+            {displayImage && <Image src={displayImage} alt="" fill sizes="40px" />}
           </div>
           <div>
             <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{p.title}</div>
@@ -602,7 +604,7 @@ export default function AdminProductsPage() {
           {p.stock} {p.stock <= 10 && '⚠'}
         </span>
       </td>
-      <td>{isVariant ? '' : p.salesCount}</td>
+      <td>{p.salesCount}</td>
       <td>
         {!isVariant && (
           <div style={{ display: 'flex', gap: 'var(--space-1)', flexWrap: 'wrap' }}>
@@ -625,7 +627,8 @@ export default function AdminProductsPage() {
         </button>
       </td>
     </tr>
-  );
+    );
+  };
 
   return (
     <div>
@@ -677,8 +680,9 @@ export default function AdminProductsPage() {
               {groupedItems.map((item) => {
                 if (isGroup(item)) {
                   const allInGroup = [item.primary, ...item.variants];
+                  const primaryImage = item.primary.images[0];
                   return allInGroup.map((p, idx) =>
-                    renderProductRow(p, idx > 0, idx === allInGroup.length - 1)
+                    renderProductRow(p, idx > 0, idx === allInGroup.length - 1, primaryImage)
                   );
                 }
                 return renderProductRow(item, false, false);
