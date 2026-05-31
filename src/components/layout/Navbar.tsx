@@ -52,7 +52,6 @@ export default function Navbar() {
           <Link href="/" className={styles.brand}>
             <span className={styles.brandIcon}>DD</span>
             Dasa Dinusulu
-            <span className={styles.brandSub}>A Product by VDF</span>
           </Link>
 
           <div className={styles.desktopNav}>
