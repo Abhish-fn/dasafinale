@@ -35,6 +35,9 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Hide store navbar on admin routes — admin has its own sidebar navigation
+  if (pathname.startsWith('/admin')) return null;
+
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/products', label: 'Shop' },

@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import styles from './Footer.module.css';
 
 const quickLinks = [
@@ -18,6 +21,11 @@ const categories = [
 ];
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  // Hide store footer on admin routes — admin has its own layout
+  if (pathname.startsWith('/admin')) return null;
+
   return (
     <footer className={styles.footer}>
       <div className={styles.container}>
