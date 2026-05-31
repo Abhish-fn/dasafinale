@@ -12,6 +12,14 @@ export default auth((req) => {
   const protectedPrefixes = ['/cart', '/wishlist', '/checkout', '/orders', '/account'];
   const isProtectedRoute = protectedPrefixes.some((prefix) => nextUrl.pathname.startsWith(prefix));
 
+  // DEBUG: Log auth state for admin routes
+  if (isAdminRoute) {
+    console.log('[Middleware] Admin route hit:', nextUrl.pathname);
+    console.log('[Middleware] isLoggedIn:', isLoggedIn);
+    console.log('[Middleware] req.auth:', JSON.stringify(req.auth, null, 2));
+    console.log('[Middleware] isAdmin:', isAdmin);
+  }
+
   if (isAdminRoute && !isAdmin) {
     return Response.redirect(new URL('/login', nextUrl));
   }

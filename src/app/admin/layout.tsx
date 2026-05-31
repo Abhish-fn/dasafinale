@@ -21,8 +21,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
+    console.log('[AdminLayout] status:', status, 'session:', JSON.stringify(session, null, 2));
     if (status === 'unauthenticated') router.push('/login');
-    else if (status === 'authenticated' && session?.user?.role !== 'admin') router.push('/');
+    else if (status === 'authenticated' && session?.user?.role !== 'admin') {
+      console.log('[AdminLayout] NOT admin — redirecting to /. Role was:', session?.user?.role);
+      router.push('/');
+    }
   }, [status, session, router]);
 
   // Close sidebar on route change
