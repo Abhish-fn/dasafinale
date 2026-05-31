@@ -36,7 +36,43 @@ export const productSchema = z.object({
     .optional(),
 });
 
-export const productUpdateSchema = productSchema.partial();
+// For updates, strip defaults so omitted fields don't get defaulted to 0/false/[]
+// which would overwrite existing DB values when doing partial updates
+export const productUpdateSchema = z.object({
+  title: z.string().min(2).max(200),
+  description: z.string().min(10).max(5000),
+  price: z.number().int().positive(),
+  compareAtPrice: z.number().int().positive().optional(),
+  category: z.enum([
+    'Clay Pot Roasted Seeds & Superfoods',
+    'Protein & Energy Snacks',
+    'Palm Jaggery Millet Biscuits',
+    'Traditional Millet Savoury Snacks',
+    'Healthy Chips & Crisps',
+    'Premium Healthy Sweets',
+  ]),
+  foodType: z.enum(['Seeds', 'Superfood', 'Biscuits', 'Snacks', 'Chips', 'Sweets', 'Protein']),
+  tags: z.array(z.string()).max(10),
+  packagingSize: z.string().min(1).max(20),
+  parentProduct: z.string().optional(),
+  variantGroup: z.string().optional(),
+  stock: z.number().int().min(0),
+  weight: z.number().positive(),
+  images: z.array(z.string().url()).max(5),
+  isMustTry: z.boolean(),
+  isSpecialItem: z.boolean(),
+  isBestSeller: z.boolean(),
+  isActive: z.boolean(),
+  nutritionInfo: z
+    .object({
+      calories: z.string().optional(),
+      protein: z.string().optional(),
+      carbs: z.string().optional(),
+      fat: z.string().optional(),
+      fiber: z.string().optional(),
+    })
+    .optional(),
+}).partial();
 
 // --- Cart ---
 export const cartItemSchema = z.object({
