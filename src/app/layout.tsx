@@ -6,17 +6,17 @@ import Footer from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Dasa Dinusulu — A Product by VDF',
-    template: '%s | Dasa Dinusulu',
+    default: 'www.DasaDinusulu.com — A Product by VDF',
+    template: '%s | www.DasaDinusulu.com',
   },
   description:
-    'Rooted in the rich culinary traditions of Andhra Pradesh, Dasa Dinusulu brings you ten treasured snacks crafted with love, purity, and the finest natural ingredients.',
-  keywords: ['healthy snacks', 'Andhra snacks', 'dry fruit laddu', 'roasted snacks', 'DasaDinusulu', 'millet snacks', 'natural ingredients', 'traditional recipes'],
+    'Rooted in the rich culinary traditions of Andhra Pradesh, www.DasaDinusulu.com brings you ten treasured snacks crafted with love, purity, and the finest natural ingredients.',
+  keywords: ['healthy snacks', 'Andhra snacks', 'dry fruit laddu', 'roasted snacks', 'www.DasaDinusulu.com', 'millet snacks', 'natural ingredients', 'traditional recipes'],
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://dasadinusulu.com'),
   openGraph: {
-    title: 'Dasa Dinusulu — A Product by VDF',
+    title: 'www.DasaDinusulu.com — A Product by VDF',
     description: 'Ten traditional treasures from Andhra Pradesh. Crafted with love, purity, and the finest natural ingredients.',
-    siteName: 'Dasa Dinusulu',
+    siteName: 'www.DasaDinusulu.com',
     locale: 'en_IN',
     type: 'website',
   },

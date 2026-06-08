@@ -51,7 +51,7 @@ export default function Navbar() {
         <div className={styles.container}>
           <Link href="/" className={styles.brand}>
             <span className={styles.brandIcon}>DD</span>
-            Dasa Dinusulu
+            <span><span className="brand-subtle">www.</span>DasaDinusulu<span className="brand-subtle">.com</span></span>
           </Link>
 
           <div className={styles.desktopNav}>

@@ -4,7 +4,7 @@ import ProductsContent from './ProductsContent';
 import styles from './products.module.css';
 
 export const metadata: Metadata = {
-  title: 'Products — DasaDinusulu',
+  title: 'Products — www.DasaDinusulu.com',
   description: 'Browse our collection of healthy snacks made with millets, seeds, and superfoods. Filter by category, type, and more.',
 };
 

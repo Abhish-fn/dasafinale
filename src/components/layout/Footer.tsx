@@ -33,12 +33,12 @@ export default function Footer() {
           <div>
             <div className={styles.brand}>
               <span className={styles.brandIcon}>DD</span>
-              Dasa Dinusulu
+              <span><span className="brand-subtle">www.</span>DasaDinusulu<span className="brand-subtle">.com</span></span>
             </div>
             <p className={styles.tagline}>A Product by VDF</p>
             <p className={styles.description}>
               Rooted in the rich culinary traditions of Andhra Pradesh,
-              Dasa Dinusulu brings you ten treasured snacks crafted with love,
+              <span className="brand-subtle">www.</span>DasaDinusulu<span className="brand-subtle">.com</span> brings you ten treasured snacks crafted with love,
               purity, and the finest natural ingredients.
             </p>
             <div className={styles.contactList}>
@@ -89,7 +89,7 @@ export default function Footer() {
 
         <div className={styles.bottom}>
           <span className={styles.copyright}>
-            © {new Date().getFullYear()} Dasa Dinusulu | A Product by VDF | All Rights Reserved
+            © {new Date().getFullYear()} <span className="brand-subtle">www.</span>DasaDinusulu<span className="brand-subtle">.com</span> | A Product by VDF | All Rights Reserved
           </span>
         </div>
       </div>

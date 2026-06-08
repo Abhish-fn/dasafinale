@@ -363,7 +363,7 @@ function CheckoutContent() {
         key: data.key,
         amount: data.amount,
         currency: data.currency,
-        name: 'DasaDinusulu',
+        name: 'www.DasaDinusulu.com',
         description: `Order ${data.orderId}`,
         order_id: data.razorpayOrderId,
         handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {

@@ -47,7 +47,7 @@ function LoginContent() {
   return (
     <div className={styles.card}>
       <span className={styles.brandIcon}>🌿</span>
-      <h1 className={styles.brandName}>DasaDinusulu</h1>
+      <h1 className={styles.brandName}><span className="brand-subtle">www.</span>DasaDinusulu<span className="brand-subtle">.com</span></h1>
       <h2 className={styles.title}>Welcome back</h2>
       <p className={styles.subtitle}>
         Sign in to access your cart, orders, wishlist, and more.

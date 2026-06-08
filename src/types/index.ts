@@ -1,4 +1,4 @@
-// Shared TypeScript types for the DasaDinusulu app
+// Shared TypeScript types for the www.DasaDinusulu.com app
 
 export type UserRole = 'user' | 'admin';
 

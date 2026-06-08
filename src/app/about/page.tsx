@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'About Us',
-  description: 'Learn about Dasa Dinusulu — rooted in the rich culinary traditions of Andhra Pradesh, bringing you ten treasured snacks crafted with love and purity.',
+  description: 'Learn about www.DasaDinusulu.com — rooted in the rich culinary traditions of Andhra Pradesh, bringing you ten treasured snacks crafted with love and purity.',
 };
 
 const values = [
@@ -29,11 +29,11 @@ export default function AboutPage() {
       <div style={{ textAlign: 'center', marginBottom: 'var(--space-16)' }}>
         <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)', background: 'rgba(107,30,43,0.08)', padding: '4px 16px', borderRadius: 'var(--radius-full)' }}>Our Story</span>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, color: 'var(--maroon)', marginTop: 'var(--space-4)', lineHeight: 1.1 }}>
-          Dasa Dinusulu<br />
+          <span className="brand-subtle">www.</span>DasaDinusulu<span className="brand-subtle">.com</span><br />
           <span style={{ color: 'var(--gold)' }}>Ten Traditional Treasures.</span>
         </h1>
         <p style={{ fontSize: 'var(--text-lg)', color: 'var(--color-gray-500)', maxWidth: 600, margin: 'var(--space-4) auto 0', lineHeight: 'var(--leading-relaxed)' }}>
-          Rooted in the rich culinary traditions of Andhra Pradesh, Dasa Dinusulu brings you ten treasured snacks
+          Rooted in the rich culinary traditions of Andhra Pradesh, <span className="brand-subtle">www.</span>DasaDinusulu<span className="brand-subtle">.com</span> brings you ten treasured snacks
           crafted with love, purity, and the finest natural ingredients. From wholesome dry fruit laddus to
           crunchy roasted seeds, each product is a celebration of health and heritage.
         </p>

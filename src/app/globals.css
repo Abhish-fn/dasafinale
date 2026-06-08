@@ -1,5 +1,5 @@
 /* ===================================================================
-   DasaDinusulu Design System — globals.css
+   www.DasaDinusulu.com Design System — globals.css
    Traditional Andhra Snacks — Maroon, Gold, Beige — Premium Heritage
    =================================================================== */
 
@@ -255,6 +255,15 @@ p {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+/* Brand name subtle prefix/suffix (www. / .com) —
+   smaller than the main brand text but same color,
+   aligned to the text baseline. */
+.brand-subtle {
+  font-size: 0.55em;
+  font-weight: inherit;
+  letter-spacing: 0;
 }
 
 .font-display {

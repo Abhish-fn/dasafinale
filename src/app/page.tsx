@@ -38,7 +38,7 @@ export default function HomePage() {
           <div>
             <span className={styles.heroBadge}>🌿 Ten Traditional Treasures</span>
             <h1 className={styles.heroTitle}>
-              Dasa Dinusulu
+              <span className="brand-subtle">www.</span>DasaDinusulu<span className="brand-subtle">.com</span>
               <br />
               <span className={styles.heroTitleAccent}>Ten Traditional Treasures</span>
             </h1>
