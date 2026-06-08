@@ -37,7 +37,12 @@ export async function GET(req: NextRequest) {
 
     const search = searchParams.get('search');
     if (search) {
-      filter.$text = { $search: search };
+      const searchRegex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      filter.$or = [
+        { title: { $regex: searchRegex } },
+        { description: { $regex: searchRegex } },
+        { tags: { $regex: searchRegex } },
+      ];
     }
 
     // Pagination
@@ -74,7 +79,7 @@ export async function GET(req: NextRequest) {
     let products;
     let total: number;
 
-    if (sortParam === 'recommended' && !search) {
+    if (sortParam === 'recommended') {
       // Weighted recommendation score
       const pipeline: mongoose.PipelineStage[] = [
         { $match: filter },
