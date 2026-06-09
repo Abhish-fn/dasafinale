@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/components/ui/Toast';
 import { formatPrice, calculateShippingFee } from '@/lib/utils';
+import { calculateGST } from '@/lib/gst';
 import { INDIAN_STATES } from '@/lib/indianStates';
 import styles from './checkout.module.css';
 
@@ -320,6 +321,11 @@ function CheckoutContent() {
   const subtotalAfterDiscount = displayTotal - discount;
   const shipping = calculateShippingFee(subtotalAfterDiscount);
   const grandTotal = subtotalAfterDiscount + shipping;
+
+  // GST breakdown — derive from selected address state
+  const selectedAddr = addresses.find((a) => a._id === selectedAddress);
+  const customerState = selectedAddr?.state || '';
+  const gst = customerState ? calculateGST(displayTotal, customerState) : null;
 
   // Place order
   const handlePlaceOrder = async () => {
@@ -671,6 +677,27 @@ function CheckoutContent() {
             <span>Subtotal</span>
             <span className={styles.summaryValue}>{formatPrice(displayTotal)}</span>
           </div>
+          {gst && (
+            <>
+              <div className={styles.summaryGstRow}>
+                <span className={styles.summaryGstLabel}>
+                  <span className={styles.gstBadge}>{gst.isIntraState ? 'Intra-State' : 'Inter-State'}</span>
+                  Base Price
+                </span>
+                <span className={styles.summaryGstValue}>{formatPrice(gst.basePrice)}</span>
+              </div>
+              <div className={styles.summaryGstRow}>
+                <span className={styles.summaryGstLabel}>CGST (5%)</span>
+                <span className={styles.summaryGstValue}>{formatPrice(gst.cgst)}</span>
+              </div>
+              {!gst.isIntraState && (
+                <div className={styles.summaryGstRow}>
+                  <span className={styles.summaryGstLabel}>SGST (5%)</span>
+                  <span className={styles.summaryGstValue}>{formatPrice(gst.sgst)}</span>
+                </div>
+              )}
+            </>
+          )}
           {discount > 0 && (
             <div className={styles.summaryRow}>
               <span>Discount ({coupon?.code})</span>

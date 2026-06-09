@@ -22,7 +22,10 @@ interface OrderDetail {
     fullName: string; phone: string; addressLine1: string; addressLine2: string;
     city: string; state: string; pincode: string;
   };
-  pricing: { subtotal: number; discount: number; shippingFee: number; total: number };
+  pricing: {
+    subtotal: number; discount: number; shippingFee: number; total: number;
+    gst?: { basePrice: number; cgst: number; sgst: number; isIntraState: boolean };
+  };
   coupon?: { code: string };
   payment: { status: string; method?: string; paidAt?: string };
   tracking?: {
@@ -217,6 +220,27 @@ export default function OrderDetailPage() {
             <span>Subtotal</span>
             <span className={styles.summaryValue}>{formatPrice(order.pricing.subtotal)}</span>
           </div>
+          {order.pricing.gst && (
+            <>
+              <div className={styles.summaryGstRow}>
+                <span className={styles.summaryGstLabel}>
+                  <span className={styles.gstBadge}>{order.pricing.gst.isIntraState ? 'Intra-State' : 'Inter-State'}</span>
+                  Base Price
+                </span>
+                <span className={styles.summaryGstValue}>{formatPrice(order.pricing.gst.basePrice)}</span>
+              </div>
+              <div className={styles.summaryGstRow}>
+                <span className={styles.summaryGstLabel}>CGST (5%)</span>
+                <span className={styles.summaryGstValue}>{formatPrice(order.pricing.gst.cgst)}</span>
+              </div>
+              {!order.pricing.gst.isIntraState && (
+                <div className={styles.summaryGstRow}>
+                  <span className={styles.summaryGstLabel}>SGST (5%)</span>
+                  <span className={styles.summaryGstValue}>{formatPrice(order.pricing.gst.sgst)}</span>
+                </div>
+              )}
+            </>
+          )}
           {order.pricing.discount > 0 && (
             <div className={styles.summaryRow}>
               <span>Discount {order.coupon?.code ? `(${order.coupon.code})` : ''}</span>

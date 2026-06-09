@@ -201,8 +201,20 @@ export default function CartPage() {
 
         <div className={styles.summary}>
           <h2 className={styles.summaryTitle}>Order Summary</h2>
+          <div className={styles.summaryItemsList}>
+            {items.map((item) => (
+              <div key={item._id} className={styles.summaryItemRow}>
+                <span className={styles.summaryItemName}>
+                  {item.product.title}
+                  {item.quantity > 1 && <span className={styles.summaryItemQty}> ×{item.quantity}</span>}
+                </span>
+                <span className={styles.summaryItemPrice}>{formatPrice(item.product.price * item.quantity)}</span>
+              </div>
+            ))}
+          </div>
+          <hr className={styles.summaryDivider} />
           <div className={styles.summaryRow}>
-            <span>Subtotal ({items.length} items)</span>
+            <span>Subtotal</span>
             <span className={styles.summaryValue}>{formatPrice(total)}</span>
           </div>
           <div className={styles.summaryRow}>

@@ -42,6 +42,12 @@ export interface IOrder extends Document {
     discount: number;
     shippingFee: number;
     total: number;
+    gst?: {
+      basePrice: number;
+      cgst: number;
+      sgst: number;
+      isIntraState: boolean;
+    };
   };
   coupon?: {
     code: string;
@@ -128,6 +134,12 @@ const orderSchema = new Schema<IOrder>(
       discount: { type: Number, default: 0 },
       shippingFee: { type: Number, required: true },
       total: { type: Number, required: true },
+      gst: {
+        basePrice: Number,
+        cgst: Number,
+        sgst: Number,
+        isIntraState: Boolean,
+      },
     },
     coupon: {
       code: String,

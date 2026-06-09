@@ -72,6 +72,12 @@
 .summaryRow { display: flex; justify-content: space-between; margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-gray-600); }
 .summaryValue { font-weight: 500; color: var(--color-gray-900); }
 .summaryDiscount { color: var(--color-success); font-weight: 500; }
+
+/* GST breakdown */
+.summaryGstRow { display: flex; justify-content: space-between; margin-bottom: var(--space-1); font-size: var(--text-xs); color: var(--color-gray-500); padding-left: var(--space-2); border-left: 2px solid var(--color-gray-200); margin-left: var(--space-1); }
+.summaryGstLabel { display: flex; align-items: center; gap: var(--space-2); }
+.summaryGstValue { font-weight: 500; color: var(--color-gray-600); font-variant-numeric: tabular-nums; }
+.gstBadge { display: inline-block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 1px 6px; border-radius: var(--radius-full); background: rgba(107, 30, 43, 0.08); color: var(--maroon); white-space: nowrap; }
 .summaryTotal { display: flex; justify-content: space-between; font-family: var(--font-heading); font-size: var(--text-xl); font-weight: 700; color: var(--maroon); margin: var(--space-4) 0; }
 
 .payBtn { width: 100%; display: flex; align-items: center; justify-content: center; gap: var(--space-2); padding: var(--space-4); font-family: var(--font-heading); font-size: var(--text-base); font-weight: 600; color: white; background: linear-gradient(135deg, var(--maroon), var(--maroon-dark)); border-radius: var(--radius-lg); transition: all var(--transition-base); cursor: pointer; }

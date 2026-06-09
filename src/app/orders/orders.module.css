@@ -71,6 +71,12 @@
 .summaryDivider { border: none; border-top: 1px solid var(--color-gray-200); margin: var(--space-3) 0; }
 .summaryTotal { display: flex; justify-content: space-between; font-family: var(--font-heading); font-size: var(--text-xl); font-weight: 700; color: var(--maroon); }
 
+/* GST breakdown */
+.summaryGstRow { display: flex; justify-content: space-between; margin-bottom: var(--space-1); font-size: var(--text-xs); color: var(--color-gray-500); padding-left: var(--space-2); border-left: 2px solid var(--color-gray-200); margin-left: var(--space-1); }
+.summaryGstLabel { display: flex; align-items: center; gap: var(--space-2); }
+.summaryGstValue { font-weight: 500; color: var(--color-gray-600); font-variant-numeric: tabular-nums; }
+.gstBadge { display: inline-block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 1px 6px; border-radius: var(--radius-full); background: rgba(107, 30, 43, 0.08); color: var(--maroon); white-space: nowrap; }
+
 /* Empty */
 .empty { text-align: center; padding: var(--space-16) var(--space-4); }
 .emptyIcon { font-size: 5rem; margin-bottom: var(--space-4); }

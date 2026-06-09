@@ -12,6 +12,7 @@ import { createOrderSchema } from '@/lib/validations';
 import { sanitize } from '@/lib/sanitize';
 import { getRazorpay } from '@/lib/razorpay';
 import { generateOrderId, calculateShippingFee } from '@/lib/utils';
+import { calculateGST } from '@/lib/gst';
 
 // POST /api/checkout/create-order — Create order with atomic stock reservation
 export async function POST(req: NextRequest) {
@@ -145,6 +146,9 @@ export async function POST(req: NextRequest) {
     const shippingFee = calculateShippingFee(subtotal - discount);
     const total = subtotal - discount + shippingFee;
 
+    // 6b. Calculate GST breakdown from the subtotal (prices are GST-inclusive)
+    const gst = calculateGST(subtotal, address.state as string);
+
     // 7. Create Razorpay order
     const razorpayOrder = await getRazorpay().orders.create({
       amount: total,
@@ -173,7 +177,18 @@ export async function POST(req: NextRequest) {
         state: address.state,
         pincode: address.pincode,
       },
-      pricing: { subtotal, discount, shippingFee, total },
+      pricing: {
+        subtotal,
+        discount,
+        shippingFee,
+        total,
+        gst: {
+          basePrice: gst.basePrice,
+          cgst: gst.cgst,
+          sgst: gst.sgst,
+          isIntraState: gst.isIntraState,
+        },
+      },
       coupon: couponData,
       payment: {
         razorpayOrderId: razorpayOrder.id,
