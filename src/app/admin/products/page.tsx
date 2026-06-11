@@ -57,6 +57,44 @@ const categories = [
 
 const foodTypes = ['Seeds', 'Superfood', 'Biscuits', 'Snacks', 'Chips', 'Sweets', 'Protein'];
 
+// Compress image on client side before uploading to avoid server body size limits
+function compressImage(file: File, maxSize = 1200, quality = 0.85): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      // Scale down if either dimension exceeds maxSize
+      if (width > maxSize || height > maxSize) {
+        const ratio = Math.min(maxSize / width, maxSize / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { reject(new Error('Canvas not supported')); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { reject(new Error('Compression failed')); return; }
+          const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          });
+          resolve(compressed);
+        },
+        'image/jpeg',
+        quality
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
+    img.src = url;
+  });
+}
+
 // Group products by variantGroup for the table display
 interface ProductGroup {
   key: string;
@@ -410,15 +448,16 @@ export default function AdminProductsPage() {
 
     setUploading(true);
     try {
+      const compressed = await compressImage(file);
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', compressed);
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
       setEditForm((prev) => ({ ...prev, images: [...(prev.images || []), data.url] }));
       toast('Image uploaded', 'success');
-    } catch {
-      toast('Failed to upload image', 'error');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to upload image', 'error');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -482,15 +521,16 @@ export default function AdminProductsPage() {
     if (currentImages.length >= 5) { toast('Maximum 5 images allowed', 'error'); return; }
     setAddUploading(true);
     try {
+      const compressed = await compressImage(file);
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', compressed);
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
       setAddForm((prev) => ({ ...prev, images: [...(prev.images || []), data.url] }));
       toast('Image uploaded', 'success');
-    } catch {
-      toast('Failed to upload image', 'error');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to upload image', 'error');
     } finally {
       setAddUploading(false);
       if (addFileInputRef.current) addFileInputRef.current.value = '';
