@@ -30,8 +30,8 @@ interface OrderDetail {
   payment: { status: string; method?: string; paidAt?: string };
   tracking?: {
     carrier?: string; trackingId?: string; trackingUrl?: string;
-    estimatedDelivery?: string;
-    statusHistory?: { status: string; timestamp: string; note?: string }[];
+    estimatedDelivery?: string; waybill?: string;
+    statusHistory?: { status: string; timestamp: string; note?: string; location?: string }[];
   };
   createdAt: string;
 }
@@ -52,6 +52,13 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [liveTracking, setLiveTracking] = useState<{
+    status: string;
+    scans: { status: string; statusDateTime: string; location: string; instructions: string }[];
+    expectedDelivery: string | null;
+    currentLocation: string | null;
+  } | null>(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
   const isNew = searchParams.get('new') === 'true';
 
   useEffect(() => {
@@ -62,6 +69,36 @@ export default function OrderDetailPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [session?.user, params.orderId]);
+
+  // Fetch live tracking when waybill exists
+  useEffect(() => {
+    if (!order?.tracking?.waybill || order.tracking.waybill === 'PENDING') return;
+    const waybill = order.tracking.waybill;
+
+    const fetchTracking = async () => {
+      setTrackingLoading(true);
+      try {
+        const res = await fetch(`/api/shipping/track/${waybill}`);
+        if (res.ok) {
+          const data = await res.json();
+          setLiveTracking(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch tracking:', err);
+      } finally {
+        setTrackingLoading(false);
+      }
+    };
+
+    fetchTracking();
+
+    // Auto-refresh every 30s for in-transit orders
+    const inTransit = ['shipped', 'out_for_delivery'].includes(order.status);
+    if (inTransit) {
+      const interval = setInterval(fetchTracking, 30_000);
+      return () => clearInterval(interval);
+    }
+  }, [order?.tracking?.waybill, order?.status]);
 
   const handleCancel = async () => {
     if (!order || !confirm('Are you sure you want to cancel this order?')) return;
@@ -159,8 +196,94 @@ export default function OrderDetailPage() {
             ))}
           </div>
 
-          {/* Tracking Timeline */}
-          {order.tracking?.statusHistory && order.tracking.statusHistory.length > 0 && (
+          {/* Shipment Progress Bar */}
+          {order.tracking?.waybill && order.tracking.waybill !== 'PENDING' && (
+            <div className={styles.detailSection}>
+              <h2 className={styles.detailSectionTitle}>Shipment Progress</h2>
+              <div className={styles.progressBar}>
+                {['confirmed', 'packed', 'shipped', 'out_for_delivery', 'delivered'].map((step, i) => {
+                  const stepOrder = ['confirmed', 'packed', 'shipped', 'out_for_delivery', 'delivered'];
+                  const currentIdx = stepOrder.indexOf(order.status);
+                  const isCompleted = i <= currentIdx;
+                  const isActive = i === currentIdx;
+                  return (
+                    <div key={step} className={styles.progressStep}>
+                      <div className={`${styles.progressDot} ${isCompleted ? styles.progressDotCompleted : ''} ${isActive ? styles.progressDotActive : ''}`}>
+                        {isCompleted && !isActive ? '✓' : i + 1}
+                      </div>
+                      {i < 4 && <div className={`${styles.progressLine} ${i < currentIdx ? styles.progressLineCompleted : ''}`} />}
+                      <div className={styles.progressLabel}>{step.replace(/_/g, ' ')}</div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Carrier Info */}
+              <div className={styles.carrierBadge}>
+                <span className={styles.carrierName}>📦 Shipped via {order.tracking.carrier || 'Delhivery'}</span>
+                <span className={styles.waybillCode}>
+                  AWB: {order.tracking.waybill}
+                  <button
+                    className={styles.copyBtn}
+                    onClick={() => {
+                      navigator.clipboard.writeText(order.tracking?.waybill || '');
+                      toast('Waybill copied!', 'success');
+                    }}
+                  >
+                    📋
+                  </button>
+                </span>
+                {order.tracking.trackingUrl && (
+                  <a href={order.tracking.trackingUrl} target="_blank" rel="noopener noreferrer" className={styles.trackLink}>
+                    Track on Delhivery →
+                  </a>
+                )}
+              </div>
+
+              {order.tracking.estimatedDelivery && (
+                <div className={styles.estimatedDelivery}>
+                  📅 Expected delivery: {new Date(order.tracking.estimatedDelivery).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </div>
+              )}
+              {liveTracking?.expectedDelivery && !order.tracking.estimatedDelivery && (
+                <div className={styles.estimatedDelivery}>
+                  📅 Expected delivery: {new Date(liveTracking.expectedDelivery).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Live Tracking Scans from Delhivery */}
+          {liveTracking && liveTracking.scans.length > 0 && (
+            <div className={styles.detailSection}>
+              <h2 className={styles.detailSectionTitle}>
+                Live Tracking
+                {trackingLoading && <span className={styles.trackingRefresh}>↻</span>}
+              </h2>
+              {liveTracking.currentLocation && (
+                <div className={styles.currentLocation}>
+                  📍 Currently at: <strong>{liveTracking.currentLocation}</strong>
+                </div>
+              )}
+              <div className={styles.timeline}>
+                {liveTracking.scans.map((scan, i) => (
+                  <div key={i} className={styles.timelineItem}>
+                    <div className={`${styles.timelineDot} ${i === 0 ? styles.timelineDotActive : ''}`} />
+                    <div className={styles.timelineLine} />
+                    <div className={styles.timelineStatus}>{scan.status}</div>
+                    <div className={styles.timelineTime}>
+                      {scan.statusDateTime ? new Date(scan.statusDateTime).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
+                    </div>
+                    {scan.location && <div className={styles.timelineNote}>📍 {scan.location}</div>}
+                    {scan.instructions && <div className={styles.timelineNote}>{scan.instructions}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Fallback: Order Timeline from DB (when no live tracking) */}
+          {!liveTracking && order.tracking?.statusHistory && order.tracking.statusHistory.length > 0 && (
             <div className={styles.detailSection}>
               <h2 className={styles.detailSectionTitle}>Order Timeline</h2>
               <div className={styles.timeline}>
@@ -173,25 +296,9 @@ export default function OrderDetailPage() {
                       {new Date(entry.timestamp).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </div>
                     {entry.note && <div className={styles.timelineNote}>{entry.note}</div>}
+                    {entry.location && <div className={styles.timelineNote}>📍 {entry.location}</div>}
                   </div>
                 ))}
-              </div>
-            </div>
-          )}
-
-          {/* Tracking Info */}
-          {order.tracking?.trackingId && (
-            <div className={styles.detailSection}>
-              <h2 className={styles.detailSectionTitle}>Tracking</h2>
-              <div className={styles.addressCard}>
-                <p><strong>Carrier:</strong> {order.tracking.carrier || 'N/A'}</p>
-                <p><strong>Tracking ID:</strong> {order.tracking.trackingId}</p>
-                {order.tracking.trackingUrl && (
-                  <p><a href={order.tracking.trackingUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary-600)' }}>Track Shipment →</a></p>
-                )}
-                {order.tracking.estimatedDelivery && (
-                  <p><strong>Expected:</strong> {new Date(order.tracking.estimatedDelivery).toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}</p>
-                )}
               </div>
             </div>
           )}

@@ -6,6 +6,8 @@ export interface IProductSnapshot {
   price: number;
   packagingSize: string;
   productId: string;
+  weight: number;
+  hsnCode: string;
 }
 
 export interface IOrderItem {
@@ -71,6 +73,24 @@ export interface IOrder extends Document {
     trackingUrl?: string;
     estimatedDelivery?: Date;
     statusHistory: ITrackingEntry[];
+    waybill?: string;
+    delhiveryStatus?: string;
+    pickupScheduled?: boolean;
+    shipmentCreatedAt?: Date;
+  };
+  delhivery?: {
+    shipmentId?: string;
+    refId?: string;
+    rawStatus?: string;
+    lastSyncAt?: Date;
+    retryCount?: number;
+  };
+  shippingQuote?: {
+    amount: number;
+    isApproximate: boolean;
+    weightGrams: number;
+    billingMode: string;
+    calculatedAt: Date;
   };
   isBuyNow: boolean;
   expiresAt?: Date;
@@ -86,6 +106,8 @@ const productSnapshotSchema = new Schema<IProductSnapshot>(
     price: { type: Number, required: true },
     packagingSize: { type: String, required: true },
     productId: { type: String, required: true },
+    weight: { type: Number, default: 0 },
+    hsnCode: { type: String, default: '' },
   },
   { _id: false }
 );
@@ -171,6 +193,24 @@ const orderSchema = new Schema<IOrder>(
       trackingUrl: String,
       estimatedDelivery: Date,
       statusHistory: { type: [trackingEntrySchema], default: [] },
+      waybill: String,
+      delhiveryStatus: String,
+      pickupScheduled: { type: Boolean, default: false },
+      shipmentCreatedAt: Date,
+    },
+    delhivery: {
+      shipmentId: String,
+      refId: String,
+      rawStatus: String,
+      lastSyncAt: Date,
+      retryCount: { type: Number, default: 0 },
+    },
+    shippingQuote: {
+      amount: Number,
+      isApproximate: Boolean,
+      weightGrams: Number,
+      billingMode: String,
+      calculatedAt: Date,
     },
     isBuyNow: { type: Boolean, default: false },
     expiresAt: Date,
@@ -184,6 +224,7 @@ orderSchema.index({ 'payment.status': 1 });
 orderSchema.index({ status: 1 });
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ expiresAt: 1, 'payment.status': 1 });
+orderSchema.index({ 'payment.status': 1, 'tracking.waybill': 1, status: 1 });
 
 const Order: Model<IOrder> = mongoose.models.Order || mongoose.model<IOrder>('Order', orderSchema);
 export default Order;

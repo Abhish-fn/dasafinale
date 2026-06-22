@@ -13,6 +13,7 @@ import { sanitize } from '@/lib/sanitize';
 import { getRazorpay } from '@/lib/razorpay';
 import { generateOrderId, calculateShippingFee } from '@/lib/utils';
 import { calculateGST } from '@/lib/gst';
+import { checkServiceability, calculateShippingCost } from '@/lib/delhivery';
 
 // POST /api/checkout/create-order — Create order with atomic stock reservation
 export async function POST(req: NextRequest) {
@@ -33,6 +34,15 @@ export async function POST(req: NextRequest) {
     }).lean();
     if (!address) {
       return NextResponse.json({ error: 'Address not found' }, { status: 404 });
+    }
+
+    // 1b. Check Delhivery serviceability BEFORE proceeding
+    const serviceability = await checkServiceability(address.pincode as string);
+    if (!serviceability.serviceable) {
+      return NextResponse.json(
+        { error: `Delivery is not available for pincode ${address.pincode}. Please use a different address.` },
+        { status: 400 }
+      );
     }
 
     // 2. Get cart items (or buy-now item)
@@ -71,6 +81,8 @@ export async function POST(req: NextRequest) {
           price: product.price,
           packagingSize: product.packagingSize,
           productId: product.productId,
+          weight: product.weight || 0,
+          hsnCode: product.hsnCode || '',
         },
         quantity: cartItem.quantity,
         priceAtOrder: product.price,
@@ -142,8 +154,35 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 6. Calculate pricing
-    const shippingFee = calculateShippingFee(subtotal - discount);
+    // 6. Calculate shipping cost (Delhivery dynamic quote, with flat-rate fallback)
+    const totalWeightGrams = orderItems.reduce(
+      (sum, item) => sum + (item.productSnapshot.weight || 0) * item.quantity, 0
+    );
+
+    let shippingFee: number;
+    let shippingQuoteData = undefined;
+    const billingMode = (process.env.DELHIVERY_BILLING_MODE || 'S') as 'E' | 'S';
+
+    try {
+      const quote = await calculateShippingCost({
+        originPincode: process.env.DELHIVERY_WAREHOUSE_PINCODE!,
+        destPincode: address.pincode as string,
+        chargeableWeightGrams: Math.max(totalWeightGrams, 1),
+        billingMode,
+      });
+      shippingFee = quote.amount;
+      shippingQuoteData = {
+        amount: quote.amount,
+        isApproximate: true,
+        weightGrams: totalWeightGrams,
+        billingMode,
+        calculatedAt: new Date(),
+      };
+    } catch (error) {
+      console.error('[DELHIVERY] Shipping quote failed, using fallback:', error);
+      shippingFee = calculateShippingFee(subtotal - discount);
+    }
+
     const total = subtotal - discount + shippingFee;
 
     // 6b. Calculate GST breakdown from the subtotal (prices are GST-inclusive)
@@ -199,6 +238,7 @@ export async function POST(req: NextRequest) {
       isBuyNow: parsed.isBuyNow || false,
       expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 min expiry
       notes: parsed.notes || '',
+      shippingQuote: shippingQuoteData,
     });
 
     // 10. Clear cart (if not buy-now)

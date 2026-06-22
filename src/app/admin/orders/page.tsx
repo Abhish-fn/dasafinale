@@ -14,6 +14,8 @@ interface AdminOrder {
   status: string;
   payment: { status: string };
   shippingAddress: { fullName: string; phone: string };
+  tracking?: { waybill?: string };
+  delhivery?: { retryCount?: number };
   createdAt: string;
 }
 
@@ -67,6 +69,22 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const createShipment = async (orderId: string) => {
+    try {
+      toast('Creating shipment...', 'info');
+      const res = await fetch(`/api/admin/orders/${orderId}/shipment`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast(`Shipment created: ${data.waybill}`, 'success');
+        fetchOrders();
+      } else {
+        toast(data.error || 'Failed to create shipment', 'error');
+      }
+    } catch {
+      toast('Failed to create shipment', 'error');
+    }
+  };
+
   return (
     <div>
       <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-2xl)', fontWeight: 700, marginBottom: 'var(--space-6)' }}>
@@ -103,8 +121,8 @@ export default function AdminOrdersPage() {
                 <th>Items</th>
                 <th>Total</th>
                 <th>Status</th>
+                <th>Shipping</th>
                 <th>Date</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -126,20 +144,36 @@ export default function AdminOrdersPage() {
                       {order.status.replace(/_/g, ' ')}
                     </span>
                   </td>
+                  <td>
+                    {order.tracking?.waybill && order.tracking.waybill !== 'PENDING' ? (
+                      <div>
+                        <a
+                          href={`https://www.delhivery.com/track/package/${order.tracking.waybill}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ fontSize: 'var(--text-xs)', fontFamily: 'monospace', color: 'var(--color-primary-600)' }}
+                        >
+                          {order.tracking.waybill}
+                        </a>
+                      </div>
+                    ) : order.tracking?.waybill === 'PENDING' ? (
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--gold)', fontWeight: 600 }}>Creating...</span>
+                    ) : order.payment.status === 'paid' ? (
+                      <button
+                        onClick={() => createShipment(order.orderId)}
+                        style={{
+                          fontSize: 'var(--text-xs)', padding: '2px 8px', background: 'var(--maroon)',
+                          color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                        }}
+                      >
+                        {(order.delhivery?.retryCount || 0) > 0 ? 'Retry' : 'Create'} Shipment
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-400)' }}>—</span>
+                    )}
+                  </td>
                   <td style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)' }}>
                     {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                  </td>
-                  <td>
-                    <select
-                      className={styles.filterSelect}
-                      style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)' }}
-                      value={order.status}
-                      onChange={(e) => updateStatus(order.orderId, e.target.value)}
-                    >
-                      {statuses.filter(Boolean).map((s) => (
-                        <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
-                      ))}
-                    </select>
                   </td>
                 </tr>
               ))}

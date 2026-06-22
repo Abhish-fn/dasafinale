@@ -93,6 +93,12 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 
+/* Shipping quote */
+.shippingCalc { font-size: var(--text-xs); color: var(--color-gray-400); font-style: italic; animation: pulse 1.5s ease-in-out infinite; }
+.shippingUnavailable { font-size: var(--text-xs); color: var(--color-error); font-weight: 600; }
+.approxBadge { display: inline-block; font-size: 9px; font-weight: 600; color: var(--color-gray-500); background: var(--color-gray-100); padding: 1px 6px; border-radius: var(--radius-full); margin-left: var(--space-2); vertical-align: middle; }
+.unserviceableBanner { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); margin-bottom: var(--space-4); font-size: var(--text-sm); font-weight: 500; color: var(--color-error); background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: var(--radius-lg); line-height: var(--leading-relaxed); }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
 @media (max-width: 768px) {
   .layout { grid-template-columns: 1fr; }

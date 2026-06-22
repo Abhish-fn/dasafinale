@@ -34,6 +34,7 @@ export const productSchema = z.object({
       fiber: z.string().optional(),
     })
     .optional(),
+  hsnCode: z.string().max(20).default(''),
 });
 
 // For updates, strip defaults so omitted fields don't get defaulted to 0/false/[]
@@ -72,6 +73,7 @@ export const productUpdateSchema = z.object({
       fiber: z.string().optional(),
     })
     .optional(),
+  hsnCode: z.string().max(20).optional(),
 }).partial();
 
 // --- Cart ---

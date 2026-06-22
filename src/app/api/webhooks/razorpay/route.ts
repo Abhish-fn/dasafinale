@@ -6,6 +6,7 @@ import Product from '@/models/Product';
 import Coupon from '@/models/Coupon';
 import CouponUsage from '@/models/CouponUsage';
 import { sendOrderConfirmation } from '@/lib/email';
+import { createAndAssignShipment } from '@/lib/delhivery';
 
 // POST /api/webhooks/razorpay — Razorpay webhook handler
 export async function POST(req: NextRequest) {
@@ -82,6 +83,9 @@ export async function POST(req: NextRequest) {
         if (user?.email) {
           sendOrderConfirmation(order.orderId, user.email).catch(console.error);
         }
+
+        // Create Delhivery shipment (non-blocking, idempotent)
+        createAndAssignShipment(order._id.toString()).catch(console.error);
         break;
       }
 

@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .select('orderId items pricing status payment.status shippingAddress.fullName shippingAddress.phone createdAt')
+        .select('orderId items pricing status payment.status shippingAddress.fullName shippingAddress.phone tracking.waybill delhivery.retryCount createdAt')
         .lean(),
       Order.countDocuments(filter),
     ]);

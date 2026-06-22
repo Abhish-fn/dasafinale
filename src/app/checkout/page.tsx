@@ -7,7 +7,7 @@ import { Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/components/ui/Toast';
-import { formatPrice, calculateShippingFee } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
 import { calculateGST } from '@/lib/gst';
 import { INDIAN_STATES } from '@/lib/indianStates';
 import styles from './checkout.module.css';
@@ -82,6 +82,15 @@ function CheckoutContent() {
   const [pincodeLoading, setPincodeLoading] = useState(false);
   const [pincodeValid, setPincodeValid] = useState(false);
   const pincodeAbortRef = useRef<AbortController | null>(null);
+
+  // Shipping quote state
+  const [shippingQuote, setShippingQuote] = useState<{
+    shippingCost: number;
+    serviceable: boolean;
+    isApproximate: boolean;
+    loading: boolean;
+    error: string | null;
+  }>({ shippingCost: 0, serviceable: true, isApproximate: false, loading: false, error: null });
 
   // Pack-size variant switching state
   const [variantCache, setVariantCache] = useState<Record<string, { _id: string; packagingSize: string; price: number; stock: number; productId: string }[]>>({});
@@ -162,6 +171,49 @@ function CheckoutContent() {
   }, []);
 
   useEffect(() => { fetchAddresses(); }, [fetchAddresses]);
+
+  // Fetch shipping quote when address changes
+  const selectedAddr = addresses.find((a) => a._id === selectedAddress);
+  useEffect(() => {
+    if (!selectedAddr) return;
+
+    setShippingQuote(prev => ({ ...prev, loading: true, error: null }));
+
+    const timeout = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ destPincode: selectedAddr.pincode });
+        if (isBuyNow && buyNowProduct) {
+          params.set('buyNowProductId', buyNowProduct._id);
+          params.set('buyNowQuantity', String(buyNowQuantity));
+        }
+        const res = await fetch(`/api/shipping/quote?${params}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          setShippingQuote({ shippingCost: 0, serviceable: true, isApproximate: false, loading: false, error: data.error || 'Quote failed' });
+          return;
+        }
+
+        if (!data.serviceable) {
+          setShippingQuote({ shippingCost: 0, serviceable: false, isApproximate: false, loading: false, error: null });
+          return;
+        }
+
+        setShippingQuote({
+          shippingCost: data.shippingCost,
+          serviceable: true,
+          isApproximate: data.isApproximate || false,
+          loading: false,
+          error: null,
+        });
+      } catch {
+        setShippingQuote(prev => ({ ...prev, loading: false, error: 'Could not calculate shipping' }));
+      }
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAddr?.pincode, items.length, isBuyNow, buyNowProduct?._id, buyNowQuantity]);
 
   // Load Razorpay SDK
   useEffect(() => {
@@ -319,11 +371,10 @@ function CheckoutContent() {
 
   const discount = coupon?.discount || 0;
   const subtotalAfterDiscount = displayTotal - discount;
-  const shipping = calculateShippingFee(subtotalAfterDiscount);
+  const shipping = shippingQuote.shippingCost;
   const grandTotal = subtotalAfterDiscount + shipping;
 
   // GST breakdown — derive from selected address state
-  const selectedAddr = addresses.find((a) => a._id === selectedAddress);
   const customerState = selectedAddr?.state || '';
   const gst = customerState ? calculateGST(displayTotal, customerState) : null;
 
@@ -706,7 +757,20 @@ function CheckoutContent() {
           )}
           <div className={styles.summaryRow}>
             <span>Shipping</span>
-            <span className={styles.summaryValue}>{shipping === 0 ? 'FREE' : formatPrice(shipping)}</span>
+            <span className={styles.summaryValue}>
+              {shippingQuote.loading ? (
+                <span className={styles.shippingCalc}>Calculating…</span>
+              ) : !shippingQuote.serviceable ? (
+                <span className={styles.shippingUnavailable}>Unavailable</span>
+              ) : shipping === 0 ? 'FREE' : (
+                <>
+                  {formatPrice(shipping)}
+                  {shippingQuote.isApproximate && (
+                    <span className={styles.approxBadge}>~approx</span>
+                  )}
+                </>
+              )}
+            </span>
           </div>
           <hr className={styles.summaryDivider} />
           <div className={styles.summaryTotal}>
@@ -714,7 +778,20 @@ function CheckoutContent() {
             <span>{formatPrice(grandTotal)}</span>
           </div>
 
-          <button className={styles.payBtn} onClick={handlePlaceOrder} disabled={processing || !selectedAddress || (!isBuyNow && items.length === 0)}>
+          {!shippingQuote.serviceable && selectedAddr && (
+            <div className={styles.unserviceableBanner}>
+              🚫 Delivery is not available for pincode {selectedAddr.pincode}. Please select a different address.
+            </div>
+          )}
+
+          <button className={styles.payBtn} onClick={handlePlaceOrder} disabled={
+            processing ||
+            !selectedAddress ||
+            (!isBuyNow && items.length === 0) ||
+            shippingQuote.loading ||
+            !shippingQuote.serviceable ||
+            !!shippingQuote.error
+          }>
             {processing ? 'Processing...' : `Pay ${formatPrice(grandTotal)}`}
           </button>
 

@@ -42,8 +42,11 @@ export function cn(...classes: (string | undefined | false | null)[]): string {
 }
 
 /**
- * Calculate shipping fee
- * Free above ₹499 (49900 paisa), flat ₹49 (4900 paisa) otherwise
+ * Calculate shipping fee (FALLBACK ONLY)
+ *
+ * Used when the Delhivery Invoice API is unavailable.
+ * Primary shipping calculation is via Delhivery API in src/lib/delhivery.ts.
+ * Free above ₹499 (49900 paisa), flat ₹49 (4900 paisa) otherwise.
  */
 export function calculateShippingFee(subtotalPaisa: number): number {
   return subtotalPaisa >= 49900 ? 0 : 4900;

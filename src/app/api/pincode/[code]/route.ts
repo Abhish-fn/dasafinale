@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import https from 'https';
+import { checkServiceability } from '@/lib/delhivery';
 
 interface PostOffice {
   Name: string;
@@ -64,6 +65,14 @@ export async function GET(
     // All post offices for a pincode share the same State and District
     const firstPO = result.PostOffice[0];
 
+    // Check Delhivery serviceability (fail open if API errors)
+    let delivery = { serviceable: true, prepaid: true, cod: false };
+    try {
+      delivery = await checkServiceability(code);
+    } catch (err) {
+      console.error('[DELHIVERY] Serviceability check failed, failing open:', err);
+    }
+
     return NextResponse.json({
       success: true,
       state: firstPO.State,
@@ -73,6 +82,7 @@ export async function GET(
         block: po.Block,
         type: po.BranchType,
       })),
+      delivery,
     });
   } catch (error) {
     console.error('Pincode API error:', error);

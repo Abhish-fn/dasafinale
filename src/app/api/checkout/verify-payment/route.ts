@@ -9,6 +9,7 @@ import { auth } from '@/lib/auth';
 import { verifyPaymentSchema } from '@/lib/validations';
 import { sanitize } from '@/lib/sanitize';
 import { sendOrderConfirmation } from '@/lib/email';
+import { createAndAssignShipment } from '@/lib/delhivery';
 
 // POST /api/checkout/verify-payment — Verify Razorpay payment (idempotent)
 export async function POST(req: NextRequest) {
@@ -117,7 +118,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 7. Send confirmation email (non-blocking)
+    // 7. Create Delhivery shipment (non-blocking, idempotent)
+    createAndAssignShipment(order._id.toString()).catch(console.error);
+
+    // 8. Send confirmation email (non-blocking)
     sendOrderConfirmation(order.orderId, session.user.email!).catch(console.error);
 
     return NextResponse.json({

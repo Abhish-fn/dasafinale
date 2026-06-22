@@ -29,6 +29,7 @@ export interface IProduct extends Document {
   isBestSeller: boolean;
   salesCount: number;
   weight: number;
+  hsnCode: string;
   nutritionInfo?: INutritionInfo;
   createdAt: Date;
   updatedAt: Date;
@@ -78,6 +79,7 @@ const productSchema = new Schema<IProduct>(
     isBestSeller: { type: Boolean, default: false },
     salesCount: { type: Number, default: 0, min: 0 },
     weight: { type: Number, required: true, min: 0 },
+    hsnCode: { type: String, default: '' },
     nutritionInfo: { type: nutritionInfoSchema },
   },
   { timestamps: true }
