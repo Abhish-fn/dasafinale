@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Order from '@/models/Order';
 import { auth } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
 import { orderUpdateSchema } from '@/lib/validations';
 import { sanitize } from '@/lib/sanitize';
 import { sendShippingUpdate } from '@/lib/email';
@@ -15,6 +16,12 @@ export async function GET(
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Rate limit: 30 requests per minute per user
+    const rl = rateLimit(`order-detail:${session.user.id}`, 30, 60_000);
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
 
     await dbConnect();

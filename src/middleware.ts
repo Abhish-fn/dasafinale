@@ -9,7 +9,7 @@ export default auth((req) => {
   const isAdmin = (req.auth?.user as unknown as { role?: string })?.role === 'admin';
 
   const isAdminRoute = nextUrl.pathname.startsWith('/admin');
-  const protectedPrefixes = ['/cart', '/wishlist', '/checkout', '/orders', '/account'];
+  const protectedPrefixes = ['/cart', '/wishlist', '/checkout', '/orders', '/account', '/track'];
   const isProtectedRoute = protectedPrefixes.some((prefix) => nextUrl.pathname.startsWith(prefix));
 
   if (isAdminRoute && !isAdmin) {
@@ -31,5 +31,6 @@ export const config = {
     '/checkout/:path*',
     '/orders/:path*',
     '/account/:path*',
+    '/track/:path*',
   ],
 };

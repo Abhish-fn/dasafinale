@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -59,6 +59,16 @@ export default function OrderDetailPage() {
     currentLocation: string | null;
   } | null>(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
+  const [trackingDegraded, setTrackingDegraded] = useState(false);
+
+  const BASE_INTERVAL = 60_000;
+  const MAX_INTERVAL = 480_000;
+  const MAX_FAILURES = 5;
+
+  const failCountRef = useRef(0);
+  const intervalMsRef = useRef(BASE_INTERVAL);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const pollingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isNew = searchParams.get('new') === 'true';
 
   useEffect(() => {
@@ -70,35 +80,90 @@ export default function OrderDetailPage() {
       .finally(() => setLoading(false));
   }, [session?.user, params.orderId]);
 
-  // Fetch live tracking when waybill exists
+  const fetchTracking = useCallback(async (waybill: string) => {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setTrackingLoading(true);
+    try {
+      const res = await fetch(`/api/shipping/track/${waybill}`, {
+        signal: controller.signal,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLiveTracking(data);
+        failCountRef.current = 0;
+        intervalMsRef.current = BASE_INTERVAL;
+        setTrackingDegraded(false);
+      } else {
+        throw new Error(`HTTP ${res.status}`);
+      }
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      console.error('Failed to fetch tracking:', err);
+      failCountRef.current += 1;
+      intervalMsRef.current = Math.min(intervalMsRef.current * 2, MAX_INTERVAL);
+      if (failCountRef.current >= MAX_FAILURES) {
+        setTrackingDegraded(true);
+      }
+    } finally {
+      if (!controller.signal.aborted) {
+        setTrackingLoading(false);
+      }
+    }
+  }, []);
+
+  // Fetch live tracking with polling, visibility handling, and circuit breaker
   useEffect(() => {
     if (!order?.tracking?.waybill || order.tracking.waybill === 'PENDING') return;
     const waybill = order.tracking.waybill;
 
-    const fetchTracking = async () => {
-      setTrackingLoading(true);
-      try {
-        const res = await fetch(`/api/shipping/track/${waybill}`);
-        if (res.ok) {
-          const data = await res.json();
-          setLiveTracking(data);
+    // Delivered/cancelled orders: fetch once, no polling
+    const isTerminal = ['delivered', 'cancelled'].includes(order.status);
+    const inTransit = ['shipped', 'out_for_delivery'].includes(order.status);
+
+    fetchTracking(waybill);
+
+    if (isTerminal || !inTransit) return;
+
+    const startPolling = () => {
+      stopPolling();
+      if (failCountRef.current >= MAX_FAILURES) return;
+      pollingTimerRef.current = setInterval(() => {
+        if (failCountRef.current >= MAX_FAILURES) {
+          stopPolling();
+          return;
         }
-      } catch (err) {
-        console.error('Failed to fetch tracking:', err);
-      } finally {
-        setTrackingLoading(false);
+        fetchTracking(waybill);
+      }, intervalMsRef.current);
+    };
+
+    const stopPolling = () => {
+      if (pollingTimerRef.current) {
+        clearInterval(pollingTimerRef.current);
+        pollingTimerRef.current = null;
       }
     };
 
-    fetchTracking();
+    const handleVisibility = () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        fetchTracking(waybill);
+        startPolling();
+      }
+    };
 
-    // Auto-refresh every 30s for in-transit orders
-    const inTransit = ['shipped', 'out_for_delivery'].includes(order.status);
-    if (inTransit) {
-      const interval = setInterval(fetchTracking, 30_000);
-      return () => clearInterval(interval);
-    }
-  }, [order?.tracking?.waybill, order?.status]);
+    startPolling();
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      stopPolling();
+      abortControllerRef.current?.abort();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [order?.tracking?.waybill, order?.status, fetchTracking]);
 
   const handleCancel = async () => {
     if (!order || !confirm('Are you sure you want to cancel this order?')) return;
@@ -253,6 +318,22 @@ export default function OrderDetailPage() {
             </div>
           )}
 
+          {/* Degraded tracking notice */}
+          {trackingDegraded && !liveTracking && (
+            <div className={styles.detailSection}>
+              <div style={{
+                padding: 'var(--space-4)',
+                background: 'rgba(245, 158, 11, 0.1)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                borderRadius: 'var(--radius-lg)',
+                color: 'var(--color-gray-700)',
+                fontSize: 'var(--text-sm)',
+              }}>
+                ⚠️ We&apos;re having trouble reaching the carrier. Showing your last known status below.
+              </div>
+            </div>
+          )}
+
           {/* Live Tracking Scans from Delhivery */}
           {liveTracking && liveTracking.scans.length > 0 && (
             <div className={styles.detailSection}>
@@ -283,7 +364,7 @@ export default function OrderDetailPage() {
           )}
 
           {/* Fallback: Order Timeline from DB (when no live tracking) */}
-          {!liveTracking && order.tracking?.statusHistory && order.tracking.statusHistory.length > 0 && (
+          {(!liveTracking || trackingDegraded) && order.tracking?.statusHistory && order.tracking.statusHistory.length > 0 && (
             <div className={styles.detailSection}>
               <h2 className={styles.detailSectionTitle}>Order Timeline</h2>
               <div className={styles.timeline}>
