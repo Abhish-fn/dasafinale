@@ -184,8 +184,14 @@ export async function calculateShippingCost(
     throw new Error('Delhivery Invoice API returned unexpected response');
   }
 
+  // Minimum shipping floor — staging returns ₹0 (no rate cards).
+  // Production rates are always higher, so this only kicks in on staging.
+  const MINIMUM_SHIPPING_PAISA = 4900; // ₹49
+  const calculatedAmount = Math.round(charges.total_amount * 100);
+  const amount = Math.max(calculatedAmount, MINIMUM_SHIPPING_PAISA);
+
   return {
-    amount: Math.round(charges.total_amount * 100), // rupees → paisa
+    amount,
     isApproximate: true,
     chargeableWeight: charges.charged_weight || params.chargeableWeightGrams,
     billingMode: params.billingMode,
