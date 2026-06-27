@@ -140,9 +140,24 @@ export default function AdminOrdersPage() {
                   <td>{order.items.reduce((s, i) => s + i.quantity, 0)}</td>
                   <td style={{ fontWeight: 600 }}>{formatPrice(order.pricing.total)}</td>
                   <td>
-                    <span className={`${styles.badge} ${styles[statusBadge[order.status] || 'badgePlaced']}`}>
-                      {order.status.replace(/_/g, ' ')}
-                    </span>
+                    <select
+                      value={order.status}
+                      onChange={(e) => updateStatus(order.orderId, e.target.value)}
+                      style={{
+                        fontSize: 'var(--text-xs)',
+                        fontWeight: 600,
+                        padding: '4px 8px',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--color-gray-200)',
+                        background: 'var(--color-surface)',
+                        cursor: 'pointer',
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      {statuses.filter(Boolean).map((s) => (
+                        <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+                      ))}
+                    </select>
                   </td>
                   <td>
                     {order.tracking?.waybill && order.tracking.waybill !== 'PENDING' ? (
