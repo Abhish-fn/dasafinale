@@ -271,7 +271,7 @@
 
 @media (max-width: 768px) {
   .heroBannerImageWrap { aspect-ratio: 4 / 3; }
-  .heroBannerCta { flex-direction: column; align-items: center; gap: var(--space-3); }
+  .heroBannerCta { gap: var(--space-3); }
   .ctaPrimary, .ctaSecondary { font-size: var(--text-base); padding: var(--space-3) var(--space-6); }
   .valuesGrid { grid-template-columns: 1fr; }
   .categoriesGrid { grid-template-columns: repeat(2, 1fr); }
