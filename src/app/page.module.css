@@ -1,90 +1,47 @@
-.hero {
+/* ── Hero Banner ── */
+.heroBanner {
   position: relative;
-  background: linear-gradient(135deg, var(--maroon-dark) 0%, var(--maroon) 50%, var(--maroon-light) 100%);
+  width: 100%;
   overflow: hidden;
-  padding: var(--space-20) 0;
+  background: #f7f1e3;
 }
 
-.hero::before {
-  content: '';
-  position: absolute;
-  top: -40%;
-  right: -10%;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(212, 160, 23, 0.15) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.hero::after {
-  content: '';
-  position: absolute;
-  bottom: -30%;
-  left: -5%;
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(240, 192, 64, 0.1) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.heroContainer {
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: 0 var(--space-4);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-12);
-  align-items: center;
+.heroBannerImageWrap {
   position: relative;
-  z-index: 1;
+  width: 100%;
+  aspect-ratio: 1024 / 500;
 }
 
-.heroBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(8px);
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  color: var(--gold-light);
-  margin-bottom: var(--space-6);
-  border: 1px solid rgba(212, 160, 23, 0.2);
-  animation: slideUp var(--transition-slow) ease-out;
+.heroBannerImage {
+  object-fit: cover;
+  object-position: center;
+  animation: bannerFadeIn 0.8s ease-out both;
 }
 
-.heroTitle {
-  font-family: var(--font-display);
-  font-size: var(--text-5xl);
-  font-weight: 900;
-  color: white;
-  line-height: 1.1;
-  margin-bottom: var(--space-6);
-  animation: slideUp var(--transition-slow) ease-out 100ms both;
+.heroBannerOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: linear-gradient(
+    to top,
+    rgba(60, 10, 18, 0.55) 0%,
+    rgba(60, 10, 18, 0.15) 35%,
+    transparent 60%
+  );
+  padding-bottom: var(--space-8);
+  pointer-events: none;
 }
 
-.heroTitleAccent {
-  color: var(--gold-light);
-}
-
-.heroSubtitle {
-  font-size: var(--text-lg);
-  color: rgba(247, 241, 227, 0.85);
-  line-height: var(--leading-relaxed);
-  margin-bottom: var(--space-8);
-  max-width: 520px;
-  animation: slideUp var(--transition-slow) ease-out 200ms both;
-}
-
-.heroActions {
+.heroBannerCta {
   display: flex;
   gap: var(--space-4);
-  animation: slideUp var(--transition-slow) ease-out 300ms both;
+  pointer-events: auto;
+  animation: slideUp var(--transition-slow) ease-out 400ms both;
 }
 
+/* CTA Buttons */
 .ctaPrimary {
   display: inline-flex;
   align-items: center;
@@ -123,64 +80,6 @@
   border-color: rgba(247, 241, 227, 0.5);
   background: rgba(247, 241, 227, 0.08);
 }
-
-.heroVisual {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  animation: fadeIn 1s ease-out 400ms both;
-}
-
-.heroCircles {
-  position: relative;
-  width: 400px;
-  height: 400px;
-}
-
-.circle {
-  position: absolute;
-  border-radius: 50%;
-}
-
-.circle1 {
-  width: 280px;
-  height: 280px;
-  background: linear-gradient(135deg, rgba(212, 160, 23, 0.25), rgba(240, 192, 64, 0.15));
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  animation: pulse 4s ease-in-out infinite;
-}
-
-.circle2 {
-  width: 200px;
-  height: 200px;
-  background: linear-gradient(135deg, rgba(247, 241, 227, 0.15), rgba(237, 229, 208, 0.1));
-  top: 10%;
-  right: 5%;
-  animation: pulse 4s ease-in-out infinite 1s;
-}
-
-.circle3 {
-  width: 120px;
-  height: 120px;
-  background: linear-gradient(135deg, rgba(212, 160, 23, 0.3), rgba(240, 192, 64, 0.15));
-  bottom: 15%;
-  left: 10%;
-  animation: pulse 4s ease-in-out infinite 2s;
-}
-
-.circleEmoji {
-  position: absolute;
-  font-size: var(--text-4xl);
-  z-index: 2;
-}
-
-.emoji1 { top: 30%; left: 40%; animation: bounce 3s ease-in-out infinite; }
-.emoji2 { top: 15%; right: 25%; animation: bounce 3s ease-in-out infinite 0.5s; }
-.emoji3 { bottom: 25%; left: 25%; animation: bounce 3s ease-in-out infinite 1s; }
-.emoji4 { bottom: 20%; right: 20%; animation: bounce 3s ease-in-out infinite 1.5s; }
 
 /* Values Section */
 .values {
@@ -368,16 +267,12 @@
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes pulse { 0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.05); } }
-@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes bannerFadeIn { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: scale(1); } }
 
 @media (max-width: 768px) {
-  .hero { padding: var(--space-12) 0; }
-  .heroContainer { grid-template-columns: 1fr; text-align: center; }
-  .heroTitle { font-size: var(--text-3xl); }
-  .heroSubtitle { font-size: var(--text-base); margin-left: auto; margin-right: auto; }
-  .heroActions { justify-content: center; flex-wrap: wrap; }
-  .heroVisual { display: none; }
+  .heroBannerImageWrap { aspect-ratio: 4 / 3; }
+  .heroBannerCta { flex-direction: column; align-items: center; gap: var(--space-3); }
+  .ctaPrimary, .ctaSecondary { font-size: var(--text-base); padding: var(--space-3) var(--space-6); }
   .valuesGrid { grid-template-columns: 1fr; }
   .categoriesGrid { grid-template-columns: repeat(2, 1fr); }
   .sectionContainer { padding: 0 var(--space-4); }
@@ -385,7 +280,12 @@
   .ctaBannerTitle { font-size: var(--text-2xl); }
 }
 
+@media (max-width: 480px) {
+  .heroBannerImageWrap { aspect-ratio: 3 / 2; }
+  .heroBannerOverlay { padding-bottom: var(--space-4); }
+  .ctaPrimary, .ctaSecondary { font-size: var(--text-sm); padding: var(--space-2) var(--space-4); }
+}
+
 @media (min-width: 768px) {
   .sectionContainer { padding: 0 var(--space-8); }
-  .heroContainer { padding: 0 var(--space-8); }
 }

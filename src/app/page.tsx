@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
 import styles from './page.module.css';
 
@@ -32,40 +33,26 @@ const categories = [
 export default function HomePage() {
   return (
     <>
-      {/* Hero Section */}
-      <section className={styles.hero}>
-        <div className={styles.heroContainer}>
-          <div>
-            <span className={styles.heroBadge}>🌿 Ten Traditional Treasures</span>
-            <h1 className={styles.heroTitle}>
-              <span className="brand-subtle">www.</span>DasaDinusulu<span className="brand-subtle">.com</span>
-              <br />
-              <span className={styles.heroTitleAccent}>Ten Traditional Treasures</span>
-            </h1>
-            <p className={styles.heroSubtitle}>
-              Rooted in the rich culinary traditions of Andhra Pradesh,
-              crafted with love, purity, and the finest natural ingredients.
-            </p>
-            <div className={styles.heroActions}>
-              <Link href="/products" className={styles.ctaPrimary}>
-                Shop Now →
-              </Link>
-              <Link href="/about" className={styles.ctaSecondary}>
-                Our Story
-              </Link>
-            </div>
-          </div>
-
-          <div className={styles.heroVisual}>
-            <div className={styles.heroCircles}>
-              <div className={`${styles.circle} ${styles.circle1}`} />
-              <div className={`${styles.circle} ${styles.circle2}`} />
-              <div className={`${styles.circle} ${styles.circle3}`} />
-              <span className={`${styles.circleEmoji} ${styles.emoji1}`}>🍯</span>
-              <span className={`${styles.circleEmoji} ${styles.emoji2}`}>🥜</span>
-              <span className={`${styles.circleEmoji} ${styles.emoji3}`}>🌾</span>
-              <span className={`${styles.circleEmoji} ${styles.emoji4}`}>🌿</span>
-            </div>
+      {/* Hero Banner */}
+      <section className={styles.heroBanner}>
+        <div className={styles.heroBannerImageWrap}>
+          <Image
+            src="/images/hero-banner.png"
+            alt="DasaDinusulu – Clay Pot Roasted Trusted Goodness. Wholesome, Crunchy, Delicious. 100% Natural, Trusted Quality, No Added Preservatives, Rich in Nutrients, Protein Packed."
+            fill
+            priority
+            sizes="100vw"
+            className={styles.heroBannerImage}
+          />
+        </div>
+        <div className={styles.heroBannerOverlay}>
+          <div className={styles.heroBannerCta}>
+            <Link href="/products" className={styles.ctaPrimary}>
+              Shop Now →
+            </Link>
+            <Link href="/about" className={styles.ctaSecondary}>
+              Our Story
+            </Link>
           </div>
         </div>
       </section>
