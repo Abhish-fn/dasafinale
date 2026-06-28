@@ -3,14 +3,15 @@ import Image from 'next/image';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
 import IngredientsOrbit from '@/components/home/IngredientsOrbit';
 import styles from './page.module.css';
+/* eslint-disable @next/next/no-img-element */
 
 const categories = [
-  { name: 'Dry Fruit Laddu', emoji: '🍯', slug: 'Dry Fruit Laddu' },
-  { name: 'Roasted Snacks', emoji: '🥜', slug: 'Roasted Snacks' },
-  { name: 'Dry Fruits & Nuts', emoji: '🫘', slug: 'Dry Fruits & Nuts' },
-  { name: 'Millet Snacks', emoji: '🌾', slug: 'Millet Snacks' },
-  { name: 'Seeds & Powders', emoji: '🌿', slug: 'Seeds & Powders' },
-  { name: 'Traditional Sweets', emoji: '🍪', slug: 'Premium Healthy Sweets' },
+  { name: 'Roasted Seeds', slug: 'Clay Pot Roasted Seeds & Superfoods', image: '/images/categories/RoastedSeeds.jpg' },
+  { name: 'Healthy Chips',  slug: 'Healthy Chips & Crisps',             image: '/images/categories/HealthyChips.jpg' },
+  { name: 'Jaggery Biscuits', slug: 'Palm Jaggery Millet Biscuits',     image: '/images/categories/JaggeryBiscuits.png' },
+  { name: 'Healthy Sweets', slug: 'Premium Healthy Sweets',             image: '/images/categories/Healthy Sweets.jpg' },
+  { name: 'Protein Snacks', slug: 'Protein & Energy Snacks',            image: '/images/categories/Proteinseeds.png' },
+  { name: 'Millet Snacks',  slug: 'Traditional Millet Savoury Snacks',  image: '/images/categories/MilletSnacks.png' },
 ];
 
 export default function HomePage() {
@@ -54,13 +55,20 @@ export default function HomePage() {
             Handpicked favourites from Andhra&apos;s finest traditions.
           </p>
           <div className={styles.categoriesGrid}>
-            {categories.map((cat, i) => (
+            {categories.map((cat) => (
               <Link
                 key={cat.slug}
                 href={`/products?category=${encodeURIComponent(cat.slug)}`}
-                className={`${styles.categoryCard} ${styles[`cat${i}`]}`}
+                className={styles.categoryCard}
               >
-                <span className={styles.categoryEmoji}>{cat.emoji}</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={cat.image}
+                  alt={cat.name}
+                  loading="lazy"
+                  className={styles.categoryBgImage}
+                />
+                <div className={styles.categoryOverlay} />
                 <span className={styles.categoryName}>{cat.name}</span>
               </Link>
             ))}

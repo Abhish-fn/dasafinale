@@ -55,6 +55,15 @@ const categories = [
   'Healthy Chips & Crisps', 'Premium Healthy Sweets',
 ];
 
+const categoryDisplayNames: Record<string, string> = {
+  'Clay Pot Roasted Seeds & Superfoods': 'Roasted Seeds',
+  'Healthy Chips & Crisps': 'Healthy Chips',
+  'Palm Jaggery Millet Biscuits': 'Jaggery Biscuits',
+  'Premium Healthy Sweets': 'Healthy Sweets',
+  'Protein & Energy Snacks': 'Protein Snacks',
+  'Traditional Millet Savoury Snacks': 'Millet Snacks',
+};
+
 const foodTypes = ['Seeds', 'Superfood', 'Biscuits', 'Snacks', 'Chips', 'Sweets', 'Protein'];
 
 // Compress image on client side before uploading to avoid server body size limits
@@ -690,7 +699,7 @@ export default function AdminProductsPage() {
         <select className={styles.filterSelect} value={category} onChange={(e) => setCategory(e.target.value)}>
           <option value="">All Categories</option>
           {categories.filter(Boolean).map((c) => (
-            <option key={c} value={c}>{c}</option>
+            <option key={c} value={c}>{categoryDisplayNames[c] || c}</option>
           ))}
         </select>
       </div>
@@ -760,7 +769,7 @@ export default function AdminProductsPage() {
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>Category</label>
                   <select className={styles.formSelect} value={editForm.category || ''} onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value }))}>
-                    {categories.filter(Boolean).map((c) => (<option key={c} value={c}>{c}</option>))}
+                    {categories.filter(Boolean).map((c) => (<option key={c} value={c}>{categoryDisplayNames[c] || c}</option>))}
                   </select>
                 </div>
                 <div className={styles.formGroup}>
@@ -1004,7 +1013,7 @@ export default function AdminProductsPage() {
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>Category *</label>
                   <select className={styles.formSelect} value={addForm.category || ''} onChange={(e) => setAddForm((f) => ({ ...f, category: e.target.value }))}>
-                    {categories.filter(Boolean).map((c) => (<option key={c} value={c}>{c}</option>))}
+                    {categories.filter(Boolean).map((c) => (<option key={c} value={c}>{categoryDisplayNames[c] || c}</option>))}
                   </select>
                 </div>
                 <div className={styles.formGroup}>

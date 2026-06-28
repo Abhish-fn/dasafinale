@@ -75,7 +75,7 @@ async function seed() {
         description: 'Our signature blend — DasaDinusulu! A premium mix of 10 nutrient-rich seeds, slow-roasted in traditional clay pots for unmatched flavor and crunch. The crown jewel of our collection.',
         images: [],
         price: 24900,
-        category: 'Clay Pot Roasted Seeds & Superfoods',
+        category: 'Roasted Foods',
         foodType: 'Superfood',
         tags: ['Roasted Superfood Mixes', 'Signature', 'High Protein'],
         packagingSize: '200g',

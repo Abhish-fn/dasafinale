@@ -4,6 +4,15 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import styles from './ProductFilters.module.css';
 
+const categoryDisplayNames: Record<string, string> = {
+  'Clay Pot Roasted Seeds & Superfoods': 'Roasted Seeds',
+  'Healthy Chips & Crisps': 'Healthy Chips',
+  'Palm Jaggery Millet Biscuits': 'Jaggery Biscuits',
+  'Premium Healthy Sweets': 'Healthy Sweets',
+  'Protein & Energy Snacks': 'Protein Snacks',
+  'Traditional Millet Savoury Snacks': 'Millet Snacks',
+};
+
 interface ProductFiltersProps {
   categories: string[];
   foodTypes: string[];
@@ -71,7 +80,7 @@ export default function ProductFilters({ categories, foodTypes, tags }: ProductF
               className={cn(styles.option, activeCategory === cat && styles.active)}
               onClick={() => updateFilter('category', activeCategory === cat ? '' : cat)}
             >
-              {cat}
+              {categoryDisplayNames[cat] || cat}
             </button>
           ))}
         </div>

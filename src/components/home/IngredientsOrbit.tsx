@@ -136,6 +136,8 @@ export default function DasaDinusuluHero() {
           <div className={styles.potCenter}>
             <img
               src="/images/Dasadinusulu.png"
+              alt="Dasa Dinusulu"
+              loading="lazy"
               style={{
                 width: '90%',
                 height: '90%',
@@ -168,7 +170,7 @@ export default function DasaDinusuluHero() {
                       src={seed.image!}
                       alt={seed.name}
                       className={styles.seedImg}
-                      loading="eager"
+                      loading="lazy"
                       onError={() => onImgError(i)}
                     />
                   ) : (

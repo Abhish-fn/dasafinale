@@ -123,41 +123,59 @@
 .categoryCard {
   position: relative;
   border-radius: var(--radius-xl);
-  padding: var(--space-8) var(--space-6);
-  text-align: center;
   overflow: hidden;
-  transition: all var(--transition-base);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
   cursor: pointer;
-  min-height: 160px;
+  min-height: 180px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  border: 1px solid rgba(107, 30, 43, 0.1);
+  padding: var(--space-5);
+  background: #2a1a1a;
 }
 
 .categoryCard:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 16px 40px rgba(60, 10, 18, 0.25);
 }
 
-.cat0 { background: linear-gradient(135deg, #fdf2f4, #f9dce2); }
-.cat1 { background: linear-gradient(135deg, #fef8e7, #f9edc5); }
-.cat2 { background: linear-gradient(135deg, #f7f1e3, #ede5d0); }
-.cat3 { background: linear-gradient(135deg, #fdf2f4, #f0b3c0); }
-.cat4 { background: linear-gradient(135deg, #fef3c7, #fde68a); }
-.cat5 { background: linear-gradient(135deg, #f9dce2, #f0b3c0); }
+.categoryCard:hover .categoryBgImage {
+  transform: scale(1.08);
+}
 
-.categoryEmoji {
-  font-size: 2.5rem;
-  margin-bottom: var(--space-3);
+.categoryBgImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.5s ease;
+  z-index: 0;
+}
+
+.categoryOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(30, 8, 12, 0.78) 0%,
+    rgba(30, 8, 12, 0.35) 50%,
+    rgba(30, 8, 12, 0.05) 100%
+  );
+  z-index: 1;
 }
 
 .categoryName {
+  position: relative;
+  z-index: 2;
   font-family: var(--font-heading);
   font-size: var(--text-lg);
   font-weight: 700;
-  color: var(--maroon);
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.02em;
+  text-align: center;
 }
 
 /* CTA Banner */
@@ -225,7 +243,6 @@
 @keyframes bannerFadeIn { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: scale(1); } }
 
 @media (max-width: 768px) {
-  .heroBannerImageWrap { aspect-ratio: 4 / 3; }
   .heroBannerCta { gap: var(--space-3); }
   .ctaPrimary, .ctaSecondary { font-size: var(--text-base); padding: var(--space-3) var(--space-6); }
   .categoriesGrid { grid-template-columns: repeat(2, 1fr); }
@@ -235,7 +252,6 @@
 }
 
 @media (max-width: 480px) {
-  .heroBannerImageWrap { aspect-ratio: 3 / 2; }
   .heroBannerOverlay { padding-bottom: var(--space-4); }
   .ctaPrimary, .ctaSecondary { font-size: var(--text-sm); padding: var(--space-2) var(--space-4); }
 }
