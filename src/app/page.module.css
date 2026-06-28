@@ -7,7 +7,7 @@
 }
 
 .heroBannerImageWrap {
-  position: relative;
+  
   width: 100%;
   aspect-ratio: 1024 / 500;
 }
@@ -81,12 +81,8 @@
   background: rgba(247, 241, 227, 0.08);
 }
 
-/* Values Section */
-.values {
-  background: var(--beige-dark);
-  padding: var(--space-20) 0;
-}
 
+/* Shared Section Styles */
 .sectionContainer {
   max-width: var(--max-width);
   margin: 0 auto;
@@ -110,47 +106,6 @@
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
-}
-
-.valuesGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-8);
-}
-
-.valueCard {
-  background: var(--color-surface);
-  border: 1px solid rgba(107, 30, 43, 0.1);
-  border-radius: var(--radius-xl);
-  padding: var(--space-8);
-  text-align: center;
-  transition: all var(--transition-base);
-}
-
-.valueCard:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-  border-color: rgba(212, 160, 23, 0.3);
-}
-
-.valueIcon {
-  font-size: 3rem;
-  margin-bottom: var(--space-4);
-  display: block;
-}
-
-.valueTitle {
-  font-family: var(--font-heading);
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--maroon);
-  margin-bottom: var(--space-3);
-}
-
-.valueDesc {
-  font-size: var(--text-sm);
-  color: var(--color-gray-600);
-  line-height: var(--leading-relaxed);
 }
 
 /* Categories Section */
@@ -273,10 +228,9 @@
   .heroBannerImageWrap { aspect-ratio: 4 / 3; }
   .heroBannerCta { gap: var(--space-3); }
   .ctaPrimary, .ctaSecondary { font-size: var(--text-base); padding: var(--space-3) var(--space-6); }
-  .valuesGrid { grid-template-columns: 1fr; }
   .categoriesGrid { grid-template-columns: repeat(2, 1fr); }
   .sectionContainer { padding: 0 var(--space-4); }
-  .values, .categories { padding: var(--space-12) 0; }
+  .categories { padding: var(--space-12) 0; }
   .ctaBannerTitle { font-size: var(--text-2xl); }
 }
 

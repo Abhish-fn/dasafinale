@@ -1,25 +1,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
+import IngredientsOrbit from '@/components/home/IngredientsOrbit';
 import styles from './page.module.css';
-
-const values = [
-  {
-    icon: '🌿',
-    title: '100% Natural',
-    desc: 'No artificial colors, preservatives, or chemicals. Pure goodness in every bite.',
-  },
-  {
-    icon: '🏠',
-    title: 'Homemade Style',
-    desc: 'Traditional recipes passed down through generations of Andhra heritage.',
-  },
-  {
-    icon: '✅',
-    title: 'Quality Tested',
-    desc: 'Every batch tested for purity, freshness, and exceptional taste.',
-  },
-];
 
 const categories = [
   { name: 'Dry Fruit Laddu', emoji: '🍯', slug: 'Dry Fruit Laddu' },
@@ -37,7 +20,7 @@ export default function HomePage() {
       <section className={styles.heroBanner}>
         <div className={styles.heroBannerImageWrap}>
           <Image
-            src="/images/hero-banner.png"
+            src="/images/hbanner.png"
             alt="DasaDinusulu – Clay Pot Roasted Trusted Goodness. Wholesome, Crunchy, Delicious. 100% Natural, Trusted Quality, No Added Preservatives, Rich in Nutrients, Protein Packed."
             fill
             priority
@@ -57,24 +40,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Values Section */}
-      <section className={styles.values}>
-        <div className={styles.sectionContainer}>
-          <h2 className={styles.sectionTitle}>Why Choose Us</h2>
-          <p className={styles.sectionSubtitle}>
-            From wholesome dry fruit laddus to crunchy roasted seeds — each product is a celebration of health and heritage.
-          </p>
-          <div className={styles.valuesGrid}>
-            {values.map((v) => (
-              <div key={v.title} className={styles.valueCard}>
-                <span className={styles.valueIcon}>{v.icon}</span>
-                <h3 className={styles.valueTitle}>{v.title}</h3>
-                <p className={styles.valueDesc}>{v.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Ingredients Orbit */}
+      <IngredientsOrbit />
 
       {/* Featured Products */}
       <FeaturedProducts />
