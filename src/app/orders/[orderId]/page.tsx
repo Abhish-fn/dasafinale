@@ -52,6 +52,7 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [liveTracking, setLiveTracking] = useState<{
     status: string;
     scans: { status: string; statusDateTime: string; location: string; instructions: string }[];
@@ -166,7 +167,8 @@ export default function OrderDetailPage() {
   }, [order?.tracking?.waybill, order?.status, fetchTracking]);
 
   const handleCancel = async () => {
-    if (!order || !confirm('Are you sure you want to cancel this order?')) return;
+    if (!order) return;
+    setShowCancelModal(false);
     setCancelling(true);
     try {
       const res = await fetch(`/api/orders/${order.orderId}/cancel`, { method: 'POST' });
@@ -451,7 +453,7 @@ export default function OrderDetailPage() {
           </div>
 
           <div style={{ marginTop: 'var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            {['delivered', 'cancelled'].includes(order.status) && (
+            {order.status === 'delivered' && (
               <button
                 onClick={handleReorder}
                 style={{ width: '100%', padding: 'var(--space-3)', fontWeight: 600, color: 'white', background: 'var(--color-primary-500)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontSize: 'var(--text-sm)' }}
@@ -459,9 +461,17 @@ export default function OrderDetailPage() {
                 🔄 Reorder
               </button>
             )}
+            {order.status === 'cancelled' && (
+              <button
+                disabled
+                style={{ width: '100%', padding: 'var(--space-3)', fontWeight: 600, color: 'var(--color-gray-400)', background: 'var(--color-gray-100)', border: '1.5px solid var(--color-gray-200)', borderRadius: 'var(--radius-lg)', cursor: 'not-allowed', fontSize: 'var(--text-sm)' }}
+              >
+                ✕ Cancelled
+              </button>
+            )}
             {['placed', 'confirmed'].includes(order.status) && (
               <button
-                onClick={handleCancel}
+                onClick={() => setShowCancelModal(true)}
                 disabled={cancelling}
                 style={{ width: '100%', padding: 'var(--space-3)', fontWeight: 600, color: 'var(--color-error)', background: 'transparent', border: '1.5px solid var(--color-error)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontSize: 'var(--text-sm)', opacity: cancelling ? 0.5 : 1 }}
               >
@@ -471,6 +481,32 @@ export default function OrderDetailPage() {
           </div>
         </div>
       </div>
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowCancelModal(false)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalIcon}>⚠️</div>
+            <h3 className={styles.modalTitle}>Cancel this order?</h3>
+            <p className={styles.modalText}>
+              This action cannot be undone. Your payment will be refunded to the original payment method.
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.modalBtnSecondary}
+                onClick={() => setShowCancelModal(false)}
+              >
+                Go Back
+              </button>
+              <button
+                className={styles.modalBtnDanger}
+                onClick={handleCancel}
+              >
+                Yes, Cancel Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

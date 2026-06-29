@@ -52,7 +52,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
       <div className={styles.panel}>
         <div className={styles.header}>
           <span className={styles.brand}>
-            <span className={styles.brandMonogram}>DD</span> <span><span className="brand-subtle">www.</span>DasaDinusulu<span className="brand-subtle">.com</span></span>
+            <span><span className="brand-subtle">www.</span>DasaDinusulu<span className="brand-subtle">.com</span></span>
           </span>
           <button className={styles.closeBtn} onClick={onClose} aria-label="Close menu">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

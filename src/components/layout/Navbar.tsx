@@ -50,7 +50,6 @@ export default function Navbar() {
       <nav className={cn(styles.nav, scrolled && styles.scrolled)}>
         <div className={styles.container}>
           <Link href="/" className={styles.brand}>
-            <span className={styles.brandIcon}>DD</span>
             <span><span className="brand-subtle">www.</span>DasaDinusulu<span className="brand-subtle">.com</span></span>
           </Link>
 

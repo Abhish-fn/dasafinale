@@ -545,6 +545,7 @@ function CheckoutContent() {
                     placeholder="10-digit mobile"
                   />
                   {formErrors.phone && <span className={styles.formError}>{formErrors.phone}</span>}
+                  <span className={styles.formHint}>Receiver&apos;s number - used only for delivery tracking.</span>
                 </div>
                 <div className={`${styles.formGroup} ${styles.formFull}`}>
                   <label className={styles.formLabel}>Address Line 1</label>

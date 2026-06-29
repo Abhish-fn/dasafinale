@@ -39,18 +39,6 @@
   gap: var(--space-2);
 }
 
-.brandMonogram {
-  font-family: var(--font-display);
-  font-size: var(--text-sm);
-  font-weight: 900;
-  color: var(--gold);
-  background: var(--maroon);
-  padding: 3px 6px;
-  border-radius: var(--radius-sm);
-  letter-spacing: 1px;
-  line-height: 1;
-}
-
 .closeBtn {
   display: flex;
   align-items: center;

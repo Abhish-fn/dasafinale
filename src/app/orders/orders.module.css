@@ -113,4 +113,89 @@
 .trackingRefresh { display: inline-block; margin-left: var(--space-2); font-size: var(--text-sm); animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Cancel Confirmation Modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: var(--color-backdrop);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  animation: fadeIn var(--transition-fast) ease-out;
+}
+
+.modalCard {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8) var(--space-6);
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-2xl);
+  animation: scaleIn var(--transition-base) ease-out;
+}
+
+.modalIcon {
+  font-size: 3rem;
+  margin-bottom: var(--space-4);
+}
+
+.modalTitle {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-2);
+}
+
+.modalText {
+  font-size: var(--text-sm);
+  color: var(--color-gray-500);
+  line-height: var(--leading-relaxed);
+  margin-bottom: var(--space-6);
+}
+
+.modalActions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.modalBtnSecondary {
+  flex: 1;
+  padding: var(--space-3);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--color-gray-700);
+  background: var(--color-gray-100);
+  border: 1.5px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.modalBtnSecondary:hover {
+  background: var(--color-gray-200);
+}
+
+.modalBtnDanger {
+  flex: 1;
+  padding: var(--space-3);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: white;
+  background: var(--color-error);
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.modalBtnDanger:hover {
+  background: #dc2626;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
 @media (min-width: 768px) { .container { padding: var(--space-8); } }

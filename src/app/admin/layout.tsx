@@ -83,7 +83,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
         <div className={styles.sidebarHeader}>
           <div className={styles.sidebarBrand}>
-            <span className={styles.brandMonogram}>DD</span>
             <span><span className="brand-subtle">www.</span>DasaDinusulu<span className="brand-subtle">.com</span></span>
           </div>
           <div className={styles.sidebarTag}>Admin Panel</div>

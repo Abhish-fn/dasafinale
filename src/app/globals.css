@@ -3,7 +3,7 @@
    Traditional Andhra Snacks — Maroon, Gold, Beige — Premium Heritage
    =================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@400;700;900&display=swap');
 
 /* --- CSS Custom Properties (Design Tokens) --- */
 :root {
@@ -103,7 +103,7 @@
 
   /* Font Families */
   --font-display: 'Playfair Display', serif;
-  --font-heading: 'Playfair Display', serif;
+  --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
   --font-body: system-ui, -apple-system, sans-serif;
 
   /* Font Sizes */
