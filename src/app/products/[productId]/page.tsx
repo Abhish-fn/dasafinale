@@ -211,15 +211,20 @@ export default function ProductDetailPage() {
                     disabled={v.isCurrent}
                     onClick={async () => {
                       if (v.isCurrent) return;
+                      const currentImages = product.images;
                       try {
                         const res = await fetch(`/api/products/${v.productId}`);
                         const data = await res.json();
                         if (res.ok && data.product) {
+                          // Fall back to the current product's images if the variant has none
+                          if (!data.product.images || data.product.images.length === 0) {
+                            data.product.images = currentImages;
+                          }
                           setProduct(data.product);
                           setVariants(data.variants || []);
                           setSelectedImage(0);
                           setQuantity(1);
-                          window.history.replaceState(null, '', `/products/${v.productId}`);
+                          window.history.replaceState(null, '', `/products/${data.product.productId}`);
                         }
                       } catch (err) {
                         console.error('Failed to switch variant:', err);

@@ -385,6 +385,9 @@ export default function AdminProductsPage() {
           editingProduct.variantGroup = variantGroup;
         }
 
+        // Use editForm.images (current form state) so freshly-uploaded images are included
+        const sharedImages = editForm.images?.length ? editForm.images : editingProduct.images || [];
+
         const res = await fetch('/api/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -394,7 +397,7 @@ export default function AdminProductsPage() {
             category: editingProduct.category,
             foodType: editingProduct.foodType,
             tags: editingProduct.tags || [],
-            images: editingProduct.images || [],
+            images: sharedImages,
             nutritionInfo: editingProduct.nutritionInfo,
             isMustTry: false,
             isBestSeller: false,
@@ -410,6 +413,26 @@ export default function AdminProductsPage() {
         if (!res.ok) {
           const data = await res.json();
           throw new Error(data.error || 'Failed to create variant');
+        }
+      }
+
+      // 5. Sync images to all sibling variants:
+      //    - Always if images were changed in this save
+      //    - Also if a sibling currently has no images (backfills existing empty variants)
+      const currentImages = (updates.images as string[] | undefined) ?? editForm.images ?? editingProduct.images ?? [];
+      const imagesChanged = updates.images !== undefined;
+      if (currentImages.length > 0 && editingProduct.variantGroup) {
+        for (const ve of variantEdits) {
+          if (ve._id === editingProduct._id || ve.isNew) continue;
+          const siblingProduct = products.find(p => p._id === ve._id);
+          const siblingHasNoImages = !siblingProduct?.images?.length;
+          if (imagesChanged || siblingHasNoImages) {
+            await fetch(`/api/products/${ve.productId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ images: currentImages }),
+            });
+          }
         }
       }
 

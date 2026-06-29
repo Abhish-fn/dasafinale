@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
-import { formatPrice, calculateShippingFee } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
 import styles from './cart.module.css';
 
@@ -25,8 +25,7 @@ export default function CartPage() {
   const [variantCache, setVariantCache] = useState<Record<string, VariantOption[]>>({});
   const [swapping, setSwapping] = useState<string | null>(null);
 
-  const shipping = calculateShippingFee(total);
-  const grandTotal = total + shipping;
+
 
   const fetchVariants = useCallback(async (variantGroup: string, currentProductId: string) => {
     if (variantCache[variantGroup]) return;
@@ -205,7 +204,7 @@ export default function CartPage() {
             {items.map((item) => (
               <div key={item._id} className={styles.summaryItemRow}>
                 <span className={styles.summaryItemName}>
-                  {item.product.title}
+                  {item.product.title}{item.product.packagingSize ? ` (${item.product.packagingSize})` : ''}
                   {item.quantity > 1 && <span className={styles.summaryItemQty}> ×{item.quantity}</span>}
                 </span>
                 <span className={styles.summaryItemPrice}>{formatPrice(item.product.price * item.quantity)}</span>
@@ -217,25 +216,18 @@ export default function CartPage() {
             <span>Subtotal</span>
             <span className={styles.summaryValue}>{formatPrice(total)}</span>
           </div>
-          <div className={styles.summaryRow}>
+          <div className={styles.summaryRow} style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-400)' }}>
             <span>Shipping</span>
-            <span className={styles.summaryValue}>
-              {shipping === 0 ? 'FREE' : formatPrice(shipping)}
-            </span>
+            <span>calculated at checkout</span>
           </div>
           <hr className={styles.summaryDivider} />
           <div className={styles.summaryTotal}>
             <span>Total</span>
-            <span>{formatPrice(grandTotal)}</span>
+            <span>{formatPrice(total)}</span>
           </div>
           <Link href="/checkout" className={styles.checkoutBtn}>
             Proceed to Checkout →
           </Link>
-          {shipping > 0 && (
-            <p className={styles.freeShipping}>
-              Add {formatPrice(49900 - total)} more for free shipping!
-            </p>
-          )}
         </div>
       </div>
     </div>

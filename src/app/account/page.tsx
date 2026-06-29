@@ -26,7 +26,6 @@ export default function AccountPage() {
   }
 
   const menuItems = [
-    { icon: '📦', label: 'My Orders', desc: 'View order history and track shipments', href: '/orders' },
     { icon: '❤️', label: 'Wishlist', desc: 'Products you\'ve saved for later', href: '/wishlist' },
     { icon: '📍', label: 'Addresses', desc: 'Manage delivery addresses', href: '/checkout' },
     { icon: '🛒', label: 'Cart', desc: 'View items in your shopping cart', href: '/cart' },

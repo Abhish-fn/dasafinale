@@ -18,7 +18,7 @@ const menuLinks = [
   { href: '/products', label: 'Products', icon: '🛍️' },
   { href: '/cart', label: 'Cart', icon: '🛒' },
   { href: '/wishlist', label: 'Wishlist', icon: '❤️' },
-  { href: '/orders', label: 'My Orders', icon: '📦' },
+  { href: '/orders', label: 'Orders', icon: '📦' },
   { href: '/account', label: 'My Account', icon: '👤' },
 ];
 

@@ -32,7 +32,6 @@ export default function Footer() {
         <div className={styles.grid}>
           <div>
             <div className={styles.brand}>
-              <span className={styles.brandIcon}>DD</span>
               <span><span className="brand-subtle">www.</span>DasaDinusulu<span className="brand-subtle">.com</span></span>
             </div>
             <p className={styles.tagline}>A Product by VDF</p>
