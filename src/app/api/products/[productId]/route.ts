@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Product from '@/models/Product';
 import { auth } from '@/lib/auth';
-import { productUpdateSchema, adminPasswordSchema } from '@/lib/validations';
+import { productUpdateSchema } from '@/lib/validations';
 import { sanitize } from '@/lib/sanitize';
 import { slugify } from '@/lib/utils';
-import bcrypt from 'bcryptjs';
 
 // GET /api/products/[productId] — Single product + size variants
 export async function GET(
@@ -95,9 +94,9 @@ export async function PUT(
   }
 }
 
-// DELETE /api/products/[productId] — Soft-delete (Admin + password)
+// DELETE /api/products/[productId] — Hard delete (Admin only)
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   ctx: { params: Promise<{ productId: string }> }
 ) {
   try {
@@ -106,35 +105,59 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const body = sanitize(await req.json());
-    const { adminPassword } = adminPasswordSchema.parse(body);
-
-    // Verify admin password
-    const hash = process.env.ADMIN_PASSWORD_HASH;
-    if (!hash) {
-      return NextResponse.json({ error: 'Admin password not configured' }, { status: 500 });
-    }
-
-    const isValid = await bcrypt.compare(adminPassword, hash);
-    if (!isValid) {
-      return NextResponse.json({ error: 'Invalid admin password' }, { status: 401 });
-    }
-
     await dbConnect();
     const { productId } = await ctx.params;
 
-    // Soft delete — set isActive to false
-    const product = await Product.findOneAndUpdate(
-      { productId },
-      { $set: { isActive: false } },
-      { new: true }
-    );
-
+    // 1. Find the product
+    const product = await Product.findOne({ productId });
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ message: 'Product deactivated', productId });
+    // 2. Delete images from Cloudinary
+    if (product.images && product.images.length > 0) {
+      const cloudinary = (await import('@/lib/cloudinary')).default;
+      for (const url of product.images) {
+        try {
+          // Extract public_id from Cloudinary URL
+          // URL format: https://res.cloudinary.com/.../upload/v.../dasadinusulu/products/filename.ext
+          const parts = url.split('/upload/');
+          if (parts[1]) {
+            const pathAfterUpload = parts[1].replace(/^v\d+\//, ''); // remove version
+            const publicId = pathAfterUpload.replace(/\.[^.]+$/, ''); // remove extension
+            await cloudinary.uploader.destroy(publicId);
+          }
+        } catch (err) {
+          console.error(`Failed to delete Cloudinary image: ${url}`, err);
+          // Continue deleting other images even if one fails
+        }
+      }
+    }
+
+    const productObjectId = product._id;
+
+    // 3. Delete the product from MongoDB
+    await Product.deleteOne({ _id: productObjectId });
+
+    // 4. Remove from all carts (Cart.items[].productId is ObjectId ref)
+    const Cart = (await import('@/models/Cart')).default;
+    await Cart.updateMany(
+      {},
+      { $pull: { items: { productId: productObjectId } } }
+    );
+
+    // 5. Remove from all wishlists (Wishlist.products[].productId is ObjectId ref)
+    const Wishlist = (await import('@/models/Wishlist')).default;
+    await Wishlist.updateMany(
+      {},
+      { $pull: { products: { productId: productObjectId } } }
+    );
+
+    // 6. Delete all reviews for this product (Review.productId is ObjectId ref)
+    const Review = (await import('@/models/Review')).default;
+    await Review.deleteMany({ productId: productObjectId });
+
+    return NextResponse.json({ message: 'Product permanently deleted', productId });
   } catch (error) {
     console.error('DELETE /api/products/[productId] error:', error);
     return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });

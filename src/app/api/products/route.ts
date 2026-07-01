@@ -15,8 +15,9 @@ export async function GET(req: NextRequest) {
 
     // Build filter query
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const filter: Record<string, any> = { isActive: true };
+    const filter: Record<string, any> = {};
     const showAll = searchParams.get('showAll') === 'true';
+    if (!showAll) filter.isActive = true;
 
     const category = searchParams.get('category');
     if (category) filter.category = category;

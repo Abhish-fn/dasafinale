@@ -23,6 +23,9 @@
 # misc
 .DS_Store
 *.pem
+db-backup
+db-backup/*
+mongo-backup/*
 
 # debug
 npm-debug.log*
@@ -39,5 +42,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-db-backup
-db-backup/*
+
+

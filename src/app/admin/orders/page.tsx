@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { formatPrice } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
 import styles from '../admin.module.css';
@@ -19,10 +20,39 @@ interface AdminOrder {
   createdAt: string;
 }
 
+interface OrderDetail {
+  orderId: string;
+  status: string;
+  items: {
+    productSnapshot: { title: string; image: string; price: number; packagingSize: string };
+    quantity: number;
+    priceAtOrder: number;
+  }[];
+  shippingAddress: {
+    fullName: string; phone: string; addressLine1: string; addressLine2?: string;
+    city: string; state: string; pincode: string;
+  };
+  pricing: {
+    subtotal: number; discount: number; shippingFee: number; total: number;
+    gst?: { basePrice: number; cgst: number; sgst: number; isIntraState: boolean };
+  };
+  coupon?: { code: string };
+  payment: { status: string; method?: string; paidAt?: string };
+  tracking?: { waybill?: string; carrier?: string; trackingUrl?: string; estimatedDelivery?: string };
+  createdAt: string;
+  notes?: string;
+}
+
 const statuses = ['', 'placed', 'confirmed', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'];
-const statusBadge: Record<string, string> = {
-  placed: 'badgePlaced', confirmed: 'badgeConfirmed', packed: 'badgePacked',
-  shipped: 'badgeShipped', delivered: 'badgeDelivered', cancelled: 'badgeCancelled',
+
+const statusColors: Record<string, { bg: string; color: string }> = {
+  placed: { bg: 'rgba(59,130,246,0.1)', color: '#3b82f6' },
+  confirmed: { bg: 'rgba(107,30,43,0.1)', color: 'var(--maroon)' },
+  packed: { bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
+  shipped: { bg: 'rgba(139,92,246,0.1)', color: '#8b5cf6' },
+  out_for_delivery: { bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
+  delivered: { bg: 'rgba(34,197,94,0.1)', color: '#22c55e' },
+  cancelled: { bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
 };
 
 export default function AdminOrdersPage() {
@@ -33,6 +63,8 @@ export default function AdminOrdersPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [detailOrder, setDetailOrder] = useState<OrderDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -85,6 +117,37 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const openOrderDetail = async (orderId: string) => {
+    setDetailLoading(true);
+    setDetailOrder(null);
+    try {
+      const res = await fetch(`/api/orders/${orderId}`);
+      const data = await res.json();
+      if (res.ok && data.order) {
+        setDetailOrder(data.order);
+      } else {
+        toast('Failed to load order details', 'error');
+      }
+    } catch {
+      toast('Failed to load order details', 'error');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const closeDetail = () => {
+    setDetailOrder(null);
+    setDetailLoading(false);
+  };
+
+  // Close on Escape
+  useEffect(() => {
+    if (!detailOrder && !detailLoading) return;
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeDetail(); };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  });
+
   return (
     <div>
       <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-2xl)', fontWeight: 700, marginBottom: 'var(--space-6)' }}>
@@ -127,11 +190,11 @@ export default function AdminOrdersPage() {
             </thead>
             <tbody>
               {orders.map((order) => (
-                <tr key={order._id}>
+                <tr key={order._id} onClick={() => openOrderDetail(order.orderId)} style={{ cursor: 'pointer' }}>
                   <td>
-                    <Link href={`/orders/${order.orderId}`} style={{ fontWeight: 600, color: 'var(--color-primary-600)' }}>
+                    <span style={{ fontWeight: 600 }}>
                       {order.orderId}
-                    </Link>
+                    </span>
                   </td>
                   <td>
                     <div style={{ fontWeight: 500 }}>{order.shippingAddress?.fullName}</div>
@@ -139,7 +202,7 @@ export default function AdminOrdersPage() {
                   </td>
                   <td>{order.items.reduce((s, i) => s + i.quantity, 0)}</td>
                   <td style={{ fontWeight: 600 }}>{formatPrice(order.pricing.total)}</td>
-                  <td>
+                  <td onClick={(e) => e.stopPropagation()}>
                     <select
                       value={order.status}
                       onChange={(e) => updateStatus(order.orderId, e.target.value)}
@@ -159,7 +222,7 @@ export default function AdminOrdersPage() {
                       ))}
                     </select>
                   </td>
-                  <td>
+                  <td onClick={(e) => e.stopPropagation()}>
                     {order.tracking?.waybill && order.tracking.waybill !== 'PENDING' ? (
                       <div>
                         <a
@@ -207,6 +270,172 @@ export default function AdminOrdersPage() {
           </div>
         )}
       </div>
+
+      {/* ===== Order Detail Modal ===== */}
+      {(detailOrder || detailLoading) && (
+        <div className={styles.modalOverlay} onClick={closeDetail}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()} style={{ maxWidth: 640 }}>
+            {detailLoading && !detailOrder ? (
+              <div style={{ padding: 'var(--space-8)', textAlign: 'center' }}>
+                <div style={{ width: 36, height: 36, border: '3px solid var(--color-gray-200)', borderTopColor: 'var(--maroon)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto var(--space-4)' }} />
+                <p style={{ color: 'var(--color-gray-500)', fontSize: 'var(--text-sm)' }}>Loading order details…</p>
+              </div>
+            ) : detailOrder && (
+              <>
+                <div className={styles.modalHeader}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                    <h2 className={styles.modalTitle}>Order {detailOrder.orderId}</h2>
+                    <span style={{
+                      fontSize: 'var(--text-xs)', fontWeight: 700, padding: '2px 10px',
+                      borderRadius: 'var(--radius-full)', textTransform: 'capitalize',
+                      background: statusColors[detailOrder.status]?.bg || 'var(--color-gray-100)',
+                      color: statusColors[detailOrder.status]?.color || 'var(--color-gray-600)',
+                    }}>
+                      {detailOrder.status.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  <button className={styles.modalClose} onClick={closeDetail} aria-label="Close">✕</button>
+                </div>
+
+                <div className={styles.modalBody}>
+                  {/* Items */}
+                  <div>
+                    <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)', marginBottom: 'var(--space-3)' }}>Items</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                      {detailOrder.items.map((item, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+                          <div style={{ width: 44, height: 44, borderRadius: 'var(--radius-md)', overflow: 'hidden', background: 'var(--color-gray-100)', flexShrink: 0, position: 'relative' }}>
+                            {item.productSnapshot.image && <Image src={item.productSnapshot.image} alt="" fill sizes="44px" />}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 500, fontSize: 'var(--text-sm)', color: 'var(--color-gray-900)' }}>
+                              {item.productSnapshot.title}
+                              {item.productSnapshot.packagingSize && <span style={{ color: 'var(--color-gray-400)', fontWeight: 400 }}> ({item.productSnapshot.packagingSize})</span>}
+                            </div>
+                            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)' }}>
+                              {formatPrice(item.priceAtOrder)} × {item.quantity}
+                            </div>
+                          </div>
+                          <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--color-gray-900)', whiteSpace: 'nowrap' }}>
+                            {formatPrice(item.priceAtOrder * item.quantity)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Pricing */}
+                  <div style={{ padding: 'var(--space-4)', background: 'rgba(107,30,43,0.03)', borderRadius: 'var(--radius-lg)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)', marginBottom: 'var(--space-1)' }}>
+                      <span>Subtotal</span><span>{formatPrice(detailOrder.pricing.subtotal)}</span>
+                    </div>
+                    {detailOrder.pricing.discount > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)', color: '#22c55e', marginBottom: 'var(--space-1)' }}>
+                        <span>Discount {detailOrder.coupon?.code ? `(${detailOrder.coupon.code})` : ''}</span>
+                        <span>-{formatPrice(detailOrder.pricing.discount)}</span>
+                      </div>
+                    )}
+                    {detailOrder.pricing.gst && (
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)', marginBottom: 'var(--space-1)', paddingLeft: 'var(--space-2)', borderLeft: '2px solid var(--color-gray-200)' }}>
+                          <span>CGST (5%)</span><span>{formatPrice(detailOrder.pricing.gst.cgst)}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)', marginBottom: 'var(--space-1)', paddingLeft: 'var(--space-2)', borderLeft: '2px solid var(--color-gray-200)' }}>
+                          <span>SGST (5%)</span><span>{formatPrice(detailOrder.pricing.gst.sgst)}</span>
+                        </div>
+                      </>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)', marginBottom: 'var(--space-2)' }}>
+                      <span>Shipping</span>
+                      <span>{detailOrder.pricing.shippingFee === 0 ? 'FREE' : formatPrice(detailOrder.pricing.shippingFee)}</span>
+                    </div>
+                    <div style={{ borderTop: '1px solid var(--color-gray-200)', paddingTop: 'var(--space-2)', display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--maroon)' }}>
+                      <span>Total</span><span>{formatPrice(detailOrder.pricing.total)}</span>
+                    </div>
+                  </div>
+
+                  {/* Customer & Address */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                    <div>
+                      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)', marginBottom: 'var(--space-2)' }}>Customer</h3>
+                      <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-700)' }}>
+                        <div style={{ fontWeight: 600 }}>{detailOrder.shippingAddress.fullName}</div>
+                        <div>📱 {detailOrder.shippingAddress.phone}</div>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)', marginBottom: 'var(--space-2)' }}>Delivery Address</h3>
+                      <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)', lineHeight: 1.5 }}>
+                        {detailOrder.shippingAddress.addressLine1}
+                        {detailOrder.shippingAddress.addressLine2 ? `, ${detailOrder.shippingAddress.addressLine2}` : ''}<br />
+                        {detailOrder.shippingAddress.city}, {detailOrder.shippingAddress.state} - {detailOrder.shippingAddress.pincode}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payment & Tracking */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                    <div>
+                      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)', marginBottom: 'var(--space-2)' }}>Payment</h3>
+                      <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)' }}>
+                        <div>
+                          Status: <strong style={{ color: detailOrder.payment.status === 'paid' ? '#22c55e' : 'var(--color-gray-900)' }}>{detailOrder.payment.status}</strong>
+                        </div>
+                        {detailOrder.payment.method && <div>Method: {detailOrder.payment.method}</div>}
+                        {detailOrder.payment.paidAt && <div>Paid: {new Date(detailOrder.payment.paidAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>}
+                      </div>
+                    </div>
+                    {detailOrder.tracking?.waybill && detailOrder.tracking.waybill !== 'PENDING' && (
+                      <div>
+                        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)', marginBottom: 'var(--space-2)' }}>Tracking</h3>
+                        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)' }}>
+                          <div>📦 {detailOrder.tracking.carrier || 'Delhivery'}</div>
+                          <div style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)' }}>AWB: {detailOrder.tracking.waybill}</div>
+                          {detailOrder.tracking.estimatedDelivery && (
+                            <div>📅 ETA: {new Date(detailOrder.tracking.estimatedDelivery).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>
+                          )}
+                          {detailOrder.tracking.trackingUrl && (
+                            <a href={detailOrder.tracking.trackingUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 'var(--text-xs)', color: 'var(--maroon)', fontWeight: 600 }}>
+                              Track on Delhivery →
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {detailOrder.notes && (
+                    <div>
+                      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)', marginBottom: 'var(--space-2)' }}>Order Notes</h3>
+                      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)', fontStyle: 'italic' }}>{detailOrder.notes}</p>
+                    </div>
+                  )}
+
+                  {/* Footer info */}
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-400)', textAlign: 'right' }}>
+                    Placed {new Date(detailOrder.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+
+                <div className={styles.modalFooter}>
+                  <Link
+                    href={`/orders/${detailOrder.orderId}`}
+                    style={{ fontSize: 'var(--text-sm)', color: 'var(--maroon)', fontWeight: 600, textDecoration: 'none' }}
+                  >
+                    Open Full Page →
+                  </Link>
+                  <button
+                    onClick={closeDetail}
+                    style={{ padding: 'var(--space-2) var(--space-6)', fontWeight: 600, color: 'var(--color-gray-600)', border: '1px solid var(--color-gray-300)', borderRadius: 'var(--radius-lg)', fontSize: 'var(--text-sm)', cursor: 'pointer', background: 'transparent' }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

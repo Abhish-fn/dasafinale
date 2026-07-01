@@ -12,11 +12,13 @@
 .addressCard { padding: var(--space-4); border: 2px solid var(--color-gray-200); border-radius: var(--radius-xl); cursor: pointer; transition: all var(--transition-fast); }
 .addressCard:hover { border-color: var(--gold); }
 .addressCardSelected { border-color: var(--maroon); background: rgba(107, 30, 43, 0.05); }
-.addressLabel { font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--maroon); margin-bottom: var(--space-2); }
+.addressLabel { font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; color: var(--maroon); margin-bottom: var(--space-2); display: flex; align-items: center; gap: var(--space-2); }
 .addressName { font-weight: 600; color: var(--color-gray-900); margin-bottom: var(--space-1); }
 .addressText { font-size: var(--text-sm); color: var(--color-gray-600); line-height: var(--leading-relaxed); }
 .addressPhone { font-size: var(--text-sm); color: var(--color-gray-500); margin-top: var(--space-2); }
-.addressDefault { font-size: 10px; color: var(--maroon); background: rgba(107, 30, 43, 0.1); padding: 1px var(--space-2); border-radius: var(--radius-full); margin-left: var(--space-2); }
+.addressDefault { font-size: 10px; color: var(--maroon); background: rgba(107, 30, 43, 0.1); padding: 1px var(--space-2); border-radius: var(--radius-full); }
+.addressEditBtn { margin-left: auto; background: none; border: none; cursor: pointer; padding: 4px; border-radius: var(--radius-sm); color: var(--color-gray-500); transition: all var(--transition-fast); }
+.addressEditBtn:hover { color: var(--maroon); background: rgba(107, 30, 43, 0.08); }
 
 .addAddressBtn { display: flex; align-items: center; justify-content: center; gap: var(--space-2); padding: var(--space-4); border: 2px dashed var(--color-gray-300); border-radius: var(--radius-xl); color: var(--color-gray-500); cursor: pointer; transition: all var(--transition-fast); font-size: var(--text-sm); font-weight: 500; min-height: 120px; }
 .addAddressBtn:hover { border-color: var(--gold); color: var(--maroon); }

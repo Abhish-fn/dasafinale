@@ -1,0 +1,108 @@
+
+> dasadinusulu-final@0.1.0 build
+> next build && cp -r public .next/standalone/public && cp -r .next/static .next/standalone/.next/static
+
+▲ Next.js 16.2.6 (Turbopack)
+- Environments: .env
+- Experiments (use with caution):
+  · serverActions
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 8.0s
+  Running TypeScript ...
+  Finished TypeScript in 12.2s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/41) ...
+  Generating static pages using 7 workers (10/41) 
+  Generating static pages using 7 workers (20/41) 
+  Generating static pages using 7 workers (30/41) 
+✓ Generating static pages using 7 workers (41/41) in 582ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /about
+├ ○ /account
+├ ○ /admin
+├ ○ /admin/coupons
+├ ○ /admin/customers
+├ ○ /admin/orders
+├ ○ /admin/products
+├ ƒ /api/addresses
+├ ƒ /api/addresses/[addressId]
+├ ƒ /api/admin/customers
+├ ƒ /api/admin/orders
+├ ƒ /api/admin/orders/[orderId]/shipment
+├ ƒ /api/admin/stats
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/cart
+├ ƒ /api/cart/[itemId]
+├ ƒ /api/cart/merge
+├ ƒ /api/cart/swap-variant
+├ ƒ /api/checkout/create-order
+├ ƒ /api/checkout/verify-payment
+├ ƒ /api/coupons
+├ ƒ /api/coupons/[couponId]
+├ ƒ /api/coupons/validate
+├ ƒ /api/cron/expire-orders
+├ ƒ /api/cron/retry-shipments
+├ ƒ /api/health
+├ ƒ /api/orders
+├ ƒ /api/orders/[orderId]
+├ ƒ /api/orders/[orderId]/cancel
+├ ƒ /api/orders/[orderId]/track
+├ ƒ /api/pincode/[code]
+├ ƒ /api/products
+├ ƒ /api/products/[productId]
+├ ƒ /api/products/[productId]/related
+├ ƒ /api/products/featured
+├ ƒ /api/reviews
+├ ƒ /api/shipping/quote
+├ ƒ /api/shipping/track/[waybill]
+├ ƒ /api/upload
+├ ƒ /api/webhooks/delhivery
+├ ƒ /api/webhooks/razorpay
+├ ƒ /api/wishlist
+├ ƒ /api/wishlist/[itemId]
+├ ○ /cart
+├ ○ /checkout
+├ ○ /contact
+├ ○ /login
+├ ○ /orders
+├ ƒ /orders/[orderId]
+├ ○ /products
+├ ƒ /products/[productId]
+├ ƒ /track/[orderId]
+└ ○ /wishlist
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+	Command being timed: "npm run build"
+	User time (seconds): 72.75
+	System time (seconds): 4.73
+	Percent of CPU this job got: 305%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:25.39
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 876012
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 2218
+	Minor (reclaiming a frame) page faults: 607531
+	Voluntary context switches: 36507
+	Involuntary context switches: 24659
+	Swaps: 0
+	File system inputs: 570136
+	File system outputs: 241672
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

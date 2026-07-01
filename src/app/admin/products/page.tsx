@@ -152,6 +152,7 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'active' | 'hidden'>('active');
 
   // Edit modal state
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -179,6 +180,81 @@ export default function AdminProductsPage() {
   const [variantEdits, setVariantEdits] = useState<VariantEdit[]>([]);
   const [loadingVariants, setLoadingVariants] = useState(false);
   const [savingVariant, setSavingVariant] = useState(false);
+
+  // Inline stock editing state
+  const [stockEdits, setStockEdits] = useState<Record<string, number>>({});
+  const [savingStock, setSavingStock] = useState<string | null>(null);
+
+  const getStockValue = (p: Product) => stockEdits[p._id] !== undefined ? stockEdits[p._id] : p.stock;
+  const setStockEdit = (id: string, val: number) => setStockEdits(prev => ({ ...prev, [id]: Math.max(0, val) }));
+
+  const saveStock = async (p: Product) => {
+    const newStock = getStockValue(p);
+    if (newStock === p.stock) return;
+    setSavingStock(p._id);
+    try {
+      const res = await fetch(`/api/products/${p.productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stock: newStock }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      toast(`Stock updated to ${newStock}`, 'success');
+      setStockEdits(prev => { const n = { ...prev }; delete n[p._id]; return n; });
+      fetchProducts();
+    } catch {
+      toast('Failed to update stock', 'error');
+    } finally {
+      setSavingStock(null);
+    }
+  };
+
+  // Toggle active/hidden with confirmation
+  const [toggleConfirm, setToggleConfirm] = useState<Product | null>(null);
+  const [togglingActive, setTogglingActive] = useState(false);
+
+  const confirmToggleActive = async () => {
+    if (!toggleConfirm) return;
+    setTogglingActive(true);
+    try {
+      const res = await fetch(`/api/products/${toggleConfirm.productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !toggleConfirm.isActive }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      toast(`Product ${toggleConfirm.isActive ? 'hidden' : 'activated'}!`, 'success');
+      setToggleConfirm(null);
+      fetchProducts();
+    } catch {
+      toast('Failed to update product', 'error');
+    } finally {
+      setTogglingActive(false);
+    }
+  };
+
+  // Delete product with confirmation
+  const [deleteConfirm, setDeleteConfirm] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/products/${deleteConfirm.productId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed');
+      }
+      toast('Product permanently deleted', 'success');
+      setDeleteConfirm(null);
+      fetchProducts();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to delete product', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -637,7 +713,8 @@ export default function AdminProductsPage() {
     }
   };
 
-  const groupedItems = groupProducts(products);
+  const filteredProducts = visibilityFilter === 'all' ? products : products.filter(p => visibilityFilter === 'active' ? p.isActive : !p.isActive);
+  const groupedItems = groupProducts(filteredProducts);
 
   // --- Render a product row in the table ---
   const renderProductRow = (p: Product, isVariant: boolean, isLast: boolean, fallbackImage?: string) => {
@@ -676,6 +753,53 @@ export default function AdminProductsPage() {
           {p.stock} {p.stock <= 10 && '⚠'}
         </span>
       </td>
+      <td>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button
+            onClick={() => setStockEdit(p._id, getStockValue(p) - 1)}
+            style={{
+              width: 28, height: 28, borderRadius: 'var(--radius-md)', border: '1px solid var(--color-gray-300)',
+              background: 'white', cursor: 'pointer', fontSize: '16px', fontWeight: 700, color: 'var(--color-gray-600)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+            disabled={getStockValue(p) <= 0}
+          >−</button>
+          <input
+            type="number"
+            min={0}
+            value={getStockValue(p)}
+            onChange={(e) => setStockEdit(p._id, parseInt(e.target.value) || 0)}
+            style={{
+              width: 56, height: 28, textAlign: 'center', border: '1px solid var(--color-gray-300)',
+              borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', fontWeight: 600,
+              background: stockEdits[p._id] !== undefined ? 'rgba(107,30,43,0.04)' : 'white',
+            }}
+          />
+          <button
+            onClick={() => setStockEdit(p._id, getStockValue(p) + 1)}
+            style={{
+              width: 28, height: 28, borderRadius: 'var(--radius-md)', border: '1px solid var(--color-gray-300)',
+              background: 'white', cursor: 'pointer', fontSize: '16px', fontWeight: 700, color: 'var(--color-gray-600)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >+</button>
+          <button
+            onClick={() => saveStock(p)}
+            disabled={stockEdits[p._id] === undefined || savingStock === p._id}
+            style={{
+              padding: '4px 10px', fontSize: 'var(--text-xs)', fontWeight: 600,
+              borderRadius: 'var(--radius-md)', cursor: 'pointer',
+              border: '1px solid var(--color-gray-200)',
+              background: stockEdits[p._id] !== undefined ? 'var(--maroon)' : 'var(--color-gray-100)',
+              color: stockEdits[p._id] !== undefined ? 'white' : 'var(--color-gray-400)',
+              transition: 'all var(--transition-fast)',
+              opacity: savingStock === p._id ? 0.6 : 1,
+            }}
+          >
+            {savingStock === p._id ? '...' : 'Save'}
+          </button>
+        </div>
+      </td>
       <td>{p.salesCount}</td>
       <td>
         {!isVariant && (
@@ -686,17 +810,35 @@ export default function AdminProductsPage() {
         )}
       </td>
       <td>
-        <span className={styles.badge} style={{ background: p.isActive ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: p.isActive ? 'var(--color-success)' : 'var(--color-error)' }}>
+        <button
+          onClick={() => setToggleConfirm(p)}
+          className={styles.badge}
+          style={{
+            background: p.isActive ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+            color: p.isActive ? 'var(--color-success)' : 'var(--color-error)',
+            cursor: 'pointer', border: 'none',
+          }}
+        >
           {p.isActive ? 'Active' : 'Hidden'}
-        </span>
+        </button>
       </td>
       <td>
-        <button className={styles.editBtn} onClick={() => openEditModal(p)} title="Edit product" aria-label={`Edit ${p.title}`}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-          </svg>
-        </button>
+        <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+          <button className={styles.editBtn} onClick={() => openEditModal(p)} title="Edit product" aria-label={`Edit ${p.title}`}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          </button>
+          <button className={styles.editBtn} onClick={() => setDeleteConfirm(p)} title="Delete product" aria-label={`Delete ${p.title}`}
+            style={{ color: 'var(--color-error)' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+          </button>
+        </div>
       </td>
     </tr>
     );
@@ -725,6 +867,11 @@ export default function AdminProductsPage() {
             <option key={c} value={c}>{categoryDisplayNames[c] || c}</option>
           ))}
         </select>
+        <select className={styles.filterSelect} value={visibilityFilter} onChange={(e) => setVisibilityFilter(e.target.value as 'all' | 'active' | 'hidden')}>
+          <option value="all">All Products</option>
+          <option value="active">Active Only</option>
+          <option value="hidden">Hidden Only</option>
+        </select>
       </div>
 
       <div className={styles.sectionCard}>
@@ -742,6 +889,7 @@ export default function AdminProductsPage() {
                 <th>Category</th>
                 <th>Price</th>
                 <th>Stock</th>
+                <th>Update</th>
                 <th>Sales</th>
                 <th>Flags</th>
                 <th>Active</th>
@@ -1153,6 +1301,85 @@ export default function AdminProductsPage() {
               <button className={`${styles.actionBtn} ${styles.actionDanger}`} onClick={closeAddModal}>Cancel</button>
               <button className={`${styles.actionBtn} ${styles.actionPrimary}`} onClick={handleCreateProduct} disabled={addSaving}>
                 {addSaving ? 'Creating...' : 'Create Product'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Toggle Active Confirmation Modal */}
+      {toggleConfirm && (
+        <div className={styles.modalOverlay} onClick={() => setToggleConfirm(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>
+                {toggleConfirm.isActive ? 'Hide Product?' : 'Activate Product?'}
+              </h2>
+              <button className={styles.modalClose} onClick={() => setToggleConfirm(null)}>✕</button>
+            </div>
+            <div className={styles.modalBody} style={{ textAlign: 'center', gap: 'var(--space-3)' }}>
+              <div style={{ fontSize: '40px' }}>{toggleConfirm.isActive ? '🙈' : '✅'}</div>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)', lineHeight: 1.6 }}>
+                {toggleConfirm.isActive
+                  ? <>Are you sure you want to hide <strong>{toggleConfirm.title}</strong>? It will no longer appear on the store.</>
+                  : <>Activate <strong>{toggleConfirm.title}</strong>? It will be visible on the store again.</>
+                }
+              </p>
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                className={`${styles.actionBtn}`}
+                style={{ border: '1px solid var(--color-gray-300)', color: 'var(--color-gray-600)', background: 'transparent' }}
+                onClick={() => setToggleConfirm(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className={`${styles.actionBtn}`}
+                style={{
+                  background: toggleConfirm.isActive ? 'var(--color-error)' : 'var(--color-success)',
+                  color: 'white', border: 'none',
+                }}
+                onClick={confirmToggleActive}
+                disabled={togglingActive}
+              >
+                {togglingActive ? 'Updating...' : toggleConfirm.isActive ? 'Yes, Hide It' : 'Yes, Activate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Product Confirmation Modal */}
+      {deleteConfirm && (
+        <div className={styles.modalOverlay} onClick={() => setDeleteConfirm(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Delete Product?</h2>
+              <button className={styles.modalClose} onClick={() => setDeleteConfirm(null)}>✕</button>
+            </div>
+            <div className={styles.modalBody} style={{ textAlign: 'center', gap: 'var(--space-3)' }}>
+              <div style={{ fontSize: '40px' }}>🗑️</div>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)', lineHeight: 1.6 }}>
+                Permanently delete <strong>{deleteConfirm.title}</strong> ({deleteConfirm.packagingSize})?
+              </p>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-error)', fontWeight: 600 }}>
+                This will remove its images, reviews, and clear it from all carts & wishlists. This action cannot be undone.
+              </p>
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                className={`${styles.actionBtn}`}
+                style={{ border: '1px solid var(--color-gray-300)', color: 'var(--color-gray-600)', background: 'transparent' }}
+                onClick={() => setDeleteConfirm(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className={`${styles.actionBtn}`}
+                style={{ background: 'var(--color-error)', color: 'white', border: 'none' }}
+                onClick={confirmDelete}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Yes, Delete Forever'}
               </button>
             </div>
           </div>

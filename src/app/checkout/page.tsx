@@ -66,6 +66,7 @@ function CheckoutContent() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<string>('');
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState('');
   const [coupon, setCoupon] = useState<CouponInfo | null>(null);
   const [couponError, setCouponError] = useState('');
@@ -304,8 +305,12 @@ function CheckoutContent() {
     if (!validateForm()) return;
 
     try {
-      const res = await fetch('/api/addresses', {
-        method: 'POST',
+      const isEditing = !!editingAddressId;
+      const url = isEditing ? `/api/addresses/${editingAddressId}` : '/api/addresses';
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
@@ -322,8 +327,9 @@ function CheckoutContent() {
         return;
       }
 
-      toast('Address saved!', 'success');
+      toast(isEditing ? 'Address updated!' : 'Address saved!', 'success');
       setShowAddressForm(false);
+      setEditingAddressId(null);
       setForm({ label: 'Home', fullName: '', phone: '', addressLine1: '', addressLine2: '', city: '', state: '', pincode: '', isDefault: false });
       setFormErrors({});
       setPincodeValid(false);
@@ -332,6 +338,24 @@ function CheckoutContent() {
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Failed to save', 'error');
     }
+  };
+
+  const handleEditAddress = (addr: Address) => {
+    setEditingAddressId(addr._id);
+    setForm({
+      label: addr.label,
+      fullName: addr.fullName,
+      phone: addr.phone,
+      addressLine1: addr.addressLine1,
+      addressLine2: addr.addressLine2 || '',
+      city: addr.city,
+      state: addr.state,
+      pincode: addr.pincode,
+      isDefault: addr.isDefault,
+    });
+    setFormErrors({});
+    setPincodeValid(true);
+    setShowAddressForm(true);
   };
 
   // Apply coupon
@@ -501,6 +525,17 @@ function CheckoutContent() {
                   <div className={styles.addressLabel}>
                     {addr.label}
                     {addr.isDefault && <span className={styles.addressDefault}>Default</span>}
+                    <button
+                      className={styles.addressEditBtn}
+                      onClick={(e) => { e.stopPropagation(); handleEditAddress(addr); }}
+                      aria-label={`Edit ${addr.label} address`}
+                      title="Edit address"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
                   </div>
                   <div className={styles.addressName}>{addr.fullName}</div>
                   <div className={styles.addressText}>
@@ -510,7 +545,7 @@ function CheckoutContent() {
                   <div className={styles.addressPhone}>📱 {addr.phone}</div>
                 </div>
               ))}
-              <button className={styles.addAddressBtn} onClick={() => setShowAddressForm(!showAddressForm)}>
+              <button className={styles.addAddressBtn} onClick={() => { setEditingAddressId(null); setForm({ label: 'Home', fullName: '', phone: '', addressLine1: '', addressLine2: '', city: '', state: '', pincode: '', isDefault: false }); setFormErrors({}); setPincodeValid(false); setShowAddressForm(!showAddressForm); }}>
                 + Add New Address
               </button>
             </div>
@@ -604,8 +639,8 @@ function CheckoutContent() {
                   {formErrors.state && <span className={styles.formError}>{formErrors.state}</span>}
                 </div>
                 <div className={`${styles.formActions} ${styles.formFull}`}>
-                  <button className={styles.formCancel} onClick={() => { setShowAddressForm(false); setFormErrors({}); setPincodeValid(false); }}>Cancel</button>
-                  <button className={styles.formSave} onClick={handleSaveAddress}>Save Address</button>
+                  <button className={styles.formCancel} onClick={() => { setShowAddressForm(false); setEditingAddressId(null); setFormErrors({}); setPincodeValid(false); }}>Cancel</button>
+                  <button className={styles.formSave} onClick={handleSaveAddress}>{editingAddressId ? 'Update Address' : 'Save Address'}</button>
                 </div>
               </div>
             )}
