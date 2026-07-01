@@ -1,0 +1,98 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          # NEXT_PUBLIC_ vars are baked in at build time — must be here
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_RAZORPAY_KEY_ID: ${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
+          NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: ${{ secrets.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME }}
+          NEXT_PUBLIC_TRACK_PAGE_ENABLED: ${{ secrets.NEXT_PUBLIC_TRACK_PAGE_ENABLED }}
+          # Some non-public vars needed at build time too (e.g. auth, db for static generation)
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+
+      - name: Prepare standalone bundle
+        run: |
+          # Copy static assets into standalone folder
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
+
+      - name: Write runtime env file
+        run: |
+          # All runtime env vars written to .env.production
+          # Next.js standalone server picks this up automatically
+          {
+            echo "MONGODB_URI=${{ secrets.MONGODB_URI }}"
+            echo "AUTH_SECRET=${{ secrets.AUTH_SECRET }}"
+            echo "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}"
+            echo "ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}"
+            echo "ADMIN_PASSWORD_HASH=${{ secrets.ADMIN_PASSWORD_HASH }}"
+            echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}"
+            echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}"
+            echo "RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }}"
+            echo "RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }}"
+            echo "RAZORPAY_WEBHOOK_SECRET=${{ secrets.RAZORPAY_WEBHOOK_SECRET }}"
+            echo "NEXT_PUBLIC_RAZORPAY_KEY_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID }}"
+            echo "DELHIVERY_API_TOKEN=${{ secrets.DELHIVERY_API_TOKEN }}"
+            echo "DELHIVERY_BASE_URL=${{ secrets.DELHIVERY_BASE_URL }}"
+            echo "DELHIVERY_CLIENT_NAME=${{ secrets.DELHIVERY_CLIENT_NAME }}"
+            echo "DELHIVERY_BILLING_MODE=${{ secrets.DELHIVERY_BILLING_MODE }}"
+            echo "DELHIVERY_WAREHOUSE_NAME=${{ secrets.DELHIVERY_WAREHOUSE_NAME }}"
+            echo "DELHIVERY_WAREHOUSE_PINCODE=${{ secrets.DELHIVERY_WAREHOUSE_PINCODE }}"
+            echo "DELHIVERY_SELLER_GST_TIN=${{ secrets.DELHIVERY_SELLER_GST_TIN }}"
+            echo "DELHIVERY_WEBHOOK_SECRET=${{ secrets.DELHIVERY_WEBHOOK_SECRET }}"
+            echo "CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}"
+            echo "CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}"
+            echo "CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}"
+            echo "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=${{ secrets.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME }}"
+            echo "NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}"
+            echo "NEXT_PUBLIC_TRACK_PAGE_ENABLED=${{ secrets.NEXT_PUBLIC_TRACK_PAGE_ENABLED }}"
+            echo "CRON_SECRET=${{ secrets.CRON_SECRET }}"
+            echo "HEALTH_CHECK_SECRET=${{ secrets.HEALTH_CHECK_SECRET }}"
+            echo "SEED_ENABLED=${{ secrets.SEED_ENABLED }}"
+          } > .next/standalone/.env.production
+
+      - name: Deploy to DigitalOcean
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.DO_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.DO_HOST }}
+          REMOTE_USER: ${{ secrets.DO_USER }}
+          SOURCE: ".next/standalone/"
+          TARGET: "/var/www/snacks-app/"
+          ARGS: "-rlgoDzvc --delete"
+          EXCLUDE: "/.git/"
+
+      - name: Restart app with PM2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          script: |
+            cd /var/www/snacks-app
+            pm2 restart snacks-app || pm2 start server.js --name "snacks-app" --env production
+            pm2 save
