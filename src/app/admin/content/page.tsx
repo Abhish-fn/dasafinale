@@ -81,7 +81,7 @@ export default function AdminContentPage() {
       // 1. Upload image to Cloudinary
       const formData = new FormData();
       formData.append('file', file);
-      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+      const uploadRes = await fetch('/api/upload/banner', { method: 'POST', body: formData });
       if (!uploadRes.ok) throw new Error('Upload failed');
       const uploadData = await uploadRes.json();
 
