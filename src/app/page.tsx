@@ -64,9 +64,6 @@ export default async function HomePage() {
       {/* Ingredients Orbit */}
       <IngredientsOrbit />
 
-      {/* Featured Products */}
-      <FeaturedProducts />
-
       {/* Categories Section */}
       <section className={styles.categories}>
         <div className={styles.sectionContainer}>
@@ -96,6 +93,9 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Featured Products */}
+      <FeaturedProducts />
+
       {/* Instagram Reels */}
       <InstagramReels />
 
@@ -103,7 +103,7 @@ export default async function HomePage() {
       <section className={styles.ctaBanner}>
         <h2 className={styles.ctaBannerTitle}>Ready to taste tradition?</h2>
         <p className={styles.ctaBannerSubtitle}>
-          Free shipping on orders above ₹499. Start your wellness journey today.
+          Free shipping on orders above ₹1499. Start your wellness journey today.
         </p>
         <Link href="/products" className={styles.ctaBannerBtn}>
           Shop Now →
