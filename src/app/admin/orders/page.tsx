@@ -44,6 +44,7 @@ interface OrderDetail {
 }
 
 const statuses = ['', 'placed', 'confirmed', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'];
+const dropdownStatuses = ['placed', 'confirmed', 'packed', 'shipped', 'out_for_delivery', 'delivered'];
 
 const statusColors: Record<string, { bg: string; color: string }> = {
   placed: { bg: 'rgba(59,130,246,0.1)', color: '#3b82f6' },
@@ -117,6 +118,21 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const cancelOrder = async (orderId: string) => {
+    if (!confirm(`Are you sure you want to cancel order ${orderId}? This will restore stock and cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/orders/${orderId}/cancel`, { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to cancel order');
+      }
+      toast(`Order ${orderId} cancelled`, 'success');
+      fetchOrders();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to cancel order', 'error');
+    }
+  };
+
   const openOrderDetail = async (orderId: string) => {
     setDetailLoading(true);
     setDetailOrder(null);
@@ -186,6 +202,7 @@ export default function AdminOrdersPage() {
                 <th>Status</th>
                 <th>Shipping</th>
                 <th>Date</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -203,24 +220,33 @@ export default function AdminOrdersPage() {
                   <td>{order.items.reduce((s, i) => s + i.quantity, 0)}</td>
                   <td style={{ fontWeight: 600 }}>{formatPrice(order.pricing.total)}</td>
                   <td onClick={(e) => e.stopPropagation()}>
-                    <select
-                      value={order.status}
-                      onChange={(e) => updateStatus(order.orderId, e.target.value)}
-                      style={{
-                        fontSize: 'var(--text-xs)',
-                        fontWeight: 600,
-                        padding: '4px 8px',
-                        borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--color-gray-200)',
-                        background: 'var(--color-surface)',
-                        cursor: 'pointer',
-                        textTransform: 'capitalize',
-                      }}
-                    >
-                      {statuses.filter(Boolean).map((s) => (
-                        <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
-                      ))}
-                    </select>
+                    {order.status === 'cancelled' ? (
+                      <span style={{
+                        fontSize: 'var(--text-xs)', fontWeight: 700, padding: '4px 10px',
+                        borderRadius: 'var(--radius-full)', background: 'rgba(239,68,68,0.1)', color: '#ef4444',
+                      }}>
+                        Cancelled
+                      </span>
+                    ) : (
+                      <select
+                        value={order.status}
+                        onChange={(e) => updateStatus(order.orderId, e.target.value)}
+                        style={{
+                          fontSize: 'var(--text-xs)',
+                          fontWeight: 600,
+                          padding: '4px 8px',
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px solid var(--color-gray-200)',
+                          background: 'var(--color-surface)',
+                          cursor: 'pointer',
+                          textTransform: 'capitalize',
+                        }}
+                      >
+                        {dropdownStatuses.map((s) => (
+                          <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+                        ))}
+                      </select>
+                    )}
                   </td>
                   <td onClick={(e) => e.stopPropagation()}>
                     {order.tracking?.waybill && order.tracking.waybill !== 'PENDING' ? (
@@ -252,6 +278,24 @@ export default function AdminOrdersPage() {
                   </td>
                   <td style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)' }}>
                     {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                  </td>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    {order.status !== 'cancelled' && order.status !== 'delivered' && (
+                      <button
+                        onClick={() => cancelOrder(order.orderId)}
+                        style={{
+                          fontSize: '11px', fontWeight: 600, padding: '3px 10px',
+                          background: 'rgba(239,68,68,0.08)', color: '#ef4444',
+                          border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-sm)',
+                          cursor: 'pointer', whiteSpace: 'nowrap',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.color = 'white'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#ef4444'; }}
+                      >
+                        Cancel
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

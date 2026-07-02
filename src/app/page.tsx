@@ -3,6 +3,8 @@ import Image from 'next/image';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
 import IngredientsOrbit from '@/components/home/IngredientsOrbit';
 import InstagramReels from '@/components/home/InstagramReels';
+import dbConnect from '@/lib/db';
+import Banner from '@/models/Banner';
 import styles from './page.module.css';
 /* eslint-disable @next/next/no-img-element */
 
@@ -15,15 +17,32 @@ const categories = [
   { name: 'Millet Snacks',  slug: 'Traditional Millet Savoury Snacks',  image: '/images/categories/MilletSnacks.png' },
 ];
 
-export default function HomePage() {
+async function getActiveBanner() {
+  try {
+    await dbConnect();
+    const banner = await Banner.findOne({ isActive: true }).lean();
+    if (banner) {
+      return { imageUrl: banner.imageUrl as string, altText: (banner.altText as string) || 'DasaDinusulu Banner' };
+    }
+  } catch {
+    // fallback to static
+  }
+  return { imageUrl: '/images/hbanner.png', altText: 'DasaDinusulu – Clay Pot Roasted Trusted Goodness.' };
+}
+
+export const dynamic = 'force-dynamic';
+
+export default async function HomePage() {
+  const banner = await getActiveBanner();
+
   return (
     <>
       {/* Hero Banner */}
       <section className={styles.heroBanner}>
         <div className={styles.heroBannerImageWrap}>
           <Image
-            src="/images/hbanner.png"
-            alt="DasaDinusulu – Clay Pot Roasted Trusted Goodness. Wholesome, Crunchy, Delicious. 100% Natural, Trusted Quality, No Added Preservatives, Rich in Nutrients, Protein Packed."
+            src={banner.imageUrl}
+            alt={banner.altText}
             fill
             priority
             sizes="100vw"

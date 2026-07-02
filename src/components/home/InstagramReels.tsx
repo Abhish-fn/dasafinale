@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { reels, CLOUD_NAME } from './reelsConfig';
+import { reels as staticReels, CLOUD_NAME, type ReelConfig } from './reelsConfig';
 import styles from './InstagramReels.module.css';
 
 /**
@@ -19,7 +19,7 @@ function cloudinaryVideoUrl(publicId: string): string {
 function ReelCard({
   reel,
 }: {
-  reel: (typeof reels)[number];
+  reel: ReelConfig;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -48,7 +48,12 @@ function ReelCard({
   const videoSrc = cloudinaryVideoUrl(reel.cloudinaryId);
 
   return (
-    <div className={styles.reelCard}>
+    <a
+      href={reel.instagramUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={styles.reelCard}
+    >
       {/* Video background */}
       <video
         ref={videoRef}
@@ -76,33 +81,53 @@ function ReelCard({
         <span className={styles.reelTag}>{reel.tag}</span>
         <h3 className={styles.reelTitle}>{reel.title}</h3>
         <div className={styles.reelFooter}>
-          <a
-            href={reel.instagramUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.reelExplore}
-          >
+          <span className={styles.reelExplore}>
             Explore Now →
-          </a>
+          </span>
           {reel.shopUrl && (
-            <Link href={reel.shopUrl} className={styles.reelShopBtn}>
+            <Link
+              href={reel.shopUrl}
+              className={styles.reelShopBtn}
+              onClick={(e) => e.stopPropagation()}
+            >
               Shop
             </Link>
           )}
         </div>
       </div>
-    </div>
+    </a>
   );
 }
 
 /**
  * Instagram Reels section for the homepage.
- * Displays 3 reel videos from Cloudinary with autoplay/muted/loop.
- *
- * To configure reels, edit: src/components/home/reelsConfig.ts
+ * Fetches reels from DB, falls back to static config.
  */
 export default function InstagramReels() {
-  // Don't render if no reels configured or all are still placeholder
+  const [reels, setReels] = useState<ReelConfig[]>(staticReels);
+
+  useEffect(() => {
+    async function fetchReels() {
+      try {
+        const res = await fetch('/api/admin/reels');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.reels && data.reels.length > 0) {
+          setReels(data.reels.filter((r: { isActive: boolean }) => r.isActive).map((r: { cloudinaryId: string; title: string; tag: string; instagramUrl: string; shopUrl?: string }) => ({
+            cloudinaryId: r.cloudinaryId,
+            title: r.title,
+            tag: r.tag,
+            instagramUrl: r.instagramUrl,
+            shopUrl: r.shopUrl,
+          })));
+        }
+      } catch {
+        // Use static fallback
+      }
+    }
+    fetchReels();
+  }, []);
+
   if (reels.length === 0) return null;
 
   return (

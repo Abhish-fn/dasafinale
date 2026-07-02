@@ -6,6 +6,7 @@ import Coupon from '@/models/Coupon';
 import CouponUsage from '@/models/CouponUsage';
 import { auth } from '@/lib/auth';
 import { sendOrderCancelled } from '@/lib/email';
+import { getRazorpay } from '@/lib/razorpay';
 
 // POST /api/orders/[orderId]/cancel — Cancel an order (user or admin)
 export async function POST(
@@ -39,13 +40,37 @@ export async function POST(
       );
     }
 
+    // Initiate Razorpay refund if payment was captured
+    let refundId: string | undefined;
+    if (order.payment.status === 'paid' && order.payment.razorpayPaymentId) {
+      try {
+        const refund = await getRazorpay().payments.refund(order.payment.razorpayPaymentId, {
+          amount: order.pricing.total, // Full refund (amount in paisa)
+          speed: 'normal',
+          notes: {
+            orderId: order.orderId,
+            reason: `Cancelled by ${session.user.role === 'admin' ? 'admin' : 'customer'}`,
+          },
+        });
+        refundId = refund.id;
+        order.payment.status = 'refunded';
+        console.log(`[Refund] Initiated refund ${refund.id} for order ${order.orderId}`);
+      } catch (refundError) {
+        console.error(`[Refund] Failed for order ${order.orderId}:`, refundError);
+        return NextResponse.json(
+          { error: 'Failed to initiate refund. Please try again or contact support.' },
+          { status: 500 }
+        );
+      }
+    }
+
     // Update status
     order.status = 'cancelled';
     if (!order.tracking) order.tracking = { statusHistory: [] };
     order.tracking.statusHistory.push({
       status: 'cancelled',
       timestamp: new Date(),
-      note: `Cancelled by ${session.user.role === 'admin' ? 'admin' : 'customer'}`,
+      note: `Cancelled by ${session.user.role === 'admin' ? 'admin' : 'customer'}${refundId ? `. Refund ID: ${refundId}` : ''}`,
     });
     await order.save();
 
@@ -76,7 +101,12 @@ export async function POST(
       sendOrderCancelled(order.orderId, user.email).catch(console.error);
     }
 
-    return NextResponse.json({ success: true, message: 'Order cancelled' });
+    return NextResponse.json({
+      success: true,
+      message: 'Order cancelled',
+      refundInitiated: !!refundId,
+      refundId,
+    });
   } catch (error) {
     console.error('POST /api/orders/[orderId]/cancel error:', error);
     return NextResponse.json({ error: 'Failed to cancel order' }, { status: 500 });
