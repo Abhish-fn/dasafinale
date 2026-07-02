@@ -44,7 +44,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   if (status === 'loading' || session?.user?.role !== 'admin') {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <div style={{ width: 40, height: 40, border: '3px solid var(--color-gray-200)', borderTopColor: 'var(--maroon)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <div style={{ width: 40, height: 40, border: '3px solid var(--color-gray-200)', borderTopColor: 'var(--red)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       </div>
     );
   }

@@ -1,8 +1,8 @@
 .reviewsSection { margin-top: var(--space-12); }
-.reviewsTitle { font-family: var(--font-heading); font-size: var(--text-2xl); font-weight: 700; color: var(--maroon); margin-bottom: var(--space-6); }
+.reviewsTitle { font-family: var(--font-heading); font-size: var(--text-2xl); font-weight: 700; color: var(--red); margin-bottom: var(--space-6); }
 
 /* Stats */
-.reviewStats { display: flex; gap: var(--space-8); margin-bottom: var(--space-8); padding: var(--space-6); background: var(--beige-dark); border-radius: var(--radius-xl); }
+.reviewStats { display: flex; gap: var(--space-8); margin-bottom: var(--space-8); padding: var(--space-6); background: var(--cream-dark); border-radius: var(--radius-xl); }
 .ratingBig { text-align: center; }
 .ratingNumber { font-family: var(--font-heading); font-size: 3rem; font-weight: 800; color: var(--color-gray-900); line-height: 1; }
 .ratingStars { color: #f59e0b; font-size: var(--text-lg); margin-top: var(--space-1); }
@@ -15,24 +15,24 @@
 .distCount { width: 24px; font-size: var(--text-xs); color: var(--color-gray-500); }
 
 /* Review Form */
-.writeBtn { padding: var(--space-3) var(--space-6); font-weight: 600; color: white; background: var(--maroon); border-radius: var(--radius-lg); cursor: pointer; margin-bottom: var(--space-6); }
-.formCard { padding: var(--space-6); background: var(--beige-dark); border-radius: var(--radius-xl); margin-bottom: var(--space-6); }
+.writeBtn { padding: var(--space-3) var(--space-6); font-weight: 600; color: white; background: var(--red); border-radius: var(--radius-lg); cursor: pointer; margin-bottom: var(--space-6); }
+.formCard { padding: var(--space-6); background: var(--cream-dark); border-radius: var(--radius-xl); margin-bottom: var(--space-6); }
 .formTitle { font-family: var(--font-heading); font-weight: 600; margin-bottom: var(--space-4); }
 .starPicker { display: flex; gap: var(--space-1); margin-bottom: var(--space-4); }
 .starBtn { font-size: var(--text-2xl); cursor: pointer; transition: transform 0.1s ease; background: none; border: none; }
 .starBtn:hover { transform: scale(1.2); }
 .formInput { width: 100%; padding: var(--space-3); border: 1.5px solid var(--color-gray-300); border-radius: var(--radius-lg); font-size: var(--text-sm); margin-bottom: var(--space-3); font-family: inherit; }
-.formInput:focus { outline: none; border-color: var(--maroon); }
+.formInput:focus { outline: none; border-color: var(--red); }
 .formActions { display: flex; gap: var(--space-3); justify-content: flex-end; }
-.submitBtn { padding: var(--space-2) var(--space-6); font-weight: 600; color: white; background: var(--maroon); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); }
+.submitBtn { padding: var(--space-2) var(--space-6); font-weight: 600; color: white; background: var(--red); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); }
 .cancelBtn { padding: var(--space-2) var(--space-6); font-weight: 500; color: var(--color-gray-600); border: 1px solid var(--color-gray-300); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); }
 
 /* Review Cards */
 .reviewList { display: flex; flex-direction: column; gap: var(--space-4); }
 .reviewCard { padding: var(--space-5); border: 1px solid var(--color-gray-200); border-radius: var(--radius-xl); }
 .reviewHeader { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
-.reviewAvatar { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: rgba(107,30,43,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; }
-.reviewAvatarLetter { font-weight: 700; font-size: var(--text-sm); color: var(--maroon); }
+.reviewAvatar { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: rgba(198, 40, 40,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; }
+.reviewAvatarLetter { font-weight: 700; font-size: var(--text-sm); color: var(--red); }
 .reviewMeta { flex: 1; }
 .reviewName { font-weight: 600; font-size: var(--text-sm); color: var(--color-gray-900); }
 .reviewDate { font-size: var(--text-xs); color: var(--color-gray-500); }

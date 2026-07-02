@@ -13,7 +13,7 @@
   bottom: 0;
   width: 300px;
   max-width: 85vw;
-  background: var(--beige);
+  background: var(--cream);
   z-index: calc(var(--z-overlay) + 1);
   display: flex;
   flex-direction: column;
@@ -26,14 +26,14 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid rgba(107, 30, 43, 0.1);
+  border-bottom: 1px solid rgba(198, 40, 40, 0.1);
 }
 
 .brand {
   font-family: var(--font-heading);
   font-size: var(--text-lg);
   font-weight: 700;
-  color: var(--maroon);
+  color: var(--red);
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -46,13 +46,13 @@
   width: 36px;
   height: 36px;
   border-radius: var(--radius-full);
-  color: var(--maroon-light);
+  color: var(--red-light);
   transition: all var(--transition-fast);
 }
 
 .closeBtn:hover {
-  background: var(--beige-dark);
-  color: var(--maroon);
+  background: var(--cream-dark);
+  color: var(--red);
 }
 
 .links {
@@ -69,23 +69,23 @@
   font-size: var(--text-base);
   font-weight: 500;
   color: var(--color-gray-700);
-  border-bottom: 1px solid rgba(107, 30, 43, 0.05);
+  border-bottom: 1px solid rgba(198, 40, 40, 0.05);
   transition: all var(--transition-fast);
 }
 
 .link:hover {
-  background: var(--beige-dark);
-  color: var(--maroon);
+  background: var(--cream-dark);
+  color: var(--red);
 }
 
 .linkActive {
-  color: var(--maroon);
-  background: rgba(107, 30, 43, 0.05);
+  color: var(--red);
+  background: rgba(198, 40, 40, 0.05);
 }
 
 .footer {
   padding: var(--space-4) var(--space-5);
-  border-top: 1px solid rgba(107, 30, 43, 0.1);
+  border-top: 1px solid rgba(198, 40, 40, 0.1);
 }
 
 .userInfo {
@@ -106,8 +106,8 @@
   width: 40px;
   height: 40px;
   border-radius: var(--radius-full);
-  background: rgba(107, 30, 43, 0.1);
-  color: var(--maroon);
+  background: rgba(198, 40, 40, 0.1);
+  color: var(--red);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -136,15 +136,15 @@
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-gray-600);
-  border: 1px solid rgba(107, 30, 43, 0.15);
+  border: 1px solid rgba(198, 40, 40, 0.15);
   border-radius: var(--radius-lg);
   text-align: center;
   transition: all var(--transition-fast);
 }
 
 .signOutBtn:hover {
-  background: var(--beige-dark);
-  border-color: rgba(107, 30, 43, 0.25);
+  background: var(--cream-dark);
+  border-color: rgba(198, 40, 40, 0.25);
 }
 
 .signInBtnMobile {
@@ -153,7 +153,7 @@
   font-size: var(--text-sm);
   font-weight: 600;
   color: white;
-  background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
+  background: linear-gradient(135deg, var(--red), var(--red-dark));
   border-radius: var(--radius-lg);
   text-align: center;
   transition: all var(--transition-fast);

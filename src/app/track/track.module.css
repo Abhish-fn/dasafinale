@@ -24,7 +24,7 @@
 }
 
 .backLink:hover {
-  color: var(--maroon);
+  color: var(--red);
 }
 
 /* ---------- Hero Section ---------- */
@@ -140,7 +140,7 @@
 
 .trackLink {
   font-size: var(--text-sm);
-  color: var(--maroon);
+  color: var(--red);
   font-weight: 500;
   text-decoration: none;
   margin-left: auto;
@@ -296,15 +296,15 @@
 }
 
 .progressDotCompleted {
-  background: var(--maroon);
-  border-color: var(--maroon);
+  background: var(--red);
+  border-color: var(--red);
   color: white;
 }
 
 .progressDotActive {
   background: white;
-  border-color: var(--maroon);
-  color: var(--maroon);
+  border-color: var(--red);
+  color: var(--red);
   box-shadow: 0 0 0 4px rgba(128, 0, 0, 0.15);
 }
 
@@ -320,7 +320,7 @@
 }
 
 .progressLineCompleted {
-  background: var(--maroon);
+  background: var(--red);
 }
 
 .progressLabel {
@@ -391,7 +391,7 @@
 }
 
 .timelineDotActive {
-  background: var(--maroon);
+  background: var(--red);
   width: 14px;
   height: 14px;
   left: calc(-1 * var(--space-6) + 1px);
@@ -514,7 +514,7 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-6);
-  background: var(--maroon);
+  background: var(--red);
   color: white;
   font-weight: 600;
   font-size: var(--text-sm);

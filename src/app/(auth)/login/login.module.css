@@ -1,5 +1,5 @@
 .card {
-  background: var(--beige);
+  background: var(--cream);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
   padding: var(--space-10);
@@ -19,7 +19,7 @@
   font-family: var(--font-heading);
   font-size: var(--text-2xl);
   font-weight: 700;
-  color: var(--maroon);
+  color: var(--red);
   margin-bottom: var(--space-2);
 }
 
@@ -48,7 +48,7 @@
   font-size: var(--text-base);
   font-weight: 600;
   color: var(--color-gray-700);
-  background: var(--beige);
+  background: var(--cream);
   border: 1.5px solid var(--color-gray-300);
   border-radius: var(--radius-lg);
   cursor: pointer;
@@ -58,7 +58,7 @@
 .googleBtn:hover {
   border-color: var(--gold);
   box-shadow: var(--shadow-md);
-  background: var(--beige-dark);
+  background: var(--cream-dark);
 }
 
 .error {

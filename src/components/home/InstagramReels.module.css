@@ -2,7 +2,7 @@
 
 .reelsSection {
   padding: var(--space-20) 0;
-  background: var(--beige-light);
+  background: var(--cream-light);
   overflow: hidden;
 }
 
@@ -27,7 +27,7 @@
   font-family: var(--font-display);
   font-size: var(--text-4xl);
   font-weight: 900;
-  color: var(--maroon);
+  color: var(--red);
   margin-bottom: var(--space-3);
   line-height: var(--leading-tight);
 }
@@ -39,13 +39,13 @@
 }
 
 .reelsHandle a {
-  color: var(--maroon);
+  color: var(--red);
   font-weight: 600;
   transition: color var(--transition-fast);
 }
 
 .reelsHandle a:hover {
-  color: var(--maroon-light);
+  color: var(--red-light);
 }
 
 .reelsDivider {
@@ -171,7 +171,7 @@
   font-family: var(--font-heading);
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--maroon-dark);
+  color: var(--red-dark);
   background: #fff;
   border: none;
   border-radius: var(--radius-full);
@@ -231,9 +231,25 @@
   }
 
   .reelsGrid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-3);
-    padding: 0 var(--space-3);
+    display: flex;
+    gap: var(--space-4);
+    padding: 0 var(--space-4);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .reelsGrid::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+
+  .reelCard {
+    flex: 0 0 70vw;
+    max-width: 280px;
+    scroll-snap-align: center;
+    aspect-ratio: 9 / 16;
   }
 
   .reelContent {
@@ -241,16 +257,12 @@
   }
 
   .reelTag {
-    font-size: 8px;
+    font-size: 9px;
   }
 
   .reelTitle {
     font-size: var(--text-sm);
     margin-bottom: var(--space-2);
-  }
-
-  .reelExplore {
-    display: none;
   }
 
   .reelShopBtn {
@@ -260,18 +272,9 @@
 }
 
 @media (max-width: 480px) {
-  .reelsGrid {
-    grid-template-columns: 1fr;
-    max-width: 320px;
-    margin: 0 auto;
-  }
-
   .reelCard {
-    aspect-ratio: 9 / 14;
-  }
-
-  .reelExplore {
-    display: inline-block;
+    flex: 0 0 65vw;
+    max-width: 240px;
   }
 }
 

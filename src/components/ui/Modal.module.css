@@ -36,7 +36,7 @@
   font-family: var(--font-heading);
   font-size: var(--text-xl);
   font-weight: 600;
-  color: var(--maroon);
+  color: var(--red);
 }
 
 .closeBtn {
@@ -51,7 +51,7 @@
 }
 
 .closeBtn:hover {
-  background: var(--beige-dark);
+  background: var(--cream-dark);
   color: var(--color-gray-700);
 }
 

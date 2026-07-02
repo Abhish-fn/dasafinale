@@ -19,7 +19,7 @@ export default function NotFound() {
           fontFamily: 'var(--font-heading)',
           fontSize: 'var(--text-6xl)',
           fontWeight: 800,
-          color: 'var(--maroon)',
+          color: 'var(--red)',
           marginBottom: 'var(--space-4)',
           lineHeight: 1,
         }}
@@ -31,7 +31,7 @@ export default function NotFound() {
           fontFamily: 'var(--font-heading)',
           fontSize: 'var(--text-2xl)',
           fontWeight: 600,
-          color: 'var(--maroon)',
+          color: 'var(--red)',
           marginBottom: 'var(--space-3)',
         }}
       >
@@ -58,7 +58,7 @@ export default function NotFound() {
           fontWeight: 600,
           fontSize: 'var(--text-base)',
           color: 'white',
-          background: 'linear-gradient(135deg, var(--maroon), var(--maroon-dark))',
+          background: 'linear-gradient(135deg, var(--red), var(--red-dark))',
           borderRadius: 'var(--radius-full)',
           transition: 'all 200ms ease',
         }}

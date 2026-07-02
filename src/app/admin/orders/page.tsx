@@ -48,7 +48,7 @@ const dropdownStatuses = ['placed', 'confirmed', 'packed', 'shipped', 'out_for_d
 
 const statusColors: Record<string, { bg: string; color: string }> = {
   placed: { bg: 'rgba(59,130,246,0.1)', color: '#3b82f6' },
-  confirmed: { bg: 'rgba(107,30,43,0.1)', color: 'var(--maroon)' },
+  confirmed: { bg: 'rgba(198, 40, 40,0.1)', color: 'var(--red)' },
   packed: { bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
   shipped: { bg: 'rgba(139,92,246,0.1)', color: '#8b5cf6' },
   out_for_delivery: { bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
@@ -266,7 +266,7 @@ export default function AdminOrdersPage() {
                       <button
                         onClick={() => createShipment(order.orderId)}
                         style={{
-                          fontSize: 'var(--text-xs)', padding: '2px 8px', background: 'var(--maroon)',
+                          fontSize: 'var(--text-xs)', padding: '2px 8px', background: 'var(--red)',
                           color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
                         }}
                       >
@@ -321,7 +321,7 @@ export default function AdminOrdersPage() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()} style={{ maxWidth: 640 }}>
             {detailLoading && !detailOrder ? (
               <div style={{ padding: 'var(--space-8)', textAlign: 'center' }}>
-                <div style={{ width: 36, height: 36, border: '3px solid var(--color-gray-200)', borderTopColor: 'var(--maroon)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto var(--space-4)' }} />
+                <div style={{ width: 36, height: 36, border: '3px solid var(--color-gray-200)', borderTopColor: 'var(--red)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto var(--space-4)' }} />
                 <p style={{ color: 'var(--color-gray-500)', fontSize: 'var(--text-sm)' }}>Loading order details…</p>
               </div>
             ) : detailOrder && (
@@ -344,7 +344,7 @@ export default function AdminOrdersPage() {
                 <div className={styles.modalBody}>
                   {/* Items */}
                   <div>
-                    <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)', marginBottom: 'var(--space-3)' }}>Items</h3>
+                    <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--red)', marginBottom: 'var(--space-3)' }}>Items</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                       {detailOrder.items.map((item, i) => (
                         <div key={i} style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
@@ -369,7 +369,7 @@ export default function AdminOrdersPage() {
                   </div>
 
                   {/* Pricing */}
-                  <div style={{ padding: 'var(--space-4)', background: 'rgba(107,30,43,0.03)', borderRadius: 'var(--radius-lg)' }}>
+                  <div style={{ padding: 'var(--space-4)', background: 'rgba(198, 40, 40,0.03)', borderRadius: 'var(--radius-lg)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)', marginBottom: 'var(--space-1)' }}>
                       <span>Subtotal</span><span>{formatPrice(detailOrder.pricing.subtotal)}</span>
                     </div>
@@ -393,7 +393,7 @@ export default function AdminOrdersPage() {
                       <span>Shipping</span>
                       <span>{detailOrder.pricing.shippingFee === 0 ? 'FREE' : formatPrice(detailOrder.pricing.shippingFee)}</span>
                     </div>
-                    <div style={{ borderTop: '1px solid var(--color-gray-200)', paddingTop: 'var(--space-2)', display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--maroon)' }}>
+                    <div style={{ borderTop: '1px solid var(--color-gray-200)', paddingTop: 'var(--space-2)', display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--red)' }}>
                       <span>Total</span><span>{formatPrice(detailOrder.pricing.total)}</span>
                     </div>
                   </div>
@@ -401,14 +401,14 @@ export default function AdminOrdersPage() {
                   {/* Customer & Address */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
                     <div>
-                      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)', marginBottom: 'var(--space-2)' }}>Customer</h3>
+                      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--red)', marginBottom: 'var(--space-2)' }}>Customer</h3>
                       <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-700)' }}>
                         <div style={{ fontWeight: 600 }}>{detailOrder.shippingAddress.fullName}</div>
                         <div>📱 {detailOrder.shippingAddress.phone}</div>
                       </div>
                     </div>
                     <div>
-                      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)', marginBottom: 'var(--space-2)' }}>Delivery Address</h3>
+                      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--red)', marginBottom: 'var(--space-2)' }}>Delivery Address</h3>
                       <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)', lineHeight: 1.5 }}>
                         {detailOrder.shippingAddress.addressLine1}
                         {detailOrder.shippingAddress.addressLine2 ? `, ${detailOrder.shippingAddress.addressLine2}` : ''}<br />
@@ -420,7 +420,7 @@ export default function AdminOrdersPage() {
                   {/* Payment & Tracking */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
                     <div>
-                      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)', marginBottom: 'var(--space-2)' }}>Payment</h3>
+                      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--red)', marginBottom: 'var(--space-2)' }}>Payment</h3>
                       <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)' }}>
                         <div>
                           Status: <strong style={{ color: detailOrder.payment.status === 'paid' ? '#22c55e' : 'var(--color-gray-900)' }}>{detailOrder.payment.status}</strong>
@@ -431,7 +431,7 @@ export default function AdminOrdersPage() {
                     </div>
                     {detailOrder.tracking?.waybill && detailOrder.tracking.waybill !== 'PENDING' && (
                       <div>
-                        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)', marginBottom: 'var(--space-2)' }}>Tracking</h3>
+                        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--red)', marginBottom: 'var(--space-2)' }}>Tracking</h3>
                         <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)' }}>
                           <div>📦 {detailOrder.tracking.carrier || 'Delhivery'}</div>
                           <div style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)' }}>AWB: {detailOrder.tracking.waybill}</div>
@@ -439,7 +439,7 @@ export default function AdminOrdersPage() {
                             <div>📅 ETA: {new Date(detailOrder.tracking.estimatedDelivery).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>
                           )}
                           {detailOrder.tracking.trackingUrl && (
-                            <a href={detailOrder.tracking.trackingUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 'var(--text-xs)', color: 'var(--maroon)', fontWeight: 600 }}>
+                            <a href={detailOrder.tracking.trackingUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 'var(--text-xs)', color: 'var(--red)', fontWeight: 600 }}>
                               Track on Delhivery →
                             </a>
                           )}
@@ -450,7 +450,7 @@ export default function AdminOrdersPage() {
 
                   {detailOrder.notes && (
                     <div>
-                      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)', marginBottom: 'var(--space-2)' }}>Order Notes</h3>
+                      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--red)', marginBottom: 'var(--space-2)' }}>Order Notes</h3>
                       <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)', fontStyle: 'italic' }}>{detailOrder.notes}</p>
                     </div>
                   )}
@@ -464,7 +464,7 @@ export default function AdminOrdersPage() {
                 <div className={styles.modalFooter}>
                   <Link
                     href={`/orders/${detailOrder.orderId}`}
-                    style={{ fontSize: 'var(--text-sm)', color: 'var(--maroon)', fontWeight: 600, textDecoration: 'none' }}
+                    style={{ fontSize: 'var(--text-sm)', color: 'var(--red)', fontWeight: 600, textDecoration: 'none' }}
                   >
                     Open Full Page →
                   </Link>

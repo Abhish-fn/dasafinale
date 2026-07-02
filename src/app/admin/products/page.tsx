@@ -767,7 +767,7 @@ export default function AdminProductsPage() {
             style={{
               width: 56, height: 28, textAlign: 'center', border: '1px solid var(--color-gray-300)',
               borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', fontWeight: 600,
-              background: stockEdits[p._id] !== undefined ? 'rgba(107,30,43,0.04)' : 'white',
+              background: stockEdits[p._id] !== undefined ? 'rgba(198, 40, 40,0.04)' : 'white',
             }}
           />
           <button
@@ -785,7 +785,7 @@ export default function AdminProductsPage() {
               padding: '4px 10px', fontSize: 'var(--text-xs)', fontWeight: 600,
               borderRadius: 'var(--radius-md)', cursor: 'pointer',
               border: '1px solid var(--color-gray-200)',
-              background: stockEdits[p._id] !== undefined ? 'var(--maroon)' : 'var(--color-gray-100)',
+              background: stockEdits[p._id] !== undefined ? 'var(--red)' : 'var(--color-gray-100)',
               color: stockEdits[p._id] !== undefined ? 'white' : 'var(--color-gray-400)',
               transition: 'all var(--transition-fast)',
               opacity: savingStock === p._id ? 0.6 : 1,
@@ -800,7 +800,7 @@ export default function AdminProductsPage() {
         {!isVariant && (
           <div style={{ display: 'flex', gap: 'var(--space-1)', flexWrap: 'wrap' }}>
             <span className={styles.badge} style={{ background: p.isMustTry ? 'rgba(232,132,90,0.15)' : 'var(--color-gray-100)', color: p.isMustTry ? 'var(--color-accent-500)' : 'var(--color-gray-400)' }}>🔥</span>
-            <span className={styles.badge} style={{ background: p.isBestSeller ? 'rgba(107,30,43,0.15)' : 'var(--color-gray-100)', color: p.isBestSeller ? 'var(--color-primary-600)' : 'var(--color-gray-400)' }}>⭐</span>
+            <span className={styles.badge} style={{ background: p.isBestSeller ? 'rgba(198, 40, 40,0.15)' : 'var(--color-gray-100)', color: p.isBestSeller ? 'var(--color-primary-600)' : 'var(--color-gray-400)' }}>⭐</span>
           </div>
         )}
       </td>
@@ -946,7 +946,7 @@ export default function AdminProductsPage() {
                 borderRadius: 'var(--radius-xl)',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
-                  <label className={styles.formLabel} style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--maroon)' }}>
+                  <label className={styles.formLabel} style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--red)' }}>
                     📦 Pack Size Variants
                   </label>
                   {editingProduct?.variantGroup && (
@@ -965,15 +965,15 @@ export default function AdminProductsPage() {
                     {variantEdits.map((ve, idx) => (
                       <div key={ve._id} style={{
                         padding: 'var(--space-3)',
-                        background: ve.isNew ? 'rgba(107,30,43,0.03)' : (ve._id === editingProduct._id ? 'rgba(107,30,43,0.06)' : 'white'),
-                        border: ve.isNew ? '1.5px dashed var(--maroon)' : (ve._id === editingProduct._id ? '1px solid rgba(107,30,43,0.15)' : '1px solid var(--color-gray-200)'),
+                        background: ve.isNew ? 'rgba(198, 40, 40,0.03)' : (ve._id === editingProduct._id ? 'rgba(198, 40, 40,0.06)' : 'white'),
+                        border: ve.isNew ? '1.5px dashed var(--red)' : (ve._id === editingProduct._id ? '1px solid rgba(198, 40, 40,0.15)' : '1px solid var(--color-gray-200)'),
                         borderRadius: 'var(--radius-lg)',
                         position: 'relative',
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
                           <span style={{
                             fontSize: '10px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.05em',
-                            color: ve.isNew ? 'var(--maroon)' : (ve._id === editingProduct._id ? 'var(--maroon)' : 'var(--color-gray-500)'),
+                            color: ve.isNew ? 'var(--red)' : (ve._id === editingProduct._id ? 'var(--red)' : 'var(--color-gray-500)'),
                           }}>
                             {ve.isNew ? '✨ New Variant' : (ve._id === editingProduct._id ? 'Primary' : 'Variant')}
                           </span>
@@ -1050,7 +1050,7 @@ export default function AdminProductsPage() {
                     fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
                     transition: 'all 0.15s ease',
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--maroon)'; e.currentTarget.style.color = 'var(--maroon)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--red)'; e.currentTarget.style.color = 'var(--red)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-gray-300)'; e.currentTarget.style.color = 'var(--color-gray-500)'; }}
                 >
                   + Add New Pack Size Variant

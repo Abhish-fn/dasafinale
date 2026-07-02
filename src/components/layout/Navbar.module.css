@@ -2,9 +2,9 @@
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  background: rgba(247, 241, 227, 0.85);
+  background: rgba(255, 248, 225, 0.9);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(107, 30, 43, 0.1);
+  border-bottom: 1px solid rgba(198, 40, 40, 0.1);
   transition: box-shadow var(--transition-base);
 }
 
@@ -26,7 +26,7 @@
   font-family: var(--font-heading);
   font-size: var(--text-xl);
   font-weight: 700;
-  color: var(--maroon);
+  color: var(--red);
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -38,7 +38,7 @@
   font-size: var(--text-sm);
   font-weight: 900;
   color: var(--gold);
-  background: var(--maroon);
+  background: var(--red);
   padding: 3px 6px;
   border-radius: var(--radius-sm);
   letter-spacing: 1px;
@@ -76,7 +76,7 @@
 
 .navLink:hover,
 .navLinkActive {
-  color: var(--maroon);
+  color: var(--red);
 }
 
 .navLink::after {
@@ -115,15 +115,15 @@
 }
 
 .iconBtn:hover {
-  background: var(--beige-dark);
-  color: var(--maroon);
+  background: var(--cream-dark);
+  color: var(--red);
 }
 
 .cartBadge {
   position: absolute;
   top: 2px;
   right: 2px;
-  background: var(--maroon);
+  background: var(--red);
   color: white;
   font-size: 10px;
   font-weight: 700;
@@ -147,7 +147,7 @@
 }
 
 .userBtn:hover {
-  background: var(--beige-dark);
+  background: var(--cream-dark);
 }
 
 .avatar {
@@ -161,8 +161,8 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-full);
-  background: rgba(107, 30, 43, 0.1);
-  color: var(--maroon);
+  background: rgba(198, 40, 40, 0.1);
+  color: var(--red);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -208,8 +208,8 @@
 }
 
 .dropdownItem:hover {
-  background: var(--beige);
-  color: var(--maroon);
+  background: var(--cream);
+  color: var(--red);
 }
 
 .dropdownDivider {
@@ -226,13 +226,13 @@
   font-size: var(--text-sm);
   font-weight: 600;
   color: white;
-  background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
+  background: linear-gradient(135deg, var(--red), var(--red-dark));
   border-radius: var(--radius-full);
   transition: all var(--transition-base);
 }
 
 .signInBtn:hover {
-  background: linear-gradient(135deg, var(--maroon-light), var(--maroon));
+  background: linear-gradient(135deg, var(--red-light), var(--red));
   box-shadow: var(--shadow-md);
 }
 
@@ -260,9 +260,9 @@
     width: 40px;
     height: 40px;
     border-radius: var(--radius-md);
-    color: var(--maroon);
+    color: var(--red);
   }
-  .hamburger:hover { background: var(--beige-dark); }
+  .hamburger:hover { background: var(--cream-dark); }
 }
 
 @media (min-width: 768px) {

@@ -33,8 +33,8 @@
 .select:hover { border-color: var(--color-gray-400); }
 
 .select:focus {
-  border-color: var(--maroon);
-  box-shadow: 0 0 0 3px rgba(107, 30, 43, 0.15);
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.15);
 }
 
 .selectError { border-color: var(--color-error); }

@@ -197,7 +197,7 @@ export default function AdminContentPage() {
 
       {/* ===== BANNER SECTION ===== */}
       <div className={styles.sectionCard} style={{ marginBottom: 'var(--space-8)' }}>
-        <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: 'var(--space-4)', color: 'var(--maroon)' }}>
+        <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: 'var(--space-4)', color: 'var(--red)' }}>
           🖼️ Hero Banner
         </h2>
         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-500)', marginBottom: 'var(--space-4)' }}>
@@ -206,7 +206,7 @@ export default function AdminContentPage() {
 
         {/* Current Active Banner */}
         {activeBanner && (
-          <div style={{ marginBottom: 'var(--space-4)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '2px solid rgba(107,30,43,0.2)', position: 'relative', aspectRatio: '16/5' }}>
+          <div style={{ marginBottom: 'var(--space-4)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '2px solid rgba(198, 40, 40,0.2)', position: 'relative', aspectRatio: '16/5' }}>
             <Image src={activeBanner.imageUrl} alt={activeBanner.altText} fill sizes="100vw" style={{ objectFit: 'cover' }} />
             <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(34,197,94,0.9)', color: 'white', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-sm)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Active
@@ -272,7 +272,7 @@ export default function AdminContentPage() {
 
       {/* ===== REELS SECTION ===== */}
       <div className={styles.sectionCard}>
-        <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: 'var(--space-4)', color: 'var(--maroon)' }}>
+        <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: 'var(--space-4)', color: 'var(--red)' }}>
           🎬 Instagram Reels
         </h2>
         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-500)', marginBottom: 'var(--space-4)' }}>
@@ -282,12 +282,12 @@ export default function AdminContentPage() {
         {/* Add New Reel Form */}
         <div style={{
           padding: 'var(--space-5)',
-          background: 'rgba(107,30,43,0.03)',
-          border: '1.5px dashed rgba(107,30,43,0.2)',
+          background: 'rgba(198, 40, 40,0.03)',
+          border: '1.5px dashed rgba(198, 40, 40,0.2)',
           borderRadius: 'var(--radius-xl)',
           marginBottom: 'var(--space-6)',
         }}>
-          <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--maroon)', marginBottom: 'var(--space-4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--red)', marginBottom: 'var(--space-4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             ✨ Add New Reel
           </h3>
 
@@ -333,7 +333,7 @@ export default function AdminContentPage() {
                   color: 'var(--color-gray-500)',
                   transition: 'all 0.15s ease',
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--maroon)'; e.currentTarget.style.color = 'var(--maroon)'; }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--red)'; e.currentTarget.style.color = 'var(--red)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-gray-300)'; e.currentTarget.style.color = 'var(--color-gray-500)'; }}
               >
                 {reelUploading ? (
@@ -436,7 +436,7 @@ export default function AdminContentPage() {
                 </div>
                 {/* Info */}
                 <div style={{ padding: 'var(--space-3)' }}>
-                  <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--maroon)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--red)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
                     {reel.tag}
                   </div>
                   <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, lineHeight: 1.3, marginBottom: 'var(--space-2)' }}>

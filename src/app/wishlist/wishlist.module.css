@@ -1,5 +1,5 @@
 .container { max-width: var(--max-width); margin: 0 auto; padding: var(--space-8) var(--space-4); }
-.pageTitle { font-family: var(--font-heading); font-size: var(--text-3xl); font-weight: 700; color: var(--maroon); margin-bottom: var(--space-8); }
+.pageTitle { font-family: var(--font-heading); font-size: var(--text-3xl); font-weight: 700; color: var(--red); margin-bottom: var(--space-8); }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-6); }
 
@@ -8,7 +8,7 @@
 .emptyIcon { font-size: 5rem; margin-bottom: var(--space-4); }
 .emptyTitle { font-family: var(--font-heading); font-size: var(--text-xl); font-weight: 600; color: var(--color-gray-700); margin-bottom: var(--space-2); }
 .emptyDesc { font-size: var(--text-sm); color: var(--color-gray-500); margin-bottom: var(--space-6); }
-.shopBtn { display: inline-flex; padding: var(--space-3) var(--space-8); font-weight: 600; color: white; background: var(--maroon); border-radius: var(--radius-full); }
+.shopBtn { display: inline-flex; padding: var(--space-3) var(--space-8); font-weight: 600; color: white; background: var(--red); border-radius: var(--radius-full); }
 .loginNote { font-size: var(--text-sm); color: var(--color-gray-500); margin-top: var(--space-2); }
 .loginNote a { color: var(--gold); font-weight: 600; }
 

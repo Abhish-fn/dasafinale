@@ -27,8 +27,8 @@ export default function AboutPage() {
     <div style={{ maxWidth: 'var(--max-width)', margin: '0 auto', padding: 'var(--space-12) var(--space-4)' }}>
       {/* Hero */}
       <div style={{ textAlign: 'center', marginBottom: 'var(--space-16)' }}>
-        <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--maroon)', background: 'rgba(107,30,43,0.08)', padding: '4px 16px', borderRadius: 'var(--radius-full)' }}>Our Story</span>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, color: 'var(--maroon)', marginTop: 'var(--space-4)', lineHeight: 1.1 }}>
+        <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--red)', background: 'rgba(198, 40, 40,0.08)', padding: '4px 16px', borderRadius: 'var(--radius-full)' }}>Our Story</span>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, color: 'var(--red)', marginTop: 'var(--space-4)', lineHeight: 1.1 }}>
           <span className="brand-subtle">www.</span>DasaDinusulu<span className="brand-subtle">.com</span><br />
           <span style={{ color: 'var(--gold)' }}>Ten Traditional Treasures.</span>
         </h1>
@@ -41,12 +41,12 @@ export default function AboutPage() {
 
       {/* Values Grid */}
       <div style={{ marginBottom: 'var(--space-16)' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 900, textAlign: 'center', marginBottom: 'var(--space-8)', color: 'var(--maroon)' }}>What We Stand For</h2>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 900, textAlign: 'center', marginBottom: 'var(--space-8)', color: 'var(--red)' }}>What We Stand For</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--space-6)' }}>
           {values.map((v) => (
-            <div key={v.title} style={{ padding: 'var(--space-6)', background: 'var(--beige-dark)', borderRadius: 'var(--radius-xl)', transition: 'transform 0.2s ease', border: '1px solid rgba(107,30,43,0.06)' }}>
+            <div key={v.title} style={{ padding: 'var(--space-6)', background: 'var(--cream-dark)', borderRadius: 'var(--radius-xl)', transition: 'transform 0.2s ease', border: '1px solid rgba(198, 40, 40,0.06)' }}>
               <div style={{ fontSize: '2.5rem', marginBottom: 'var(--space-3)' }}>{v.emoji}</div>
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--maroon)', marginBottom: 'var(--space-2)' }}>{v.title}</h3>
+              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--red)', marginBottom: 'var(--space-2)' }}>{v.title}</h3>
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)', lineHeight: 'var(--leading-relaxed)' }}>{v.desc}</p>
             </div>
           ))}
@@ -55,12 +55,12 @@ export default function AboutPage() {
 
       {/* Timeline */}
       <div style={{ marginBottom: 'var(--space-16)' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 900, textAlign: 'center', marginBottom: 'var(--space-8)', color: 'var(--maroon)' }}>Our Journey</h2>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 900, textAlign: 'center', marginBottom: 'var(--space-8)', color: 'var(--red)' }}>Our Journey</h2>
         <div style={{ maxWidth: 600, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
           {milestones.map((m, i) => (
             <div key={i} style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'flex-start' }}>
-              <div style={{ width: 60, flexShrink: 0, fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: 'var(--text-lg)', color: 'var(--maroon)' }}>{m.year}</div>
-              <div style={{ flex: 1, padding: 'var(--space-4)', background: 'var(--beige-dark)', borderRadius: 'var(--radius-lg)', fontSize: 'var(--text-sm)', color: 'var(--color-gray-700)', borderLeft: '3px solid var(--gold)' }}>
+              <div style={{ width: 60, flexShrink: 0, fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: 'var(--text-lg)', color: 'var(--red)' }}>{m.year}</div>
+              <div style={{ flex: 1, padding: 'var(--space-4)', background: 'var(--cream-dark)', borderRadius: 'var(--radius-lg)', fontSize: 'var(--text-sm)', color: 'var(--color-gray-700)', borderLeft: '3px solid var(--gold)' }}>
                 {m.event}
               </div>
             </div>
@@ -69,10 +69,10 @@ export default function AboutPage() {
       </div>
 
       {/* CTA */}
-      <div style={{ textAlign: 'center', padding: 'var(--space-12)', background: 'linear-gradient(135deg, rgba(107,30,43,0.05), rgba(212,160,23,0.08))', borderRadius: 'var(--radius-xl)' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 900, marginBottom: 'var(--space-3)', color: 'var(--maroon)' }}>Ready to taste tradition?</h2>
+      <div style={{ textAlign: 'center', padding: 'var(--space-12)', background: 'linear-gradient(135deg, rgba(198, 40, 40,0.05), rgba(255, 179, 0,0.08))', borderRadius: 'var(--radius-xl)' }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 900, marginBottom: 'var(--space-3)', color: 'var(--red)' }}>Ready to taste tradition?</h2>
         <p style={{ color: 'var(--color-gray-600)', marginBottom: 'var(--space-6)' }}>Explore our collection and taste the difference.</p>
-        <Link href="/products" style={{ display: 'inline-block', padding: 'var(--space-3) var(--space-8)', fontWeight: 700, color: 'var(--maroon-dark)', background: 'linear-gradient(135deg, var(--gold-light), var(--gold))', borderRadius: 'var(--radius-full)', fontSize: 'var(--text-base)' }}>
+        <Link href="/products" style={{ display: 'inline-block', padding: 'var(--space-3) var(--space-8)', fontWeight: 700, color: 'var(--red-dark)', background: 'linear-gradient(135deg, var(--gold-light), var(--gold))', borderRadius: 'var(--radius-full)', fontSize: 'var(--text-base)' }}>
           Shop Now →
         </Link>
       </div>

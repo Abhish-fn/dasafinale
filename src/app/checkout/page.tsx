@@ -736,7 +736,7 @@ function CheckoutContent() {
                               }}
                               style={{
                                 padding: '2px 8px', fontSize: '10px', fontWeight: 600, border: 'none',
-                                background: v._id === item.product._id ? 'var(--maroon)' : 'transparent',
+                                background: v._id === item.product._id ? 'var(--red)' : 'transparent',
                                 color: v._id === item.product._id ? 'white' : 'var(--color-gray-600)',
                                 cursor: v._id === item.product._id ? 'default' : 'pointer',
                                 opacity: v.stock === 0 && v._id !== item.product._id ? 0.35 : 1,

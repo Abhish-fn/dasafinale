@@ -43,35 +43,35 @@
 
 /* Variants */
 .primary {
-  background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
+  background: linear-gradient(135deg, var(--red), var(--red-dark));
   color: white;
-  box-shadow: 0 2px 8px rgba(107, 30, 43, 0.3);
+  box-shadow: 0 2px 8px rgba(198, 40, 40, 0.3);
 }
 .primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--maroon-light), var(--maroon));
-  box-shadow: 0 4px 16px rgba(107, 30, 43, 0.4);
+  background: linear-gradient(135deg, var(--red-light), var(--red));
+  box-shadow: 0 4px 16px rgba(198, 40, 40, 0.4);
   transform: translateY(-1px);
 }
 
 .secondary {
   background: linear-gradient(135deg, var(--gold), var(--gold-light));
-  color: var(--maroon-dark);
-  box-shadow: 0 2px 8px rgba(212, 160, 23, 0.3);
+  color: var(--red-dark);
+  box-shadow: 0 2px 8px rgba(255, 179, 0, 0.3);
 }
 .secondary:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--gold-light), var(--gold));
-  box-shadow: 0 4px 16px rgba(212, 160, 23, 0.4);
+  box-shadow: 0 4px 16px rgba(255, 179, 0, 0.4);
   transform: translateY(-1px);
 }
 
 .outline {
-  border-color: var(--maroon);
-  color: var(--maroon);
+  border-color: var(--red);
+  color: var(--red);
   background: transparent;
 }
 .outline:hover:not(:disabled) {
-  background: rgba(107, 30, 43, 0.05);
-  border-color: var(--maroon);
+  background: rgba(198, 40, 40, 0.05);
+  border-color: var(--red);
 }
 
 .ghost {
@@ -79,7 +79,7 @@
   background: transparent;
 }
 .ghost:hover:not(:disabled) {
-  background: var(--beige-dark);
+  background: var(--cream-dark);
 }
 
 .danger {
@@ -109,7 +109,7 @@
 .outline .spinner,
 .ghost .spinner {
   border-color: rgba(0, 0, 0, 0.15);
-  border-top-color: var(--maroon);
+  border-top-color: var(--red);
 }
 
 @keyframes spin {
