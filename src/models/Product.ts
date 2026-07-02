@@ -17,7 +17,6 @@ export interface IProduct extends Document {
   price: number;
   compareAtPrice?: number;
   category: string;
-  foodType: string;
   tags: string[];
   packagingSize: string;
   parentProduct?: string;
@@ -44,7 +43,6 @@ const CATEGORIES = [
   'Premium Healthy Sweets',
 ] as const;
 
-const FOOD_TYPES = ['Seeds', 'Superfood', 'Biscuits', 'Snacks', 'Chips', 'Sweets', 'Protein'] as const;
 
 const nutritionInfoSchema = new Schema(
   {
@@ -67,7 +65,6 @@ const productSchema = new Schema<IProduct>(
     price: { type: Number, required: true, min: 0 },
     compareAtPrice: { type: Number, min: 0 },
     category: { type: String, required: true, enum: CATEGORIES },
-    foodType: { type: String, required: true, enum: FOOD_TYPES },
     tags: { type: [String], default: [] },
     packagingSize: { type: String, required: true },
     parentProduct: { type: String },
@@ -86,7 +83,6 @@ const productSchema = new Schema<IProduct>(
 );
 
 productSchema.index({ category: 1 });
-productSchema.index({ foodType: 1 });
 productSchema.index({ tags: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ variantGroup: 1 });

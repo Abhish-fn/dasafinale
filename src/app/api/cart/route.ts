@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       : { sessionId };
 
     const cart = await Cart.findOne(query)
-      .populate('items.productId', 'title slug images price compareAtPrice packagingSize stock isActive category foodType variantGroup')
+      .populate('items.productId', 'title slug images price compareAtPrice packagingSize stock isActive category variantGroup')
       .lean();
 
     if (!cart) {

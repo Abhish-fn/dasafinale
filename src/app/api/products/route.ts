@@ -22,8 +22,6 @@ export async function GET(req: NextRequest) {
     const category = searchParams.get('category');
     if (category) filter.category = category;
 
-    const foodType = searchParams.get('foodType');
-    if (foodType) filter.foodType = foodType;
 
     const tags = searchParams.get('tags');
     if (tags) filter.tags = { $in: tags.split(',').map((t) => t.trim()) };
@@ -116,9 +114,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Get available filter values (for sidebar)
-    const [categories, foodTypes, allTags] = await Promise.all([
+    const [categories, allTags] = await Promise.all([
       Product.distinct('category', { isActive: true }),
-      Product.distinct('foodType', { isActive: true }),
       Product.distinct('tags', { isActive: true }),
     ]);
 
@@ -174,7 +171,6 @@ export async function GET(req: NextRequest) {
       },
       filters: {
         categories,
-        foodTypes,
         tags: allTags,
       },
     });

@@ -17,7 +17,6 @@ interface ProductData {
   stock: number;
   isMustTry?: boolean;
   isBestSeller?: boolean;
-  foodType: string;
 }
 
 interface FeaturedData {

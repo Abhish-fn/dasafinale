@@ -10,7 +10,6 @@ export type ProductCategory =
   | 'Healthy Chips & Crisps'
   | 'Premium Healthy Sweets';
 
-export type FoodType = 'Seeds' | 'Superfood' | 'Biscuits' | 'Snacks' | 'Chips' | 'Sweets' | 'Protein';
 
 export type OrderStatus =
   | 'placed'
@@ -59,7 +58,6 @@ export interface IProduct {
   price: number;
   compareAtPrice?: number;
   category: ProductCategory;
-  foodType: FoodType;
   tags: string[];
   packagingSize: string;
   parentProduct?: string;

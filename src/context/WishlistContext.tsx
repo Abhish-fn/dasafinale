@@ -14,7 +14,6 @@ interface WishlistProduct {
   packagingSize: string;
   stock: number;
   category: string;
-  foodType: string;
   isMustTry?: boolean;
   isBestSeller?: boolean;
   tags?: string[];

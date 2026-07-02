@@ -21,14 +21,13 @@ interface ProductData {
   isMustTry?: boolean;
   isBestSeller?: boolean;
   tags?: string[];
-  foodType: string;
   variantCount?: number;
 }
 
 interface FetchResult {
   products: ProductData[];
   pagination: { page: number; limit: number; total: number; totalPages: number };
-  filters: { categories: string[]; foodTypes: string[]; tags: string[] };
+  filters: { categories: string[]; tags: string[] };
 }
 
 export default function ProductsContent() {
@@ -75,7 +74,6 @@ export default function ProductsContent() {
 
   const activeFilterCount = [
     searchParams.get('category'),
-    searchParams.get('foodType'),
     searchParams.get('tags'),
   ].filter(Boolean).length;
 
@@ -85,7 +83,6 @@ export default function ProductsContent() {
       {data?.filters && (
         <ProductFilters
           categories={data.filters.categories}
-          foodTypes={data.filters.foodTypes}
           tags={data.filters.tags}
         />
       )}
@@ -126,7 +123,6 @@ export default function ProductsContent() {
                 {data?.filters && (
                   <ProductFilters
                     categories={data.filters.categories}
-                    foodTypes={data.filters.foodTypes}
                     tags={data.filters.tags}
                   />
                 )}

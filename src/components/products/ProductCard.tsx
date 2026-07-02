@@ -21,10 +21,18 @@ interface ProductCardProps {
     isMustTry?: boolean;
     isBestSeller?: boolean;
     tags?: string[];
-    foodType: string;
     variantCount?: number;
   };
 }
+
+const categoryDisplayNames: Record<string, string> = {
+  'Clay Pot Roasted Seeds & Superfoods': 'Roasted Seeds',
+  'Healthy Chips & Crisps': 'Healthy Chips',
+  'Palm Jaggery Millet Biscuits': 'Jaggery Biscuits',
+  'Premium Healthy Sweets': 'Healthy Sweets',
+  'Protein & Energy Snacks': 'Protein Snacks',
+  'Traditional Millet Savoury Snacks': 'Millet Snacks',
+};
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { data: session } = useSession();
@@ -84,7 +92,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       </div>
 
       <div className={styles.body}>
-        <div className={styles.category}>{product.foodType}</div>
+        <div className={styles.category}>{categoryDisplayNames[product.category] || product.category}</div>
         <h3 className={styles.title}>{product.title}</h3>
         <div className={styles.size}>{product.packagingSize}</div>
 

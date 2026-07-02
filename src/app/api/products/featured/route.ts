@@ -11,17 +11,17 @@ export async function GET() {
       Product.find({ isActive: true, isMustTry: true })
         .sort({ salesCount: -1 })
         .limit(4)
-        .select('title slug images price compareAtPrice category packagingSize isMustTry isBestSeller stock foodType')
+        .select('title slug images price compareAtPrice category packagingSize isMustTry isBestSeller stock')
         .lean(),
       Product.find({ isActive: true, isBestSeller: true })
         .sort({ salesCount: -1 })
         .limit(4)
-        .select('title slug images price compareAtPrice category packagingSize isMustTry isBestSeller stock foodType')
+        .select('title slug images price compareAtPrice category packagingSize isMustTry isBestSeller stock')
         .lean(),
       Product.find({ isActive: true })
         .sort({ createdAt: -1 })
         .limit(4)
-        .select('title slug images price compareAtPrice category packagingSize isMustTry isBestSeller stock foodType')
+        .select('title slug images price compareAtPrice category packagingSize isMustTry isBestSeller stock')
         .lean(),
     ]);
 

@@ -32,7 +32,6 @@ interface ProductDetail {
   price: number;
   compareAtPrice?: number;
   category: string;
-  foodType: string;
   tags: string[];
   packagingSize: string;
   stock: number;

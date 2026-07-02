@@ -15,16 +15,14 @@ const categoryDisplayNames: Record<string, string> = {
 
 interface ProductFiltersProps {
   categories: string[];
-  foodTypes: string[];
   tags: string[];
 }
 
-export default function ProductFilters({ categories, foodTypes, tags }: ProductFiltersProps) {
+export default function ProductFilters({ categories, tags }: ProductFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const activeCategory = searchParams.get('category') || '';
-  const activeFoodType = searchParams.get('foodType') || '';
   const activeTags = searchParams.get('tags')?.split(',') || [];
 
   function updateFilter(key: string, value: string) {
@@ -57,7 +55,7 @@ export default function ProductFilters({ categories, foodTypes, tags }: ProductF
     router.push('/products');
   }
 
-  const hasFilters = activeCategory || activeFoodType || activeTags.length > 0;
+  const hasFilters = activeCategory || activeTags.length > 0;
 
   return (
     <aside className={styles.filters}>
@@ -81,22 +79,6 @@ export default function ProductFilters({ categories, foodTypes, tags }: ProductF
               onClick={() => updateFilter('category', activeCategory === cat ? '' : cat)}
             >
               {categoryDisplayNames[cat] || cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Food Type */}
-      <div className={styles.section}>
-        <h4 className={styles.sectionTitle}>Type</h4>
-        <div className={styles.options}>
-          {foodTypes.map((ft) => (
-            <button
-              key={ft}
-              className={cn(styles.option, activeFoodType === ft && styles.active)}
-              onClick={() => updateFilter('foodType', activeFoodType === ft ? '' : ft)}
-            >
-              {ft}
             </button>
           ))}
         </div>

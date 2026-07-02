@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
 import IngredientsOrbit from '@/components/home/IngredientsOrbit';
+import InstagramReels from '@/components/home/InstagramReels';
 import styles from './page.module.css';
 /* eslint-disable @next/next/no-img-element */
 
@@ -75,6 +76,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Instagram Reels */}
+      <InstagramReels />
 
       {/* CTA Banner */}
       <section className={styles.ctaBanner}>

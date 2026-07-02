@@ -22,7 +22,6 @@ interface Product {
   price: number;
   compareAtPrice?: number;
   category: string;
-  foodType: string;
   tags: string[];
   stock: number;
   isActive: boolean;
@@ -64,7 +63,6 @@ const categoryDisplayNames: Record<string, string> = {
   'Traditional Millet Savoury Snacks': 'Millet Snacks',
 };
 
-const foodTypes = ['Seeds', 'Superfood', 'Biscuits', 'Snacks', 'Chips', 'Sweets', 'Protein'];
 
 // Compress image on client side before uploading to avoid server body size limits
 function compressImage(file: File, maxSize = 1200, quality = 0.85): Promise<File> {
@@ -165,7 +163,7 @@ export default function AdminProductsPage() {
   // Add product modal state
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState<Partial<Product>>({
-    title: '', description: '', category: categories[1], foodType: foodTypes[0],
+    title: '', description: '', category: categories[1],
     packagingSize: '', weight: 0, price: 0, compareAtPrice: undefined,
     stock: 0, images: [], tags: [],
     isMustTry: false, isBestSeller: false, isSpecialItem: false,
@@ -327,7 +325,6 @@ export default function AdminProductsPage() {
       price: product.price / 100,
       compareAtPrice: product.compareAtPrice ? product.compareAtPrice / 100 : undefined,
       category: product.category,
-      foodType: product.foodType,
       packagingSize: product.packagingSize,
       variantGroup: product.variantGroup || '',
       weight: product.weight,
@@ -361,7 +358,7 @@ export default function AdminProductsPage() {
       const updates: Record<string, unknown> = {};
       const fields: (keyof Product)[] = [
         'title', 'description', 'category',
-        'foodType', 'images', 'tags',
+        'images', 'tags',
         'isMustTry', 'isBestSeller', 'isSpecialItem', 'nutritionInfo',
       ];
 
@@ -471,7 +468,6 @@ export default function AdminProductsPage() {
             title: editingProduct.title,
             description: editingProduct.description,
             category: editingProduct.category,
-            foodType: editingProduct.foodType,
             tags: editingProduct.tags || [],
             images: sharedImages,
             nutritionInfo: editingProduct.nutritionInfo,
@@ -606,7 +602,7 @@ export default function AdminProductsPage() {
   // --- Add Product Modal Logic ---
   const openAddModal = () => {
     setAddForm({
-      title: '', description: '', category: categories[1], foodType: foodTypes[0],
+      title: '', description: '', category: categories[1],
       packagingSize: '', weight: 0, price: 0, compareAtPrice: undefined,
       stock: 0, images: [], tags: [],
       isMustTry: false, isBestSeller: false, isSpecialItem: false,
@@ -680,7 +676,6 @@ export default function AdminProductsPage() {
         title: addForm.title,
         description: addForm.description,
         category: addForm.category,
-        foodType: addForm.foodType,
         packagingSize: addForm.packagingSize,
         weight: addForm.weight,
         price: Math.round((addForm.price as number) * 100),
@@ -935,20 +930,12 @@ export default function AdminProductsPage() {
                 <textarea className={styles.formTextarea} rows={3} value={editForm.description || ''} onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} />
               </div>
 
-              {/* Category & Food Type */}
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Category</label>
-                  <select className={styles.formSelect} value={editForm.category || ''} onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value }))}>
-                    {categories.filter(Boolean).map((c) => (<option key={c} value={c}>{categoryDisplayNames[c] || c}</option>))}
-                  </select>
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Food Type</label>
-                  <select className={styles.formSelect} value={editForm.foodType || ''} onChange={(e) => setEditForm((f) => ({ ...f, foodType: e.target.value }))}>
-                    {foodTypes.map((ft) => (<option key={ft} value={ft}>{ft}</option>))}
-                  </select>
-                </div>
+              {/* Category */}
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Category</label>
+                <select className={styles.formSelect} value={editForm.category || ''} onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value }))}>
+                  {categories.filter(Boolean).map((c) => (<option key={c} value={c}>{categoryDisplayNames[c] || c}</option>))}
+                </select>
               </div>
 
               {/* ===== VARIANTS SECTION ===== */}
@@ -1179,20 +1166,12 @@ export default function AdminProductsPage() {
                 <textarea className={styles.formTextarea} rows={3} value={addForm.description || ''} onChange={(e) => setAddForm((f) => ({ ...f, description: e.target.value }))} placeholder="Product description (min 10 characters)" />
               </div>
 
-              {/* Category & Food Type */}
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Category *</label>
-                  <select className={styles.formSelect} value={addForm.category || ''} onChange={(e) => setAddForm((f) => ({ ...f, category: e.target.value }))}>
-                    {categories.filter(Boolean).map((c) => (<option key={c} value={c}>{categoryDisplayNames[c] || c}</option>))}
-                  </select>
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Food Type *</label>
-                  <select className={styles.formSelect} value={addForm.foodType || ''} onChange={(e) => setAddForm((f) => ({ ...f, foodType: e.target.value }))}>
-                    {foodTypes.map((ft) => (<option key={ft} value={ft}>{ft}</option>))}
-                  </select>
-                </div>
+              {/* Category */}
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Category *</label>
+                <select className={styles.formSelect} value={addForm.category || ''} onChange={(e) => setAddForm((f) => ({ ...f, category: e.target.value }))}>
+                  {categories.filter(Boolean).map((c) => (<option key={c} value={c}>{categoryDisplayNames[c] || c}</option>))}
+                </select>
               </div>
 
               {/* Packaging, Weight, Stock */}

@@ -14,7 +14,7 @@ export async function GET() {
 
     await dbConnect();
     const wishlist = await Wishlist.findOne({ userId: session.user.id })
-      .populate('products.productId', 'title slug images price compareAtPrice packagingSize stock isActive category foodType isMustTry isBestSeller tags')
+      .populate('products.productId', 'title slug images price compareAtPrice packagingSize stock isActive category isMustTry isBestSeller tags')
       .lean();
 
     if (!wishlist) {

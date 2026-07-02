@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
     if (!signature || !webhookSecret) {
+      console.warn('[Razorpay Webhook] Missing signature or webhook secret');
       return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
     }
 
@@ -26,10 +27,15 @@ export async function POST(req: NextRequest) {
       .digest('hex');
 
     if (expectedSignature !== signature) {
+      console.warn('[Razorpay Webhook] Invalid signature');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
     const event = JSON.parse(rawBody);
+    console.log(`[Razorpay Webhook] Received event: ${event.event}`, {
+      paymentId: event.payload?.payment?.entity?.id,
+      orderId: event.payload?.payment?.entity?.order_id,
+    });
     await dbConnect();
 
     switch (event.event) {
