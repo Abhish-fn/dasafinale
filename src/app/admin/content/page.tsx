@@ -34,7 +34,7 @@ export default function AdminContentPage() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [bannerLoading, setBannerLoading] = useState(true);
   const [bannerUploading, setBannerUploading] = useState(false);
-  const [bannerAltText, setBannerAltText] = useState('');
+
   const bannerFileRef = useRef<HTMLInputElement>(null);
 
   // --- Reel State ---
@@ -89,12 +89,12 @@ export default function AdminContentPage() {
       const res = await fetch('/api/admin/banners', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: uploadData.url, altText: bannerAltText || 'DasaDinusulu Banner' }),
+        body: JSON.stringify({ imageUrl: uploadData.url }),
       });
       if (!res.ok) throw new Error('Failed to save banner');
 
       toast('Banner updated!', 'success');
-      setBannerAltText('');
+
       fetchBanners();
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Failed to upload banner', 'error');
@@ -214,37 +214,52 @@ export default function AdminContentPage() {
           </div>
         )}
 
-        {/* Upload Form */}
-        <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div className={styles.formGroup} style={{ flex: '1 1 200px' }}>
-            <label className={styles.formLabel}>Alt Text (optional)</label>
-            <input
-              className={styles.formInput}
-              value={bannerAltText}
-              onChange={(e) => setBannerAltText(e.target.value)}
-              placeholder="Description of the banner"
-            />
-          </div>
-          <button
-            className={`${styles.actionBtn} ${styles.actionPrimary}`}
-            style={{ padding: 'var(--space-3) var(--space-5)', whiteSpace: 'nowrap' }}
-            onClick={() => bannerFileRef.current?.click()}
-            disabled={bannerUploading}
-          >
-            {bannerUploading ? (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                <span className={styles.spinner} /> Uploading...
-              </span>
-            ) : '📤 Upload New Banner'}
-          </button>
-          <input
-            ref={bannerFileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/avif"
-            style={{ display: 'none' }}
-            onChange={handleBannerUpload}
-          />
-        </div>
+        {/* Upload Button */}
+        <button
+          onClick={() => bannerFileRef.current?.click()}
+          disabled={bannerUploading}
+          style={{
+            width: '100%',
+            padding: 'var(--space-6)',
+            border: '2px dashed var(--color-gray-300)',
+            borderRadius: 'var(--radius-lg)',
+            background: 'transparent',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 'var(--space-2)',
+            color: 'var(--color-gray-500)',
+            transition: 'all 0.15s ease',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--maroon)'; e.currentTarget.style.color = 'var(--maroon)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-gray-300)'; e.currentTarget.style.color = 'var(--color-gray-500)'; }}
+        >
+          {bannerUploading ? (
+            <>
+              <span className={styles.spinner} />
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>Uploading banner...</span>
+              <span style={{ fontSize: 'var(--text-xs)' }}>Please wait</span>
+            </>
+          ) : (
+            <>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>Upload New Banner</span>
+              <span style={{ fontSize: 'var(--text-xs)' }}>JPEG, PNG, WebP — Max 5MB</span>
+            </>
+          )}
+        </button>
+        <input
+          ref={bannerFileRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/avif"
+          style={{ display: 'none' }}
+          onChange={handleBannerUpload}
+        />
 
         {/* Banner History */}
         {banners.length > 1 && (
