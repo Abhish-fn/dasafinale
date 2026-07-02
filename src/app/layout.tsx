@@ -19,13 +19,13 @@ export const metadata: Metadata = {
     siteName: 'www.DasaDinusulu.com',
     locale: 'en_IN',
     type: 'website',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'DasaDinusulu — Traditional Andhra Snacks' }],
+    images: [{ url: '/og-image.jpg', width: 1200, height: 630, type: 'image/jpeg', alt: 'DasaDinusulu — Traditional Andhra Snacks' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'www.DasaDinusulu.com — A Product by VDF',
     description: 'Ten traditional treasures from Andhra Pradesh.',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
   robots: { index: true, follow: true },
   icons: {
