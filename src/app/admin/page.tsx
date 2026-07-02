@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { formatPrice } from '@/lib/utils';
 import styles from './admin.module.css';
 

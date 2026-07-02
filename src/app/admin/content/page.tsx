@@ -156,7 +156,7 @@ export default function AdminContentPage() {
           title: reelTitle,
           tag: reelTag || 'LIVE COMMERCE',
           instagramUrl: reelInstagramUrl,
-          shopUrl: reelShopUrl || undefined,
+          shopUrl: reelShopUrl ? `/products/${reelShopUrl.trim()}` : undefined,
         }),
       });
       if (!res.ok) throw new Error('Failed to save reel');
@@ -211,6 +211,22 @@ export default function AdminContentPage() {
             <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(34,197,94,0.9)', color: 'white', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-sm)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Active
             </div>
+            <button
+              onClick={() => handleDeleteBanner(activeBanner._id)}
+              style={{
+                position: 'absolute', top: 8, right: 8,
+                background: 'rgba(239,68,68,0.9)', color: 'white', border: 'none',
+                borderRadius: 'var(--radius-full)', width: 28, height: 28,
+                cursor: 'pointer', fontSize: '14px', fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#dc2626'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.9)'; }}
+              title="Delete active banner (will revert to default)"
+            >
+              ×
+            </button>
           </div>
         )}
 
@@ -395,8 +411,8 @@ export default function AdminContentPage() {
               <input className={styles.formInput} value={reelInstagramUrl} onChange={(e) => setReelInstagramUrl(e.target.value)} placeholder="https://www.instagram.com/reel/..." />
             </div>
             <div className={styles.formGroup} style={{ flex: '1 1 200px' }}>
-              <label className={styles.formLabel}>Product Page URL</label>
-              <input className={styles.formInput} value={reelShopUrl} onChange={(e) => setReelShopUrl(e.target.value)} placeholder="/products/CPS001 or /products" />
+              <label className={styles.formLabel}>Product ID</label>
+              <input className={styles.formInput} value={reelShopUrl} onChange={(e) => setReelShopUrl(e.target.value)} placeholder="e.g. CPS001" />
             </div>
           </div>
 

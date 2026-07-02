@@ -3,6 +3,9 @@ import { auth } from '@/lib/auth';
 import cloudinary from '@/lib/cloudinary';
 import { rateLimit } from '@/lib/rate-limit';
 
+// Increase serverless function timeout for large video uploads
+export const maxDuration = 120;
+
 // POST /api/upload/video — Upload video to Cloudinary (Admin only)
 export async function POST(req: NextRequest) {
   try {
@@ -34,7 +37,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'File too large. Max 100MB.' }, { status: 400 });
     }
 
-    // Convert to buffer and upload
+    // Convert to buffer and upload to Cloudinary
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
@@ -44,13 +47,11 @@ export async function POST(req: NextRequest) {
           {
             folder: 'reels',
             resource_type: 'video',
-            transformation: [
-              { quality: 'auto', format: 'mp4' },
-            ],
+            eager_async: true,
           },
-          (error, result) => {
+          (error, uploadResult) => {
             if (error) reject(error);
-            else resolve(result as { secure_url: string; public_id: string });
+            else resolve(uploadResult as { secure_url: string; public_id: string });
           }
         )
         .end(buffer);
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('POST /api/upload/video error:', error);
-    return NextResponse.json({ error: 'Video upload failed' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Video upload failed';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

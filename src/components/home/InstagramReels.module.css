@@ -167,10 +167,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 18px;
+  padding: 10px 24px;
   font-family: var(--font-heading);
-  font-size: var(--text-sm);
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: 700;
   color: var(--red-dark);
   background: #fff;
   border: none;
@@ -179,6 +179,7 @@
   transition: all var(--transition-fast);
   text-decoration: none;
   white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .reelShopBtn:hover {
@@ -266,8 +267,9 @@
   }
 
   .reelShopBtn {
-    font-size: var(--text-xs);
-    padding: 4px 12px;
+    font-size: var(--text-sm);
+    padding: 8px 18px;
+    font-weight: 700;
   }
 }
 
