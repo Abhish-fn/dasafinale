@@ -82,7 +82,12 @@ export default function AdminContentPage() {
       const formData = new FormData();
       formData.append('file', file);
       const uploadRes = await fetch('/api/upload/banner', { method: 'POST', body: formData });
-      if (!uploadRes.ok) throw new Error('Upload failed');
+      if (!uploadRes.ok) {
+        if (uploadRes.status === 413) throw new Error('File too large for server. Ask your developer to increase nginx client_max_body_size.');
+        let errMsg = 'Upload failed';
+        try { const d = await uploadRes.json(); errMsg = d.error || errMsg; } catch { /* HTML response */ }
+        throw new Error(errMsg);
+      }
       const uploadData = await uploadRes.json();
 
       // 2. Save banner to DB
@@ -126,8 +131,10 @@ export default function AdminContentPage() {
       formData.append('file', file);
       const res = await fetch('/api/upload/video', { method: 'POST', body: formData });
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Upload failed');
+        if (res.status === 413) throw new Error('Video too large for server. Ask your developer to increase nginx client_max_body_size.');
+        let errMsg = 'Upload failed';
+        try { const d = await res.json(); errMsg = d.error || errMsg; } catch { /* HTML response from nginx */ }
+        throw new Error(errMsg);
       }
       const data = await res.json();
       setReelCloudinaryId(data.publicId);
