@@ -408,7 +408,7 @@ export async function createAndAssignShipment(orderId: string): Promise<void> {
       'tracking.waybill': { $exists: false },
     },
     { $set: { 'tracking.waybill': 'PENDING' } },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   if (!order) {

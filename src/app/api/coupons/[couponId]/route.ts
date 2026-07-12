@@ -17,7 +17,7 @@ export async function PUT(
     await dbConnect();
     const { couponId } = await ctx.params;
     const body = sanitize(await req.json());
-    const coupon = await Coupon.findByIdAndUpdate(couponId, { $set: body }, { new: true });
+    const coupon = await Coupon.findByIdAndUpdate(couponId, { $set: body }, { returnDocument: 'after' });
     if (!coupon) return NextResponse.json({ error: 'Coupon not found' }, { status: 404 });
     return NextResponse.json({ coupon });
   } catch (error) {

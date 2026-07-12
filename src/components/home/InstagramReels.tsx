@@ -104,13 +104,16 @@ function ReelCard({
  * Fetches reels from DB, falls back to static config.
  */
 export default function InstagramReels() {
-  const [reels, setReels] = useState<ReelConfig[]>(staticReels);
+  const [reels, setReels] = useState<ReelConfig[]>([]);
 
   useEffect(() => {
     async function fetchReels() {
       try {
         const res = await fetch('/api/admin/reels');
-        if (!res.ok) return;
+        if (!res.ok) {
+          setReels(staticReels);
+          return;
+        }
         const data = await res.json();
         if (data.reels && data.reels.length > 0) {
           setReels(data.reels.filter((r: { isActive: boolean }) => r.isActive).map((r: { cloudinaryId: string; title: string; tag: string; instagramUrl: string; shopUrl?: string }) => ({
@@ -120,9 +123,11 @@ export default function InstagramReels() {
             instagramUrl: r.instagramUrl,
             shopUrl: r.shopUrl,
           })));
+        } else {
+          setReels(staticReels);
         }
       } catch {
-        // Use static fallback
+        setReels(staticReels);
       }
     }
     fetchReels();

@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
             },
           },
         },
-        { new: true }
+        { returnDocument: 'after' }
       );
 
       if (!order) {

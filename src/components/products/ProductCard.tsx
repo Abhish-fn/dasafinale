@@ -51,21 +51,23 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [adding, setAdding] = useState(false);
   const router = useRouter();
 
-  // Use the cheapest variant for display (sorted by price)
+  // Sort variants by price ascending
   const sortedVariants = [...(product.variants || [])].sort((a, b) => a.price - b.price);
-  const displayVariant = sortedVariants[0];
+  const cheapestInStock = sortedVariants.find(v => v.stock > 0) || sortedVariants[0];
 
-  if (!displayVariant) return null;
+  // Selected variant state — defaults to cheapest in-stock
+  const [selectedVariantId, setSelectedVariantId] = useState(cheapestInStock?._id);
+  const selectedVariant = sortedVariants.find(v => v._id === selectedVariantId) || sortedVariants[0];
 
-  const discount = displayVariant.compareAtPrice
-    ? Math.round(((displayVariant.compareAtPrice - displayVariant.price) / displayVariant.compareAtPrice) * 100)
+  if (!selectedVariant) return null;
+
+  const discount = selectedVariant.compareAtPrice
+    ? Math.round(((selectedVariant.compareAtPrice - selectedVariant.price) / selectedVariant.compareAtPrice) * 100)
     : 0;
 
   // Product is out of stock only if ALL variants are out of stock
   const allOutOfStock = sortedVariants.every(v => v.stock === 0);
-
-  // Find the cheapest in-stock variant for add-to-cart
-  const cartVariant = sortedVariants.find(v => v.stock > 0) || displayVariant;
+  const selectedOutOfStock = selectedVariant.stock === 0;
 
   const categoryEmojis: Record<string, string> = {
     'Clay Pot Roasted Seeds & Superfoods': '🫘',
@@ -76,14 +78,20 @@ export default function ProductCard({ product }: ProductCardProps) {
     'Premium Healthy Sweets': '🍬',
   };
 
+  const handleVariantSelect = (e: React.MouseEvent, variantId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedVariantId(variantId);
+  };
+
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (allOutOfStock || adding) return;
+    if (selectedOutOfStock || adding) return;
     setAdding(true);
     try {
-      await addToCart(product._id, cartVariant._id);
-      toast('Added to cart!', 'success');
+      await addToCart(product._id, selectedVariant._id);
+      toast(`${selectedVariant.packagingSize} added to cart!`, 'success');
     } catch {
       toast('Failed to add to cart', 'error');
     } finally {
@@ -94,8 +102,8 @@ export default function ProductCard({ product }: ProductCardProps) {
   const handleBuyNow = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (allOutOfStock) return;
-    router.push(`/checkout?buyNow=true&productId=${product.productId}&quantity=1`);
+    if (selectedOutOfStock) return;
+    router.push(`/checkout?buyNow=true&productId=${product.productId}&variantId=${selectedVariant._id}&quantity=1`);
   };
 
   return (
@@ -140,13 +148,30 @@ export default function ProductCard({ product }: ProductCardProps) {
       <div className={styles.body}>
         <div className={styles.category}>{categoryDisplayNames[product.category] || product.category}</div>
         <h3 className={styles.title}>{product.title}</h3>
-        <div className={styles.size}>{displayVariant.packagingSize}</div>
+        {/* Variant selector pills */}
+        {sortedVariants.length > 1 ? (
+          <div className={styles.variantSelector}>
+            {sortedVariants.map((v) => (
+              <button
+                key={v._id}
+                className={`${styles.variantPill} ${v._id === selectedVariantId ? styles.variantPillActive : ''} ${v.stock === 0 ? styles.variantPillOos : ''}`}
+                onClick={(e) => handleVariantSelect(e, v._id)}
+                disabled={v.stock === 0}
+                title={v.stock === 0 ? 'Out of stock' : `${v.packagingSize} — ${formatPrice(v.price)}`}
+              >
+                {v.packagingSize}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.size}>{selectedVariant.packagingSize}</div>
+        )}
 
         <div className={styles.priceRow}>
-          <span className={styles.price}>{formatPrice(displayVariant.price)}</span>
-          {displayVariant.compareAtPrice && displayVariant.compareAtPrice > displayVariant.price && (
+          <span className={styles.price}>{formatPrice(selectedVariant.price)}</span>
+          {selectedVariant.compareAtPrice && selectedVariant.compareAtPrice > selectedVariant.price && (
             <>
-              <span className={styles.comparePrice}>{formatPrice(displayVariant.compareAtPrice)}</span>
+              <span className={styles.comparePrice}>{formatPrice(selectedVariant.compareAtPrice)}</span>
               <span className={styles.discountPercent}>{discount}% off</span>
             </>
           )}
@@ -158,19 +183,18 @@ export default function ProductCard({ product }: ProductCardProps) {
           <button
             className={styles.addToCartBtn}
             onClick={handleAddToCart}
-            disabled={allOutOfStock || adding}
+            disabled={selectedOutOfStock || adding}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <path d="M16 10a4 4 0 0 1-8 0" />
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M9 12l2 2 4-4" />
             </svg>
-            {adding ? 'Adding...' : allOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+            {adding ? 'Adding...' : selectedOutOfStock ? 'Out of Stock' : 'Add to Cart'}
           </button>
           <button
             className={styles.buyNowBtn}
             onClick={handleBuyNow}
-            disabled={allOutOfStock}
+            disabled={selectedOutOfStock}
             title="Buy Now"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none">

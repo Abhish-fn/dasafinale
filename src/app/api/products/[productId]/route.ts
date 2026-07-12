@@ -68,7 +68,7 @@ export async function PUT(
     const product = await Product.findOneAndUpdate(
       { productId },
       { $set: updateData },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     if (!product) {

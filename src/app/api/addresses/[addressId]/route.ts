@@ -32,7 +32,7 @@ export async function PUT(
     const address = await Address.findOneAndUpdate(
       { _id: addressId, userId: session.user.id },
       { $set: parsed },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!address) {
