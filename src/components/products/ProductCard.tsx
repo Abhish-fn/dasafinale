@@ -1,10 +1,14 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { formatPrice } from '@/lib/utils';
 import { useWishlist } from '@/context/WishlistContext';
+import { useCart } from '@/context/CartContext';
 import { useSession } from 'next-auth/react';
+import { useToast } from '@/components/ui/Toast';
 import styles from './ProductCard.module.css';
 
 interface ProductVariant {
@@ -41,7 +45,11 @@ const categoryDisplayNames: Record<string, string> = {
 export default function ProductCard({ product }: ProductCardProps) {
   const { data: session } = useSession();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { addToCart } = useCart();
+  const { toast } = useToast();
   const wishlisted = session?.user ? isInWishlist(product._id) : false;
+  const [adding, setAdding] = useState(false);
+  const router = useRouter();
 
   // Use the cheapest variant for display (sorted by price)
   const sortedVariants = [...(product.variants || [])].sort((a, b) => a.price - b.price);
@@ -56,6 +64,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   // Product is out of stock only if ALL variants are out of stock
   const allOutOfStock = sortedVariants.every(v => v.stock === 0);
 
+  // Find the cheapest in-stock variant for add-to-cart
+  const cartVariant = sortedVariants.find(v => v.stock > 0) || displayVariant;
+
   const categoryEmojis: Record<string, string> = {
     'Clay Pot Roasted Seeds & Superfoods': '🫘',
     'Protein & Energy Snacks': '💪',
@@ -63,6 +74,28 @@ export default function ProductCard({ product }: ProductCardProps) {
     'Traditional Millet Savoury Snacks': '🌾',
     'Healthy Chips & Crisps': '🥜',
     'Premium Healthy Sweets': '🍬',
+  };
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (allOutOfStock || adding) return;
+    setAdding(true);
+    try {
+      await addToCart(product._id, cartVariant._id);
+      toast('Added to cart!', 'success');
+    } catch {
+      toast('Failed to add to cart', 'error');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (allOutOfStock) return;
+    router.push(`/checkout?buyNow=true&productId=${product.productId}&quantity=1`);
   };
 
   return (
@@ -121,11 +154,30 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {allOutOfStock && <div className={styles.outOfStock}>Out of Stock</div>}
 
-        {sortedVariants.length > 1 && (
-          <div className={styles.packSizes}>
-            📦 {sortedVariants.length} pack sizes
-          </div>
-        )}
+        <div className={styles.cardActions}>
+          <button
+            className={styles.addToCartBtn}
+            onClick={handleAddToCart}
+            disabled={allOutOfStock || adding}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+            </svg>
+            {adding ? 'Adding...' : allOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+          </button>
+          <button
+            className={styles.buyNowBtn}
+            onClick={handleBuyNow}
+            disabled={allOutOfStock}
+            title="Buy Now"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+          </button>
+        </div>
 
         {product.tags && product.tags.length > 0 && (
           <div className={styles.tags}>
