@@ -14,6 +14,8 @@ interface OrderDetail {
   orderId: string;
   status: string;
   items: {
+    productId: string; // MongoDB _id of the product
+    variantId: string; // MongoDB _id of the variant
     productSnapshot: { title: string; image: string; price: number; packagingSize: string; productId: string };
     quantity: number;
     priceAtOrder: number;
@@ -186,7 +188,8 @@ export default function OrderDetailPage() {
   const handleReorder = async () => {
     if (!order) return;
     for (const item of order.items) {
-      await addToCart(item.productSnapshot.productId, item.quantity);
+      // Use the MongoDB _id stored at item level, not the human-readable productSnapshot.productId
+      await addToCart(item.productId, item.variantId, item.quantity);
     }
     toast('Items added to cart!', 'success');
     router.push('/cart');

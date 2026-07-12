@@ -22,16 +22,15 @@ export async function GET(req: NextRequest) {
     const category = searchParams.get('category');
     if (category) filter.category = category;
 
-
     const tags = searchParams.get('tags');
     if (tags) filter.tags = { $in: tags.split(',').map((t) => t.trim()) };
 
     const priceMin = searchParams.get('priceMin');
     const priceMax = searchParams.get('priceMax');
     if (priceMin || priceMax) {
-      filter.price = {};
-      if (priceMin) (filter.price as Record<string, number>).$gte = parseInt(priceMin);
-      if (priceMax) (filter.price as Record<string, number>).$lte = parseInt(priceMax);
+      filter['variants.price'] = {};
+      if (priceMin) (filter['variants.price'] as Record<string, number>).$gte = parseInt(priceMin);
+      if (priceMax) (filter['variants.price'] as Record<string, number>).$lte = parseInt(priceMax);
     }
 
     const search = searchParams.get('search');
@@ -49,69 +48,63 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '12')));
     const skip = (page - 1) * limit;
 
-    // Sort
+    // Sort — all paths use aggregation since price/salesCount live inside variants
     const sortParam = searchParams.get('sort') || 'recommended';
-    let sortQuery: Record<string, mongoose.SortOrder> = {};
+
+    const pipeline: mongoose.PipelineStage[] = [
+      { $match: filter },
+      {
+        $addFields: {
+          minPrice: { $min: '$variants.price' },
+          totalSalesCount: { $sum: '$variants.salesCount' },
+        },
+      },
+    ];
 
     switch (sortParam) {
       case 'price_asc':
-        sortQuery = { price: 1 };
+        pipeline.push({ $sort: { minPrice: 1 } });
         break;
       case 'price_desc':
-        sortQuery = { price: -1 };
+        pipeline.push({ $sort: { minPrice: -1 } });
         break;
       case 'best_sellers':
-        sortQuery = { salesCount: -1 };
+        pipeline.push({ $sort: { totalSalesCount: -1 } });
         break;
       case 'must_try':
-        sortQuery = { isMustTry: -1, salesCount: -1 };
+        pipeline.push({ $sort: { isMustTry: -1, totalSalesCount: -1 } });
         break;
       case 'newest':
-        sortQuery = { createdAt: -1 };
+        pipeline.push({ $sort: { createdAt: -1 } });
         break;
       case 'recommended':
       default:
-        // Use aggregation for weighted sort
-        break;
-    }
-
-    let products;
-    let total: number;
-
-    if (sortParam === 'recommended') {
-      // Weighted recommendation score
-      const pipeline: mongoose.PipelineStage[] = [
-        { $match: filter },
-        {
+        pipeline.push({
           $addFields: {
             score: {
               $add: [
-                { $multiply: ['$salesCount', 0.4] },
+                { $multiply: ['$totalSalesCount', 0.4] },
                 { $cond: ['$isMustTry', 30, 0] },
                 { $cond: ['$isBestSeller', 20, 0] },
                 { $cond: ['$isSpecialItem', 10, 0] },
               ],
             },
           },
-        },
-        { $sort: { score: -1 } },
-        {
-          $facet: {
-            data: [{ $skip: skip }, { $limit: limit }],
-            count: [{ $count: 'total' }],
-          },
-        },
-      ];
-
-      const result = await Product.aggregate(pipeline);
-      products = result[0].data;
-      total = result[0].count[0]?.total || 0;
-    } else {
-      [products, total] = await Promise.all([
-        Product.find(filter).sort(sortQuery).skip(skip).limit(limit).lean(),
-        Product.countDocuments(filter),
-      ]);
+        });
+        pipeline.push({ $sort: { score: -1 } });
+        break;
     }
+
+    pipeline.push({
+      $facet: {
+        data: [{ $skip: skip }, { $limit: limit }],
+        count: [{ $count: 'total' }],
+      },
+    });
+
+    const result = await Product.aggregate(pipeline);
+    const products = result[0].data;
+    const total = result[0].count[0]?.total || 0;
 
     // Get available filter values (for sidebar)
     const [categories, allTags] = await Promise.all([
@@ -119,50 +112,8 @@ export async function GET(req: NextRequest) {
       Product.distinct('tags', { isActive: true }),
     ]);
 
-    // Deduplicate products by variantGroup (skip for admin/showAll)
-    // For products sharing the same variantGroup, keep only the cheapest (smallest pack)
-    // and attach a variantCount so the card can show "X pack sizes"
-    let finalProducts = products;
-    if (!showAll) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const variantGroupMap = new Map<string, { product: any; count: number }>();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const deduped: any[] = [];
-
-      for (const p of products) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const vg = (p as any).variantGroup as string | undefined;
-        if (vg) {
-          const existing = variantGroupMap.get(vg);
-          if (existing) {
-            existing.count++;
-            // Keep the cheaper one (smallest pack)
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            if ((p as any).price < (existing.product as any).price) {
-              existing.product = p;
-            }
-          } else {
-            variantGroupMap.set(vg, { product: p, count: 1 });
-          }
-        } else {
-          deduped.push(p);
-        }
-      }
-
-      // Append variant group representatives with counts
-      for (const { product: rep, count } of variantGroupMap.values()) {
-        let totalVariants = count;
-        if (count >= 1) {
-          const vg = (rep as Record<string, unknown>).variantGroup as string;
-          totalVariants = await Product.countDocuments({ variantGroup: vg, isActive: true });
-        }
-        deduped.push({ ...rep, variantCount: totalVariants > 1 ? totalVariants : undefined });
-      }
-      finalProducts = deduped;
-    }
-
     return NextResponse.json({
-      products: finalProducts,
+      products,
       pagination: {
         page,
         limit,

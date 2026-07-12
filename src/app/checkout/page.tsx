@@ -38,15 +38,20 @@ declare global {
   }
 }
 
-interface BuyNowProduct {
+interface BuyNowVariant {
   _id: string;
-  productId: string;
-  title: string;
-  price: number;
-  images: string[];
   packagingSize: string;
+  price: number;
   stock: number;
-  variantGroup?: string;
+  weight: number;
+}
+
+interface BuyNowProduct {
+  _id: string;        // MongoDB ObjectId
+  productId: string;  // human-readable "CPS001"
+  title: string;
+  images: string[];
+  variants: BuyNowVariant[];
 }
 
 function CheckoutContent() {
@@ -58,7 +63,9 @@ function CheckoutContent() {
 
   // Buy Now params
   const isBuyNow = searchParams.get('buyNow') === 'true';
-  const buyNowProductId = searchParams.get('productId') || '';
+  // productId here is the MongoDB _id (passed from product detail page)
+  const buyNowProductMongoId = searchParams.get('productId') || '';
+  const buyNowVariantId = searchParams.get('variantId') || '';
   const buyNowQuantity = parseInt(searchParams.get('quantity') || '1', 10);
   const [buyNowProduct, setBuyNowProduct] = useState<BuyNowProduct | null>(null);
   const [loadingBuyNow, setLoadingBuyNow] = useState(isBuyNow);
@@ -93,56 +100,21 @@ function CheckoutContent() {
     error: string | null;
   }>({ shippingCost: 0, serviceable: true, isApproximate: false, loading: false, error: null });
 
-  // Pack-size variant switching state
-  const [variantCache, setVariantCache] = useState<Record<string, { _id: string; packagingSize: string; price: number; stock: number; productId: string }[]>>({});
+  // Pack-size variant switching state (for cart items on checkout page)
   const [swapping, setSwapping] = useState<string | null>(null);
-
-  // Auto-fetch variants for checkout items
-  const fetchCheckoutVariants = useCallback(async (variantGroup: string, productId: string) => {
-    if (variantCache[variantGroup]) return;
-    try {
-      const res = await fetch(`/api/products/${productId}`);
-      const data = await res.json();
-      if (res.ok && data.product) {
-        const all = [
-          { _id: data.product._id, packagingSize: data.product.packagingSize, price: data.product.price, stock: data.product.stock, productId: data.product.productId },
-          ...(data.variants || []).map((v: Record<string, unknown>) => ({
-            _id: v._id as string, packagingSize: v.packagingSize as string,
-            price: v.price as number, stock: v.stock as number, productId: v.productId as string,
-          })),
-        ].sort((a, b) => a.price - b.price);
-        setVariantCache(prev => ({ ...prev, [variantGroup]: all }));
-      }
-    } catch (err) {
-      console.error('Failed to fetch variants:', err);
-    }
-  }, [variantCache]);
 
   // Redirect if not logged in
   useEffect(() => {
     if (authStatus === 'unauthenticated') router.push('/login');
   }, [authStatus, router]);
 
-  // Auto-fetch variants for all checkout items
-  useEffect(() => {
-    if (isBuyNow) return;
-    for (const item of items) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const vg = (item.product as any).variantGroup as string | undefined;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pid = (item.product as any).productId as string | undefined;
-      if (vg && pid && !variantCache[vg]) {
-        fetchCheckoutVariants(vg, pid);
-      }
-    }
-  }, [items, isBuyNow, fetchCheckoutVariants, variantCache]);
-
   // Fetch buy-now product
   useEffect(() => {
-    if (!isBuyNow || !buyNowProductId) return;
+    if (!isBuyNow || !buyNowProductMongoId) return;
     async function fetchBuyNowProduct() {
       try {
-        const res = await fetch(`/api/products/${buyNowProductId}`);
+        // Fetch by MongoDB _id — the product detail API supports both slug and _id lookup
+        const res = await fetch(`/api/products/${buyNowProductMongoId}`);
         if (!res.ok) throw new Error('Product not found');
         const data = await res.json();
         setBuyNowProduct(data.product);
@@ -154,7 +126,7 @@ function CheckoutContent() {
       }
     }
     fetchBuyNowProduct();
-  }, [isBuyNow, buyNowProductId, router, toast]);
+  }, [isBuyNow, buyNowProductMongoId, router, toast]);
 
   // Fetch addresses
   const fetchAddresses = useCallback(async () => {
@@ -185,6 +157,7 @@ function CheckoutContent() {
         const params = new URLSearchParams({ destPincode: selectedAddr.pincode });
         if (isBuyNow && buyNowProduct) {
           params.set('buyNowProductId', buyNowProduct._id);
+          params.set('buyNowVariantId', buyNowVariantId);
           params.set('buyNowQuantity', String(buyNowQuantity));
         }
         const res = await fetch(`/api/shipping/quote?${params}`);
@@ -214,7 +187,7 @@ function CheckoutContent() {
 
     return () => clearTimeout(timeout);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAddr?.pincode, items.length, isBuyNow, buyNowProduct?._id, buyNowQuantity]);
+  }, [selectedAddr?.pincode, items.length, isBuyNow, buyNowProduct?._id, buyNowVariantId, buyNowQuantity]);
 
   // Load Razorpay SDK
   useEffect(() => {
@@ -366,7 +339,7 @@ function CheckoutContent() {
       const res = await fetch('/api/coupons/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: couponCode, cartTotal: total }),
+        body: JSON.stringify({ code: couponCode, cartTotal: displayTotal }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -380,17 +353,29 @@ function CheckoutContent() {
     }
   };
 
+  // Helper: get variant from cart item
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getItemVariant = (item: any) => {
+    return item.product?.variants?.find((v: any) => v._id === item.variantId);
+  };
+
+  // Resolve buy-now variant
+  const buyNowVariant = isBuyNow && buyNowProduct
+    ? buyNowProduct.variants?.find(v => v._id === buyNowVariantId)
+    : null;
+
   // Pricing — use buy-now product or cart
-  const displayItems = isBuyNow && buyNowProduct
+  const displayItems = isBuyNow && buyNowProduct && buyNowVariant
     ? [{
         _id: buyNowProduct._id,
         quantity: buyNowQuantity,
         product: buyNowProduct,
+        variantId: buyNowVariantId,
       }]
     : items;
 
-  const displayTotal = isBuyNow && buyNowProduct
-    ? buyNowProduct.price * buyNowQuantity
+  const displayTotal = isBuyNow && buyNowVariant
+    ? buyNowVariant.price * buyNowQuantity
     : total;
 
   const discount = coupon?.discount || 0;
@@ -412,7 +397,7 @@ function CheckoutContent() {
       toast('Your cart is empty', 'warning');
       return;
     }
-    if (isBuyNow && !buyNowProduct) {
+    if (isBuyNow && (!buyNowProduct || !buyNowVariant)) {
       toast('Product not loaded', 'warning');
       return;
     }
@@ -430,7 +415,9 @@ function CheckoutContent() {
           ...(isBuyNow ? {
             isBuyNow: true,
             buyNowItem: {
+              // productId here is the MongoDB _id (from buyNowProduct._id)
               productId: buyNowProduct!._id,
+              variantId: buyNowVariantId,
               quantity: buyNowQuantity,
             },
           } : {}),
@@ -698,12 +685,13 @@ function CheckoutContent() {
           <h2 className={styles.summaryTitle}>Order Summary</h2>
           <div className={styles.summaryItems}>
             {displayItems.map((item) => {
-              const product = item.product;
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const hasVariants = !!(product as any).variantGroup;
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const vg = (product as any).variantGroup as string | undefined;
-              const variants = vg ? variantCache[vg] : undefined;
+              const variant = isBuyNow ? buyNowVariant : getItemVariant(item);
+              if (!variant) return null;
+
+              const hasMultipleVariants = !isBuyNow && item.product.variants.length > 1;
+              const sortedVariants = hasMultipleVariants
+                ? [...item.product.variants].sort((a: any, b: any) => a.price - b.price)
+                : [];
 
               return (
                 <div key={item._id} className={styles.summaryItem}>
@@ -716,14 +704,14 @@ function CheckoutContent() {
                     <div className={styles.summaryItemName}>{item.product.title}</div>
                     <div className={styles.summaryItemMeta}>
                       {/* Inline variant pill toggle */}
-                      {hasVariants && variants && variants.length > 1 && !isBuyNow ? (
+                      {hasMultipleVariants && sortedVariants.length > 1 ? (
                         <span style={{ display: 'inline-flex', gap: '1px', border: '1px solid var(--color-gray-300)', borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginRight: 'var(--space-2)' }}>
-                          {variants.map((v) => (
+                          {sortedVariants.map((v: any) => (
                             <button
                               key={v._id}
-                              disabled={v._id === item.product._id || v.stock === 0 || swapping === item._id}
+                              disabled={v._id === (item as any).variantId || v.stock === 0 || swapping === item._id}
                               onClick={async () => {
-                                if (v._id === item.product._id) return;
+                                if (v._id === (item as any).variantId) return;
                                 setSwapping(item._id);
                                 try {
                                   await swapVariant(item._id, v._id);
@@ -736,10 +724,10 @@ function CheckoutContent() {
                               }}
                               style={{
                                 padding: '2px 8px', fontSize: '10px', fontWeight: 600, border: 'none',
-                                background: v._id === item.product._id ? 'var(--red)' : 'transparent',
-                                color: v._id === item.product._id ? 'white' : 'var(--color-gray-600)',
-                                cursor: v._id === item.product._id ? 'default' : 'pointer',
-                                opacity: v.stock === 0 && v._id !== item.product._id ? 0.35 : 1,
+                                background: v._id === (item as any).variantId ? 'var(--red)' : 'transparent',
+                                color: v._id === (item as any).variantId ? 'white' : 'var(--color-gray-600)',
+                                cursor: v._id === (item as any).variantId ? 'default' : 'pointer',
+                                opacity: v.stock === 0 && v._id !== (item as any).variantId ? 0.35 : 1,
                                 transition: 'all 0.15s ease',
                               }}
                             >
@@ -748,12 +736,12 @@ function CheckoutContent() {
                           ))}
                         </span>
                       ) : (
-                        <span>{item.product.packagingSize} </span>
+                        <span>{variant.packagingSize} </span>
                       )}
                       × {item.quantity}
                     </div>
                   </div>
-                  <div className={styles.summaryItemPrice}>{formatPrice(item.product.price * item.quantity)}</div>
+                  <div className={styles.summaryItemPrice}>{formatPrice(variant.price * item.quantity)}</div>
                 </div>
               );
             })}

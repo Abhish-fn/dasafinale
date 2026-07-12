@@ -53,12 +53,17 @@ export async function POST(req: NextRequest) {
       order.payment.failureReason = 'Invalid signature';
       await order.save();
 
-      // Release stock
-      for (const item of order.items) {
-        await Product.updateOne(
-          { _id: item.productId },
-          { $inc: { stock: item.quantity } }
-        );
+      // Release stock (idempotent via stockReleased flag)
+      if (!order.stockReleased) {
+        for (const item of order.items) {
+          await Product.updateOne(
+            { _id: item.productId },
+            { $inc: { 'variants.$[v].stock': item.quantity } },
+            { arrayFilters: [{ 'v._id': item.variantId }] }
+          );
+        }
+        order.stockReleased = true;
+        await order.save();
       }
 
       // Release coupon
@@ -110,11 +115,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 6. Increment sales count
+    // 6. Increment sales count (guarded by paymentProcessed — already set above, won't run twice)
     for (const item of order.items) {
       await Product.updateOne(
         { _id: item.productId },
-        { $inc: { salesCount: item.quantity } }
+        { $inc: { 'variants.$[v].salesCount': item.quantity } },
+        { arrayFilters: [{ 'v._id': item.variantId }] }
       );
     }
 

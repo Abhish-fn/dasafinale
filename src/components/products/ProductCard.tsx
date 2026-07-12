@@ -7,21 +7,25 @@ import { useWishlist } from '@/context/WishlistContext';
 import { useSession } from 'next-auth/react';
 import styles from './ProductCard.module.css';
 
+interface ProductVariant {
+  _id: string;
+  packagingSize: string;
+  price: number;
+  compareAtPrice?: number;
+  stock: number;
+}
+
 interface ProductCardProps {
   product: {
     _id: string;
     productId: string;
     title: string;
     images: string[];
-    price: number;
-    compareAtPrice?: number;
     category: string;
-    packagingSize: string;
-    stock: number;
+    variants: ProductVariant[];
     isMustTry?: boolean;
     isBestSeller?: boolean;
     tags?: string[];
-    variantCount?: number;
   };
 }
 
@@ -39,9 +43,18 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { isInWishlist, toggleWishlist } = useWishlist();
   const wishlisted = session?.user ? isInWishlist(product._id) : false;
 
-  const discount = product.compareAtPrice
-    ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
+  // Use the cheapest variant for display (sorted by price)
+  const sortedVariants = [...(product.variants || [])].sort((a, b) => a.price - b.price);
+  const displayVariant = sortedVariants[0];
+
+  if (!displayVariant) return null;
+
+  const discount = displayVariant.compareAtPrice
+    ? Math.round(((displayVariant.compareAtPrice - displayVariant.price) / displayVariant.compareAtPrice) * 100)
     : 0;
+
+  // Product is out of stock only if ALL variants are out of stock
+  const allOutOfStock = sortedVariants.every(v => v.stock === 0);
 
   const categoryEmojis: Record<string, string> = {
     'Clay Pot Roasted Seeds & Superfoods': '🫘',
@@ -94,23 +107,23 @@ export default function ProductCard({ product }: ProductCardProps) {
       <div className={styles.body}>
         <div className={styles.category}>{categoryDisplayNames[product.category] || product.category}</div>
         <h3 className={styles.title}>{product.title}</h3>
-        <div className={styles.size}>{product.packagingSize}</div>
+        <div className={styles.size}>{displayVariant.packagingSize}</div>
 
         <div className={styles.priceRow}>
-          <span className={styles.price}>{formatPrice(product.price)}</span>
-          {product.compareAtPrice && product.compareAtPrice > product.price && (
+          <span className={styles.price}>{formatPrice(displayVariant.price)}</span>
+          {displayVariant.compareAtPrice && displayVariant.compareAtPrice > displayVariant.price && (
             <>
-              <span className={styles.comparePrice}>{formatPrice(product.compareAtPrice)}</span>
+              <span className={styles.comparePrice}>{formatPrice(displayVariant.compareAtPrice)}</span>
               <span className={styles.discountPercent}>{discount}% off</span>
             </>
           )}
         </div>
 
-        {product.stock === 0 && <div className={styles.outOfStock}>Out of Stock</div>}
+        {allOutOfStock && <div className={styles.outOfStock}>Out of Stock</div>}
 
-        {product.variantCount && product.variantCount > 1 && (
+        {sortedVariants.length > 1 && (
           <div className={styles.packSizes}>
-            📦 {product.variantCount} pack sizes
+            📦 {sortedVariants.length} pack sizes
           </div>
         )}
 

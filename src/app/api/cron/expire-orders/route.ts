@@ -26,12 +26,16 @@ export async function POST(req: NextRequest) {
     let released = 0;
 
     for (const order of expiredOrders) {
-      // Release stock
-      for (const item of order.items) {
-        await Product.updateOne(
-          { _id: item.productId },
-          { $inc: { stock: item.quantity } }
-        );
+      // Release stock (idempotent via stockReleased flag)
+      if (!order.stockReleased) {
+        for (const item of order.items) {
+          await Product.updateOne(
+            { _id: item.productId },
+            { $inc: { 'variants.$[v].stock': item.quantity } },
+            { arrayFilters: [{ 'v._id': item.variantId }] }
+          );
+        }
+        order.stockReleased = true;
       }
 
       // Release coupon

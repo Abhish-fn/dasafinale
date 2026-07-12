@@ -13,14 +13,16 @@ export async function GET() {
     }
 
     await dbConnect();
+    // Populate product with its embedded variants — price/stock/packagingSize live there now
     const wishlist = await Wishlist.findOne({ userId: session.user.id })
-      .populate('products.productId', 'title slug images price compareAtPrice packagingSize stock isActive category isMustTry isBestSeller tags')
+      .populate('products.productId', 'title slug images variants isActive category isMustTry isBestSeller tags productId')
       .lean();
 
     if (!wishlist) {
       return NextResponse.json({ products: [] });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const products = wishlist.products
       .filter((item: Record<string, any>) => item.productId?.isActive)
       .map((item: Record<string, any>) => ({
@@ -45,6 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     await dbConnect();
+    // productId here is the MongoDB _id of the product document
     const { productId } = await req.json();
 
     const product = await Product.findById(productId);
@@ -59,6 +62,7 @@ export async function POST(req: NextRequest) {
 
     // Check if already in wishlist
     const exists = wishlist.products.some(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (item: Record<string, any>) => item.productId.toString() === productId
     );
     if (exists) {

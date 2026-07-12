@@ -12,6 +12,7 @@ export interface IProductSnapshot {
 
 export interface IOrderItem {
   productId: Types.ObjectId;
+  variantId: Types.ObjectId;
   productSnapshot: IProductSnapshot;
   quantity: number;
   priceAtOrder: number;
@@ -66,6 +67,7 @@ export interface IOrder extends Document {
     paidAt?: Date;
   };
   paymentProcessed: boolean;
+  stockReleased: boolean;
   status: 'placed' | 'confirmed' | 'packed' | 'shipped' | 'out_for_delivery' | 'delivered' | 'cancelled';
   tracking: {
     carrier?: string;
@@ -115,6 +117,7 @@ const productSnapshotSchema = new Schema<IProductSnapshot>(
 const orderItemSchema = new Schema<IOrderItem>(
   {
     productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+    variantId: { type: Schema.Types.ObjectId, required: true },
     productSnapshot: { type: productSnapshotSchema, required: true },
     quantity: { type: Number, required: true, min: 1 },
     priceAtOrder: { type: Number, required: true },
@@ -182,6 +185,7 @@ const orderSchema = new Schema<IOrder>(
       paidAt: Date,
     },
     paymentProcessed: { type: Boolean, default: false },
+    stockReleased: { type: Boolean, default: false },
     status: {
       type: String,
       enum: ['placed', 'confirmed', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'],

@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 export interface ICartItem {
   productId: Types.ObjectId;
+  variantId: Types.ObjectId;
   quantity: number;
   addedAt: Date;
 }
@@ -16,6 +17,7 @@ export interface ICart extends Document {
 const cartItemSchema = new Schema<ICartItem>(
   {
     productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+    variantId: { type: Schema.Types.ObjectId, required: true },
     quantity: { type: Number, required: true, min: 1 },
     addedAt: { type: Date, default: Date.now },
   },
@@ -30,6 +32,13 @@ const cartSchema = new Schema<ICart>(
   },
   { timestamps: { createdAt: false, updatedAt: true } }
 );
+
+// Pre-save: purge any legacy cart items missing variantId (pre-migration leftovers).
+// Once a cart is touched post-migration, these orphans are stripped automatically.
+cartSchema.pre('save', function () {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  this.items = (this.items as any[]).filter((item) => item.variantId != null);
+});
 
 // Sparse unique indexes — only one cart per user OR per session
 cartSchema.index({ userId: 1 }, { unique: true, sparse: true });

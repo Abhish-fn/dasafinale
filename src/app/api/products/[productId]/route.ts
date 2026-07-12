@@ -6,7 +6,7 @@ import { productUpdateSchema } from '@/lib/validations';
 import { sanitize } from '@/lib/sanitize';
 import { slugify } from '@/lib/utils';
 
-// GET /api/products/[productId] — Single product + size variants
+// GET /api/products/[productId] — Single product (variants are embedded)
 export async function GET(
   _req: NextRequest,
   ctx: { params: Promise<{ productId: string }> }
@@ -24,19 +24,10 @@ export async function GET(
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    // Fetch size variants (same variantGroup, different _id)
-    let variants: typeof product[] = [];
-    if (product.variantGroup) {
-      variants = await Product.find({
-        variantGroup: product.variantGroup,
-        isActive: true,
-        _id: { $ne: product._id },
-      })
-        .select('productId slug title packagingSize price compareAtPrice stock weight images')
-        .lean();
-    }
+    // Sort variants by price ascending for consistent display
+    product.variants.sort((a, b) => a.price - b.price);
 
-    return NextResponse.json({ product, variants });
+    return NextResponse.json({ product });
   } catch (error) {
     console.error('GET /api/products/[productId] error:', error);
     return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 });

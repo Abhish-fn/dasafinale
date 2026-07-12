@@ -9,13 +9,11 @@ interface ProductData {
   productId: string;
   title: string;
   images: string[];
-  price: number;
-  compareAtPrice?: number;
+  variants: { _id: string; packagingSize: string; price: number; compareAtPrice?: number; stock: number }[];
   category: string;
-  packagingSize: string;
-  stock: number;
   isMustTry?: boolean;
   isBestSeller?: boolean;
+  tags?: string[];
 }
 
 export default function RelatedProducts({ productId }: { productId: string }) {
@@ -25,10 +23,11 @@ export default function RelatedProducts({ productId }: { productId: string }) {
   useEffect(() => {
     fetch(`/api/products/${productId}/related`)
       .then((r) => r.json())
-      .then((data) => setProducts(data.products || []))
+      .then((data) => setProducts(data.related || []))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [productId]);
+
 
   if (!loading && products.length === 0) return null;
 

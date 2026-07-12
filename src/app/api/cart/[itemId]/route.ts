@@ -28,6 +28,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Cart not found' }, { status: 404 });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const item = (cart.items as any[]).find(
       (i) => i._id.toString() === itemId
     );
@@ -35,10 +36,17 @@ export async function PUT(
       return NextResponse.json({ error: 'Item not found in cart' }, { status: 404 });
     }
 
-    // Validate stock
+    // Validate stock against the specific variant, not the product
     const product = await Product.findById(item.productId);
-    if (!product || product.stock < quantity) {
-      return NextResponse.json({ error: 'Insufficient stock', available: product?.stock || 0 }, { status: 400 });
+    if (!product) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+    const variant = product.variants.id(item.variantId);
+    if (!variant) {
+      return NextResponse.json({ error: 'Variant no longer exists' }, { status: 404 });
+    }
+    if (variant.stock < quantity) {
+      return NextResponse.json({ error: 'Insufficient stock', available: variant.stock }, { status: 400 });
     }
 
     item.quantity = quantity;
@@ -72,6 +80,7 @@ export async function DELETE(
     }
 
     cart.items = cart.items.filter(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (item: Record<string, any>) => item._id.toString() !== itemId
     );
     await cart.save();

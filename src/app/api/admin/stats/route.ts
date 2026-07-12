@@ -55,18 +55,37 @@ export async function GET() {
       ]),
       User.countDocuments(),
       Product.countDocuments({ isActive: true }),
-      Product.countDocuments({ isActive: true, stock: { $lte: 10 } }),
+      // Low stock: any product where at least one variant has stock <= 10
+      Product.countDocuments({ isActive: true, 'variants.stock': { $lte: 10 } }),
       Order.countDocuments({ paymentProcessed: true, status: { $in: ['placed', 'confirmed'] } }),
       Order.find({ paymentProcessed: true })
         .sort({ createdAt: -1 })
         .limit(10)
         .select('orderId items pricing status createdAt shippingAddress.fullName')
         .lean(),
-      Product.find({ isActive: true })
-        .sort({ salesCount: -1 })
-        .limit(5)
-        .select('title productId salesCount price images packagingSize')
-        .lean(),
+      // Top products: aggregate totalSalesCount from embedded variants
+      Product.aggregate([
+        { $match: { isActive: true } },
+        {
+          $addFields: {
+            totalSalesCount: { $sum: '$variants.salesCount' },
+            minPrice: { $min: '$variants.price' },
+            primaryPackagingSize: { $arrayElemAt: ['$variants.packagingSize', 0] },
+          },
+        },
+        { $sort: { totalSalesCount: -1 } },
+        { $limit: 5 },
+        {
+          $project: {
+            title: 1,
+            productId: 1,
+            totalSalesCount: 1,
+            minPrice: 1,
+            primaryPackagingSize: 1,
+            images: 1,
+          },
+        },
+      ]),
       Order.aggregate([
         { $match: { paymentProcessed: true } },
         { $group: { _id: '$status', count: { $sum: 1 } } },

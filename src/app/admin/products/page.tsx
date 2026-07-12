@@ -14,35 +14,39 @@ interface NutritionInfo {
   fiber?: string;
 }
 
-interface Product {
+interface Variant {
   _id: string;
-  productId: string;
-  title: string;
-  description: string;
+  packagingSize: string;
+  weight: number;
   price: number;
   compareAtPrice?: number;
+  stock: number;
+  salesCount: number;
+}
+
+interface Product {
+  _id: string;
+  productId: string; // human-readable "CPS001"
+  title: string;
+  description: string;
   category: string;
   tags: string[];
-  stock: number;
   isActive: boolean;
   isMustTry: boolean;
   isBestSeller: boolean;
   isSpecialItem: boolean;
-  salesCount: number;
   images: string[];
-  packagingSize: string;
-  variantGroup?: string;
-  weight: number;
+  variants: Variant[];
   nutritionInfo?: NutritionInfo;
+  hsnCode?: string;
 }
 
-// A variant edit row in the modal
-interface VariantEdit {
-  _id: string; // '' for new variants
-  productId: string;
+// A variant row in the edit/add modal (display units: rupees, not paisa)
+interface VariantEditRow {
+  _id: string; // existing variant _id, or 'new-xxx' for new ones
   packagingSize: string;
-  price: number; // in rupees (display units)
-  compareAtPrice: number;
+  price: number; // in rupees
+  compareAtPrice: number; // in rupees (0 = not set)
   stock: number;
   weight: number;
   isNew?: boolean;
@@ -63,8 +67,7 @@ const categoryDisplayNames: Record<string, string> = {
   'Traditional Millet Savoury Snacks': 'Millet Snacks',
 };
 
-
-// Compress image on client side before uploading to avoid server body size limits
+// Compress image on client side before uploading
 function compressImage(file: File, maxSize = 1200, quality = 0.85): Promise<File> {
   return new Promise((resolve, reject) => {
     const img = new window.Image();
@@ -72,7 +75,6 @@ function compressImage(file: File, maxSize = 1200, quality = 0.85): Promise<File
     img.onload = () => {
       URL.revokeObjectURL(url);
       let { width, height } = img;
-      // Scale down if either dimension exceeds maxSize
       if (width > maxSize || height > maxSize) {
         const ratio = Math.min(maxSize / width, maxSize / height);
         width = Math.round(width * ratio);
@@ -102,46 +104,20 @@ function compressImage(file: File, maxSize = 1200, quality = 0.85): Promise<File
   });
 }
 
-// Group products by variantGroup for the table display
-interface ProductGroup {
-  key: string;
-  primary: Product;
-  variants: Product[]; // other products in the same group (excluding primary)
+// Helper: get the primary (cheapest) variant
+function primaryVariant(p: Product): Variant | undefined {
+  if (!p.variants || p.variants.length === 0) return undefined;
+  return [...p.variants].sort((a, b) => a.price - b.price)[0];
 }
 
-function groupProducts(products: Product[]): (Product | ProductGroup)[] {
-  const grouped = new Map<string, Product[]>();
-  const standalone: Product[] = [];
-
-  for (const p of products) {
-    if (p.variantGroup) {
-      const list = grouped.get(p.variantGroup) || [];
-      list.push(p);
-      grouped.set(p.variantGroup, list);
-    } else {
-      standalone.push(p);
-    }
-  }
-
-  const result: (Product | ProductGroup)[] = [];
-
-  // Add grouped products
-  for (const [key, list] of grouped.entries()) {
-    // Sort by price so cheapest (smallest) comes first
-    list.sort((a, b) => a.price - b.price);
-    result.push({ key, primary: list[0], variants: list.slice(1) });
-  }
-
-  // Add standalone products
-  for (const p of standalone) {
-    result.push(p);
-  }
-
-  return result;
+// Helper: total sales across all variants
+function totalSales(p: Product): number {
+  return (p.variants || []).reduce((sum, v) => sum + (v.salesCount || 0), 0);
 }
 
-function isGroup(item: Product | ProductGroup): item is ProductGroup {
-  return 'primary' in item;
+// Helper: check if any variant is low stock
+function hasLowStock(p: Product): boolean {
+  return (p.variants || []).some(v => v.stock <= 10);
 }
 
 export default function AdminProductsPage() {
@@ -162,43 +138,57 @@ export default function AdminProductsPage() {
 
   // Add product modal state
   const [showAddModal, setShowAddModal] = useState(false);
-  const [addForm, setAddForm] = useState<Partial<Product>>({
-    title: '', description: '', category: categories[1],
-    packagingSize: '', weight: 0, price: 0, compareAtPrice: undefined,
-    stock: 0, images: [], tags: [],
+  const [addForm, setAddForm] = useState<{
+    title: string; description: string; category: string;
+    images: string[]; tags: string[];
+    isMustTry: boolean; isBestSeller: boolean; isSpecialItem: boolean;
+    nutritionInfo: NutritionInfo;
+    hsnCode: string;
+  }>({
+    title: '', description: '', category: categories[1] || '',
+    images: [], tags: [],
     isMustTry: false, isBestSeller: false, isSpecialItem: false,
     nutritionInfo: { calories: '', protein: '', carbs: '', fat: '', fiber: '' },
+    hsnCode: '',
   });
+  const [addVariants, setAddVariants] = useState<VariantEditRow[]>([{
+    _id: 'new-1', packagingSize: '', price: 0, compareAtPrice: 0, stock: 0, weight: 0, isNew: true,
+  }]);
   const [addTagInput, setAddTagInput] = useState('');
   const [addSaving, setAddSaving] = useState(false);
   const [addUploading, setAddUploading] = useState(false);
   const addFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Variant editing state — all variants editable in one modal
-  const [variantEdits, setVariantEdits] = useState<VariantEdit[]>([]);
-  const [loadingVariants, setLoadingVariants] = useState(false);
-  const [savingVariant, setSavingVariant] = useState(false);
+  // Variant editing in edit modal
+  const [variantEdits, setVariantEdits] = useState<VariantEditRow[]>([]);
 
-  // Inline stock editing state
+  // Inline stock editing state — keyed by "productId:variantId"
   const [stockEdits, setStockEdits] = useState<Record<string, number>>({});
   const [savingStock, setSavingStock] = useState<string | null>(null);
 
-  const getStockValue = (p: Product) => stockEdits[p._id] !== undefined ? stockEdits[p._id] : p.stock;
-  const setStockEdit = (id: string, val: number) => setStockEdits(prev => ({ ...prev, [id]: Math.max(0, val) }));
+  const stockKey = (p: Product, v: Variant) => `${p._id}:${v._id}`;
+  const getStockValue = (p: Product, v: Variant) => stockEdits[stockKey(p, v)] !== undefined ? stockEdits[stockKey(p, v)] : v.stock;
+  const setStockEdit = (p: Product, v: Variant, val: number) =>
+    setStockEdits(prev => ({ ...prev, [stockKey(p, v)]: Math.max(0, val) }));
 
-  const saveStock = async (p: Product) => {
-    const newStock = getStockValue(p);
-    if (newStock === p.stock) return;
-    setSavingStock(p._id);
+  const saveStock = async (p: Product, v: Variant) => {
+    const key = stockKey(p, v);
+    const newStock = stockEdits[key];
+    if (newStock === undefined || newStock === v.stock) return;
+    setSavingStock(key);
     try {
+      // Update only this variant's stock within the embedded array
+      const updatedVariants = p.variants.map(vr =>
+        vr._id === v._id ? { ...vr, stock: newStock } : vr
+      );
       const res = await fetch(`/api/products/${p.productId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stock: newStock }),
+        body: JSON.stringify({ variants: updatedVariants }),
       });
       if (!res.ok) throw new Error('Failed');
       toast(`Stock updated to ${newStock}`, 'success');
-      setStockEdits(prev => { const n = { ...prev }; delete n[p._id]; return n; });
+      setStockEdits(prev => { const n = { ...prev }; delete n[key]; return n; });
       fetchProducts();
     } catch {
       toast('Failed to update stock', 'error');
@@ -207,7 +197,7 @@ export default function AdminProductsPage() {
     }
   };
 
-  // Toggle active/hidden with confirmation
+  // Toggle active/hidden
   const [toggleConfirm, setToggleConfirm] = useState<Product | null>(null);
   const [togglingActive, setTogglingActive] = useState(false);
 
@@ -231,7 +221,7 @@ export default function AdminProductsPage() {
     }
   };
 
-  // Delete product with confirmation
+  // Delete product
   const [deleteConfirm, setDeleteConfirm] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -261,7 +251,7 @@ export default function AdminProductsPage() {
       if (search) params.set('search', search);
       if (category) params.set('category', category);
       params.set('limit', '100');
-      params.set('showAll', 'true'); // Admin sees all variants
+      params.set('showAll', 'true');
       const res = await fetch(`/api/products?${params}`);
       const data = await res.json();
       setProducts(data.products || []);
@@ -274,61 +264,13 @@ export default function AdminProductsPage() {
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
-  // --- Fetch all variants for a variant group ---
-  const fetchVariantsForModal = useCallback(async (product: Product) => {
-    if (!product.variantGroup) {
-      // Single product, no group — show just this one
-      setVariantEdits([{
-        _id: product._id,
-        productId: product.productId,
-        packagingSize: product.packagingSize,
-        price: product.price / 100,
-        compareAtPrice: product.compareAtPrice ? product.compareAtPrice / 100 : 0,
-        stock: product.stock,
-        weight: product.weight,
-      }]);
-      return;
-    }
-    setLoadingVariants(true);
-    try {
-      const res = await fetch(`/api/products/${product.productId}`);
-      const data = await res.json();
-      if (res.ok) {
-        // Build variant edits from current product + its variants
-        const allProducts = [data.product, ...(data.variants || [])];
-        const edits: VariantEdit[] = allProducts.map((v: Record<string, unknown>) => ({
-          _id: v._id as string,
-          productId: v.productId as string,
-          packagingSize: v.packagingSize as string,
-          price: (v.price as number) / 100,
-          compareAtPrice: v.compareAtPrice ? (v.compareAtPrice as number) / 100 : 0,
-          stock: (v.stock as number) || 0,
-          weight: (v.weight as number) || 0,
-        }));
-        // Sort by price (cheapest first)
-        edits.sort((a, b) => a.price - b.price);
-        setVariantEdits(edits);
-      }
-    } catch (err) {
-      console.error('Failed to fetch variants:', err);
-    } finally {
-      setLoadingVariants(false);
-    }
-  }, []);
-
-  // --- Open Edit Modal (for any product in a group) ---
+  // --- Open Edit Modal ---
   const openEditModal = useCallback((product: Product) => {
     setEditingProduct(product);
     setEditForm({
       title: product.title,
       description: product.description,
-      price: product.price / 100,
-      compareAtPrice: product.compareAtPrice ? product.compareAtPrice / 100 : undefined,
       category: product.category,
-      packagingSize: product.packagingSize,
-      variantGroup: product.variantGroup || '',
-      weight: product.weight,
-      stock: product.stock,
       images: [...product.images],
       tags: [...(product.tags || [])],
       isMustTry: product.isMustTry,
@@ -339,8 +281,17 @@ export default function AdminProductsPage() {
       },
     });
     setTagInput('');
-    fetchVariantsForModal(product);
-  }, [fetchVariantsForModal]);
+    // Build variant edit rows from embedded variants (convert paisa → rupees)
+    const sorted = [...product.variants].sort((a, b) => a.price - b.price);
+    setVariantEdits(sorted.map(v => ({
+      _id: v._id,
+      packagingSize: v.packagingSize,
+      price: v.price / 100,
+      compareAtPrice: v.compareAtPrice ? v.compareAtPrice / 100 : 0,
+      stock: v.stock,
+      weight: v.weight,
+    })));
+  }, []);
 
   const closeEditModal = () => {
     setEditingProduct(null);
@@ -349,12 +300,12 @@ export default function AdminProductsPage() {
     setVariantEdits([]);
   };
 
-  // --- Save: update shared fields on primary product + each variant's individual fields ---
+  // --- Save product with embedded variants ---
   const handleEditSave = async () => {
     if (!editingProduct) return;
     setSaving(true);
     try {
-      // 1. Save shared fields on the primary (editingProduct)
+      // Build updates object — only changed fields
       const updates: Record<string, unknown> = {};
       const fields: (keyof Product)[] = [
         'title', 'description', 'category',
@@ -362,153 +313,63 @@ export default function AdminProductsPage() {
         'isMustTry', 'isBestSeller', 'isSpecialItem', 'nutritionInfo',
       ];
 
-      const originalInFormUnits: Record<string, unknown> = { ...editingProduct };
-      originalInFormUnits.price = editingProduct.price / 100;
-      originalInFormUnits.compareAtPrice = editingProduct.compareAtPrice ? editingProduct.compareAtPrice / 100 : undefined;
-
       for (const field of fields) {
         const newVal = editForm[field];
-        const oldVal = (originalInFormUnits as Record<string, unknown>)[field];
+        const oldVal = editingProduct[field];
         if (JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
           updates[field] = newVal;
         }
       }
 
-      // 2. Save per-variant fields (packagingSize, price, compareAtPrice, stock, weight)
-      // Find the variant edit that matches the primary product
-      const primaryEdit = variantEdits.find(v => v._id === editingProduct._id);
-      if (primaryEdit) {
-        // Include per-variant fields in the primary save
-        if (primaryEdit.packagingSize !== editingProduct.packagingSize) updates.packagingSize = primaryEdit.packagingSize;
-        if (Math.round(primaryEdit.price * 100) !== editingProduct.price) updates.price = Math.round(primaryEdit.price * 100);
-        const origCompare = editingProduct.compareAtPrice ? editingProduct.compareAtPrice / 100 : 0;
-        if (primaryEdit.compareAtPrice !== origCompare) {
-          updates.compareAtPrice = primaryEdit.compareAtPrice ? Math.round(primaryEdit.compareAtPrice * 100) : undefined;
-        }
-        if (primaryEdit.stock !== editingProduct.stock) updates.stock = primaryEdit.stock;
-        if (primaryEdit.weight !== editingProduct.weight) updates.weight = primaryEdit.weight;
-      } else {
-        // Fallback: use form values
-        if (JSON.stringify(editForm.price) !== JSON.stringify(editingProduct.price / 100)) {
-          updates.price = Math.round((editForm.price as number) * 100);
-        }
-        if (JSON.stringify(editForm.compareAtPrice) !== JSON.stringify(editingProduct.compareAtPrice ? editingProduct.compareAtPrice / 100 : undefined)) {
-          updates.compareAtPrice = editForm.compareAtPrice ? Math.round((editForm.compareAtPrice as number) * 100) : undefined;
-        }
-        if (editForm.packagingSize !== editingProduct.packagingSize) updates.packagingSize = editForm.packagingSize;
-        if (editForm.stock !== editingProduct.stock) updates.stock = editForm.stock;
-        if (editForm.weight !== editingProduct.weight) updates.weight = editForm.weight;
+      // Build the full variants array (convert rupees → paisa)
+      const newVariants = variantEdits.map(ve => ({
+        ...(ve.isNew ? {} : { _id: ve._id }),
+        packagingSize: ve.packagingSize,
+        weight: ve.weight,
+        price: Math.round(ve.price * 100),
+        compareAtPrice: ve.compareAtPrice ? Math.round(ve.compareAtPrice * 100) : undefined,
+        stock: ve.stock,
+      }));
+
+      // Always send variants if any variant was edited or added/removed
+      const origVariantsSorted = [...editingProduct.variants].sort((a, b) => a.price - b.price);
+      const origForCompare = origVariantsSorted.map(v => ({
+        _id: v._id,
+        packagingSize: v.packagingSize,
+        weight: v.weight,
+        price: v.price,
+        compareAtPrice: v.compareAtPrice || undefined,
+        stock: v.stock,
+      }));
+      const newForCompare = newVariants.map(v => ({
+        _id: (v as Record<string, unknown>)._id,
+        packagingSize: v.packagingSize,
+        weight: v.weight,
+        price: v.price,
+        compareAtPrice: v.compareAtPrice || undefined,
+        stock: v.stock,
+      }));
+      if (JSON.stringify(origForCompare) !== JSON.stringify(newForCompare)) {
+        updates.variants = newVariants;
       }
 
-      if (Object.keys(updates).length > 0) {
-        const res = await fetch(`/api/products/${editingProduct.productId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updates),
-        });
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Failed to update primary product');
-        }
+      if (Object.keys(updates).length === 0) {
+        toast('No changes to save', 'info');
+        setSaving(false);
+        return;
       }
 
-      // 3. Save other existing variants (non-primary, non-new)
-      for (const ve of variantEdits) {
-        if (ve._id === editingProduct._id || ve.isNew) continue;
-        // Find the original product data to compare
-        const original = products.find(p => p._id === ve._id);
-        if (!original) continue;
-
-        const vUpdates: Record<string, unknown> = {};
-        if (ve.packagingSize !== original.packagingSize) vUpdates.packagingSize = ve.packagingSize;
-        if (Math.round(ve.price * 100) !== original.price) vUpdates.price = Math.round(ve.price * 100);
-        const origComp = original.compareAtPrice ? original.compareAtPrice / 100 : 0;
-        if (ve.compareAtPrice !== origComp) {
-          vUpdates.compareAtPrice = ve.compareAtPrice ? Math.round(ve.compareAtPrice * 100) : undefined;
-        }
-        if (ve.stock !== original.stock) vUpdates.stock = ve.stock;
-        if (ve.weight !== original.weight) vUpdates.weight = ve.weight;
-
-        if (Object.keys(vUpdates).length > 0) {
-          const res = await fetch(`/api/products/${ve.productId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(vUpdates),
-          });
-          if (!res.ok) {
-            const data = await res.json();
-            throw new Error(data.error || `Failed to update variant ${ve.packagingSize}`);
-          }
-        }
+      const res = await fetch(`/api/products/${editingProduct.productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to save');
       }
 
-      // 4. Create new variants
-      for (const ve of variantEdits) {
-        if (!ve.isNew) continue;
-        const variantGroup = editingProduct.variantGroup ||
-          editingProduct.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-
-        // Set variantGroup on parent if it doesn't have one
-        if (!editingProduct.variantGroup) {
-          await fetch(`/api/products/${editingProduct.productId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ variantGroup }),
-          });
-          editingProduct.variantGroup = variantGroup;
-        }
-
-        // Use editForm.images (current form state) so freshly-uploaded images are included
-        const sharedImages = editForm.images?.length ? editForm.images : editingProduct.images || [];
-
-        const res = await fetch('/api/products', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: editingProduct.title,
-            description: editingProduct.description,
-            category: editingProduct.category,
-            tags: editingProduct.tags || [],
-            images: sharedImages,
-            nutritionInfo: editingProduct.nutritionInfo,
-            isMustTry: false,
-            isBestSeller: false,
-            isSpecialItem: false,
-            variantGroup,
-            packagingSize: ve.packagingSize,
-            price: Math.round(ve.price * 100),
-            compareAtPrice: ve.compareAtPrice ? Math.round(ve.compareAtPrice * 100) : undefined,
-            stock: ve.stock,
-            weight: ve.weight,
-          }),
-        });
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Failed to create variant');
-        }
-      }
-
-      // 5. Sync images to all sibling variants:
-      //    - Always if images were changed in this save
-      //    - Also if a sibling currently has no images (backfills existing empty variants)
-      const currentImages = (updates.images as string[] | undefined) ?? editForm.images ?? editingProduct.images ?? [];
-      const imagesChanged = updates.images !== undefined;
-      if (currentImages.length > 0 && editingProduct.variantGroup) {
-        for (const ve of variantEdits) {
-          if (ve._id === editingProduct._id || ve.isNew) continue;
-          const siblingProduct = products.find(p => p._id === ve._id);
-          const siblingHasNoImages = !siblingProduct?.images?.length;
-          if (imagesChanged || siblingHasNoImages) {
-            await fetch(`/api/products/${ve.productId}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ images: currentImages }),
-            });
-          }
-        }
-      }
-
-      toast('All changes saved!', 'success');
+      toast('Product saved!', 'success');
       closeEditModal();
       fetchProducts();
     } catch (err) {
@@ -519,14 +380,13 @@ export default function AdminProductsPage() {
   };
 
   // --- Variant edit helpers ---
-  const updateVariantEdit = (index: number, field: keyof VariantEdit, value: string | number) => {
+  const updateVariantEdit = (index: number, field: keyof VariantEditRow, value: string | number) => {
     setVariantEdits(prev => prev.map((v, i) => i === index ? { ...v, [field]: value } : v));
   };
 
   const addNewVariant = () => {
     setVariantEdits(prev => [...prev, {
       _id: `new-${Date.now()}`,
-      productId: '',
       packagingSize: '',
       price: 0,
       compareAtPrice: 0,
@@ -536,20 +396,21 @@ export default function AdminProductsPage() {
     }]);
   };
 
-  const removeNewVariant = (index: number) => {
-    setVariantEdits(prev => prev.filter((_, i) => i !== index));
+  const removeVariant = (index: number) => {
+    setVariantEdits(prev => {
+      if (prev.length <= 1) {
+        toast('Product must have at least one variant', 'error');
+        return prev;
+      }
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const currentImages = editForm.images || [];
-    if (currentImages.length >= 5) {
-      toast('Maximum 5 images allowed', 'error');
-      return;
-    }
-
+    if (currentImages.length >= 5) { toast('Maximum 5 images allowed', 'error'); return; }
     setUploading(true);
     try {
       const compressed = await compressImage(file);
@@ -569,10 +430,7 @@ export default function AdminProductsPage() {
   };
 
   const removeImage = (index: number) => {
-    setEditForm((prev) => ({
-      ...prev,
-      images: (prev.images || []).filter((_, i) => i !== index),
-    }));
+    setEditForm((prev) => ({ ...prev, images: (prev.images || []).filter((_, i) => i !== index) }));
   };
 
   const addTag = () => {
@@ -586,35 +444,31 @@ export default function AdminProductsPage() {
   };
 
   const removeTag = (index: number) => {
-    setEditForm((prev) => ({
-      ...prev,
-      tags: (prev.tags || []).filter((_, i) => i !== index),
-    }));
+    setEditForm((prev) => ({ ...prev, tags: (prev.tags || []).filter((_, i) => i !== index) }));
   };
 
   const updateNutrition = (field: keyof NutritionInfo, value: string) => {
-    setEditForm((prev) => ({
-      ...prev,
-      nutritionInfo: { ...(prev.nutritionInfo || {}), [field]: value },
-    }));
+    setEditForm((prev) => ({ ...prev, nutritionInfo: { ...(prev.nutritionInfo || {}), [field]: value } }));
   };
 
-  // --- Add Product Modal Logic ---
+  // --- Add Product Modal ---
   const openAddModal = () => {
     setAddForm({
-      title: '', description: '', category: categories[1],
-      packagingSize: '', weight: 0, price: 0, compareAtPrice: undefined,
-      stock: 0, images: [], tags: [],
+      title: '', description: '', category: categories[1] || '',
+      images: [], tags: [],
       isMustTry: false, isBestSeller: false, isSpecialItem: false,
       nutritionInfo: { calories: '', protein: '', carbs: '', fat: '', fiber: '' },
+      hsnCode: '',
     });
+    setAddVariants([{
+      _id: 'new-1', packagingSize: '', price: 0, compareAtPrice: 0, stock: 0, weight: 0, isNew: true,
+    }]);
     setAddTagInput('');
     setShowAddModal(true);
   };
 
   const closeAddModal = () => {
     setShowAddModal(false);
-    setAddForm({});
     setAddTagInput('');
   };
 
@@ -631,7 +485,7 @@ export default function AdminProductsPage() {
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Upload failed');
-      setAddForm((prev) => ({ ...prev, images: [...(prev.images || []), data.url] }));
+      setAddForm((prev) => ({ ...prev, images: [...prev.images, data.url] }));
       toast('Image uploaded', 'success');
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Failed to upload image', 'error');
@@ -642,33 +496,35 @@ export default function AdminProductsPage() {
   };
 
   const removeAddImage = (index: number) => {
-    setAddForm((prev) => ({ ...prev, images: (prev.images || []).filter((_, i) => i !== index) }));
+    setAddForm((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
   };
 
   const addAddTag = () => {
     const tag = addTagInput.trim();
     if (!tag) return;
-    const current = addForm.tags || [];
-    if (current.includes(tag)) { toast('Tag already exists', 'error'); return; }
-    if (current.length >= 10) { toast('Maximum 10 tags allowed', 'error'); return; }
-    setAddForm((prev) => ({ ...prev, tags: [...(prev.tags || []), tag] }));
+    if (addForm.tags.includes(tag)) { toast('Tag already exists', 'error'); return; }
+    if (addForm.tags.length >= 10) { toast('Maximum 10 tags allowed', 'error'); return; }
+    setAddForm((prev) => ({ ...prev, tags: [...prev.tags, tag] }));
     setAddTagInput('');
   };
 
   const removeAddTag = (index: number) => {
-    setAddForm((prev) => ({ ...prev, tags: (prev.tags || []).filter((_, i) => i !== index) }));
+    setAddForm((prev) => ({ ...prev, tags: prev.tags.filter((_, i) => i !== index) }));
   };
 
   const updateAddNutrition = (field: keyof NutritionInfo, value: string) => {
-    setAddForm((prev) => ({ ...prev, nutritionInfo: { ...(prev.nutritionInfo || {}), [field]: value } }));
+    setAddForm((prev) => ({ ...prev, nutritionInfo: { ...prev.nutritionInfo, [field]: value } }));
   };
 
   const handleCreateProduct = async () => {
     if (!addForm.title?.trim()) { toast('Title is required', 'error'); return; }
-    if (!addForm.description?.trim() || (addForm.description?.trim().length || 0) < 10) { toast('Description must be at least 10 characters', 'error'); return; }
-    if (!addForm.packagingSize?.trim()) { toast('Packaging size is required', 'error'); return; }
-    if (!addForm.price || addForm.price <= 0) { toast('Price must be greater than 0', 'error'); return; }
-    if (!addForm.weight || addForm.weight <= 0) { toast('Weight must be greater than 0', 'error'); return; }
+    if (!addForm.description?.trim() || addForm.description.length < 10) { toast('Description must be at least 10 characters', 'error'); return; }
+    if (addVariants.length === 0) { toast('At least one variant is required', 'error'); return; }
+    for (const v of addVariants) {
+      if (!v.packagingSize.trim()) { toast('All variants need a packaging size', 'error'); return; }
+      if (v.price <= 0) { toast('All variants need a price > 0', 'error'); return; }
+      if (v.weight <= 0) { toast('All variants need a weight > 0', 'error'); return; }
+    }
 
     setAddSaving(true);
     try {
@@ -676,17 +532,20 @@ export default function AdminProductsPage() {
         title: addForm.title,
         description: addForm.description,
         category: addForm.category,
-        packagingSize: addForm.packagingSize,
-        weight: addForm.weight,
-        price: Math.round((addForm.price as number) * 100),
-        compareAtPrice: addForm.compareAtPrice ? Math.round((addForm.compareAtPrice as number) * 100) : undefined,
-        stock: addForm.stock || 0,
-        images: addForm.images || [],
-        tags: addForm.tags || [],
-        isMustTry: addForm.isMustTry || false,
-        isBestSeller: addForm.isBestSeller || false,
-        isSpecialItem: addForm.isSpecialItem || false,
+        images: addForm.images,
+        tags: addForm.tags,
+        isMustTry: addForm.isMustTry,
+        isBestSeller: addForm.isBestSeller,
+        isSpecialItem: addForm.isSpecialItem,
         nutritionInfo: addForm.nutritionInfo,
+        hsnCode: addForm.hsnCode,
+        variants: addVariants.map(v => ({
+          packagingSize: v.packagingSize,
+          weight: v.weight,
+          price: Math.round(v.price * 100),
+          compareAtPrice: v.compareAtPrice ? Math.round(v.compareAtPrice * 100) : undefined,
+          stock: v.stock,
+        })),
       };
 
       const res = await fetch('/api/products', {
@@ -709,135 +568,255 @@ export default function AdminProductsPage() {
   };
 
   const filteredProducts = visibilityFilter === 'all' ? products : products.filter(p => visibilityFilter === 'active' ? p.isActive : !p.isActive);
-  const groupedItems = groupProducts(filteredProducts);
 
-  // --- Render a product row in the table ---
-  const renderProductRow = (p: Product, isVariant: boolean, isLast: boolean, fallbackImage?: string) => {
-    const displayImage = p.images[0] || fallbackImage;
+  // --- Render a variant row for the table ---
+  const renderVariantRow = (p: Product, v: Variant, vIdx: number, isLast: boolean) => {
+    const key = stockKey(p, v);
     return (
-    <tr key={p._id} style={isVariant ? { background: 'rgba(107,140,62,0.03)' } : undefined}>
-      <td>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', paddingLeft: isVariant ? 'var(--space-6)' : 0 }}>
-          {isVariant && (
-            <span style={{ color: 'var(--color-gray-300)', fontSize: '14px', marginLeft: '-20px' }}>└</span>
-          )}
-          <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', overflow: 'hidden', background: 'var(--color-gray-100)', flexShrink: 0, position: 'relative' }}>
-            {displayImage && <Image src={displayImage} alt="" fill sizes="40px" />}
-          </div>
-          <div>
-            <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{p.title}</div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)', display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-              {p.packagingSize}
-              {p.variantGroup && !isVariant && (
-                <span className={styles.badge} style={{ background: 'rgba(107,140,62,0.15)', color: 'var(--color-primary-600)', fontSize: '10px' }}>
-                  📦 {p.variantGroup}
-                </span>
-              )}
-              {isVariant && (
-                <span style={{ fontSize: '10px', color: 'var(--color-gray-400)' }}>variant</span>
-              )}
+      <tr key={`${p._id}-${v._id}`} style={vIdx > 0 ? { background: 'rgba(107,140,62,0.03)' } : undefined}>
+        <td>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', paddingLeft: vIdx > 0 ? 'var(--space-6)' : 0 }}>
+            {vIdx > 0 && (
+              <span style={{ color: 'var(--color-gray-300)', fontSize: '14px', marginLeft: '-20px' }}>└</span>
+            )}
+            {vIdx === 0 ? (
+              <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', overflow: 'hidden', background: 'var(--color-gray-100)', flexShrink: 0, position: 'relative' }}>
+                {p.images[0] && <Image src={p.images[0]} alt="" fill sizes="40px" />}
+              </div>
+            ) : (
+              <div style={{ width: 40 }} />
+            )}
+            <div>
+              {vIdx === 0 && <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{p.title}</div>}
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)', display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                {v.packagingSize}
+                {vIdx > 0 && (
+                  <span style={{ fontSize: '10px', color: 'var(--color-gray-400)' }}>variant</span>
+                )}
+                {vIdx === 0 && p.variants.length > 1 && (
+                  <span className={styles.badge} style={{ background: 'rgba(107,140,62,0.15)', color: 'var(--color-primary-600)', fontSize: '10px' }}>
+                    📦 {p.variants.length} sizes
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </td>
-      <td style={{ fontSize: 'var(--text-xs)', fontFamily: 'monospace', color: 'var(--color-gray-600)', letterSpacing: '0.02em' }}>{p.productId}</td>
-      <td style={{ fontSize: 'var(--text-xs)' }}>{isVariant ? '' : p.category}</td>
-      <td style={{ fontWeight: 600 }}>{formatPrice(p.price)}</td>
-      <td>
-        <span style={{ fontWeight: 600, color: p.stock <= 10 ? 'var(--color-error)' : 'inherit' }}>
-          {p.stock} {p.stock <= 10 && '⚠'}
-        </span>
-      </td>
-      <td>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <button
-            onClick={() => setStockEdit(p._id, getStockValue(p) - 1)}
-            style={{
-              width: 28, height: 28, borderRadius: 'var(--radius-md)', border: '1px solid var(--color-gray-300)',
-              background: 'white', cursor: 'pointer', fontSize: '16px', fontWeight: 700, color: 'var(--color-gray-600)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-            disabled={getStockValue(p) <= 0}
-          >−</button>
-          <input
-            type="number"
-            min={0}
-            value={getStockValue(p)}
-            onChange={(e) => setStockEdit(p._id, parseInt(e.target.value) || 0)}
-            style={{
-              width: 56, height: 28, textAlign: 'center', border: '1px solid var(--color-gray-300)',
-              borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', fontWeight: 600,
-              background: stockEdits[p._id] !== undefined ? 'rgba(198, 40, 40,0.04)' : 'white',
-            }}
-          />
-          <button
-            onClick={() => setStockEdit(p._id, getStockValue(p) + 1)}
-            style={{
-              width: 28, height: 28, borderRadius: 'var(--radius-md)', border: '1px solid var(--color-gray-300)',
-              background: 'white', cursor: 'pointer', fontSize: '16px', fontWeight: 700, color: 'var(--color-gray-600)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >+</button>
-          <button
-            onClick={() => saveStock(p)}
-            disabled={stockEdits[p._id] === undefined || savingStock === p._id}
-            style={{
-              padding: '4px 10px', fontSize: 'var(--text-xs)', fontWeight: 600,
-              borderRadius: 'var(--radius-md)', cursor: 'pointer',
-              border: '1px solid var(--color-gray-200)',
-              background: stockEdits[p._id] !== undefined ? 'var(--red)' : 'var(--color-gray-100)',
-              color: stockEdits[p._id] !== undefined ? 'white' : 'var(--color-gray-400)',
-              transition: 'all var(--transition-fast)',
-              opacity: savingStock === p._id ? 0.6 : 1,
-            }}
-          >
-            {savingStock === p._id ? '...' : 'Save'}
-          </button>
-        </div>
-      </td>
-      <td>{p.salesCount}</td>
-      <td>
-        {!isVariant && (
-          <div style={{ display: 'flex', gap: 'var(--space-1)', flexWrap: 'wrap' }}>
-            <span className={styles.badge} style={{ background: p.isMustTry ? 'rgba(232,132,90,0.15)' : 'var(--color-gray-100)', color: p.isMustTry ? 'var(--color-accent-500)' : 'var(--color-gray-400)' }}>🔥</span>
-            <span className={styles.badge} style={{ background: p.isBestSeller ? 'rgba(198, 40, 40,0.15)' : 'var(--color-gray-100)', color: p.isBestSeller ? 'var(--color-primary-600)' : 'var(--color-gray-400)' }}>⭐</span>
+        </td>
+        <td style={{ fontSize: 'var(--text-xs)', fontFamily: 'monospace', color: 'var(--color-gray-600)', letterSpacing: '0.02em' }}>{vIdx === 0 ? p.productId : ''}</td>
+        <td style={{ fontSize: 'var(--text-xs)' }}>{vIdx === 0 ? p.category : ''}</td>
+        <td style={{ fontWeight: 600 }}>{formatPrice(v.price)}</td>
+        <td>
+          <span style={{ fontWeight: 600, color: v.stock <= 10 ? 'var(--color-error)' : 'inherit' }}>
+            {v.stock} {v.stock <= 10 && '⚠'}
+          </span>
+        </td>
+        <td>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button
+              onClick={() => setStockEdit(p, v, getStockValue(p, v) - 1)}
+              style={{
+                width: 28, height: 28, borderRadius: 'var(--radius-md)', border: '1px solid var(--color-gray-300)',
+                background: 'white', cursor: 'pointer', fontSize: '16px', fontWeight: 700, color: 'var(--color-gray-600)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+              disabled={getStockValue(p, v) <= 0}
+            >−</button>
+            <input
+              type="number"
+              min={0}
+              value={getStockValue(p, v)}
+              onChange={(e) => setStockEdit(p, v, parseInt(e.target.value) || 0)}
+              style={{
+                width: 56, height: 28, textAlign: 'center', border: '1px solid var(--color-gray-300)',
+                borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', fontWeight: 600,
+                background: stockEdits[key] !== undefined ? 'rgba(198, 40, 40,0.04)' : 'white',
+              }}
+            />
+            <button
+              onClick={() => setStockEdit(p, v, getStockValue(p, v) + 1)}
+              style={{
+                width: 28, height: 28, borderRadius: 'var(--radius-md)', border: '1px solid var(--color-gray-300)',
+                background: 'white', cursor: 'pointer', fontSize: '16px', fontWeight: 700, color: 'var(--color-gray-600)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >+</button>
+            <button
+              onClick={() => saveStock(p, v)}
+              disabled={stockEdits[key] === undefined || savingStock === key}
+              style={{
+                padding: '4px 10px', fontSize: 'var(--text-xs)', fontWeight: 600,
+                borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                border: '1px solid var(--color-gray-200)',
+                background: stockEdits[key] !== undefined ? 'var(--red)' : 'var(--color-gray-100)',
+                color: stockEdits[key] !== undefined ? 'white' : 'var(--color-gray-400)',
+                transition: 'all var(--transition-fast)',
+                opacity: savingStock === key ? 0.6 : 1,
+              }}
+            >
+              {savingStock === key ? '...' : 'Save'}
+            </button>
           </div>
-        )}
-      </td>
-      <td>
-        <button
-          onClick={() => setToggleConfirm(p)}
-          className={styles.badge}
-          style={{
-            background: p.isActive ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-            color: p.isActive ? 'var(--color-success)' : 'var(--color-error)',
-            cursor: 'pointer', border: 'none',
-          }}
-        >
-          {p.isActive ? 'Active' : 'Hidden'}
-        </button>
-      </td>
-      <td>
-        <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
-          <button className={styles.editBtn} onClick={() => openEditModal(p)} title="Edit product" aria-label={`Edit ${p.title}`}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-          </button>
-          <button className={styles.editBtn} onClick={() => setDeleteConfirm(p)} title="Delete product" aria-label={`Delete ${p.title}`}
-            style={{ color: 'var(--color-error)' }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
-          </button>
-        </div>
-      </td>
-    </tr>
+        </td>
+        <td>{v.salesCount || 0}</td>
+        <td>
+          {vIdx === 0 && (
+            <div style={{ display: 'flex', gap: 'var(--space-1)', flexWrap: 'wrap' }}>
+              <span className={styles.badge} style={{ background: p.isMustTry ? 'rgba(232,132,90,0.15)' : 'var(--color-gray-100)', color: p.isMustTry ? 'var(--color-accent-500)' : 'var(--color-gray-400)' }}>🔥</span>
+              <span className={styles.badge} style={{ background: p.isBestSeller ? 'rgba(198, 40, 40,0.15)' : 'var(--color-gray-100)', color: p.isBestSeller ? 'var(--color-primary-600)' : 'var(--color-gray-400)' }}>⭐</span>
+            </div>
+          )}
+        </td>
+        <td>
+          {vIdx === 0 && (
+            <button
+              onClick={() => setToggleConfirm(p)}
+              className={styles.badge}
+              style={{
+                background: p.isActive ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                color: p.isActive ? 'var(--color-success)' : 'var(--color-error)',
+                cursor: 'pointer', border: 'none',
+              }}
+            >
+              {p.isActive ? 'Active' : 'Hidden'}
+            </button>
+          )}
+        </td>
+        <td>
+          {vIdx === 0 && (
+            <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+              <button className={styles.editBtn} onClick={() => openEditModal(p)} title="Edit product" aria-label={`Edit ${p.title}`}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+              </button>
+              <button className={styles.editBtn} onClick={() => setDeleteConfirm(p)} title="Delete product" aria-label={`Delete ${p.title}`}
+                style={{ color: 'var(--color-error)' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </td>
+      </tr>
     );
   };
+
+  // --- Variant editor section used in both edit and add modals ---
+  const renderVariantEditor = (
+    variants: VariantEditRow[],
+    setVariants: (fn: (prev: VariantEditRow[]) => VariantEditRow[]) => void,
+    canRemoveExisting = false
+  ) => (
+    <div style={{
+      padding: 'var(--space-4)',
+      background: 'rgba(107,140,62,0.04)',
+      border: '1px solid rgba(107,140,62,0.15)',
+      borderRadius: 'var(--radius-xl)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+        <label className={styles.formLabel} style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--red)' }}>
+          📦 Pack Size Variants
+        </label>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+        {variants.map((ve, idx) => (
+          <div key={ve._id} style={{
+            padding: 'var(--space-3)',
+            background: ve.isNew ? 'rgba(198, 40, 40,0.03)' : 'white',
+            border: ve.isNew ? '1.5px dashed var(--red)' : '1px solid var(--color-gray-200)',
+            borderRadius: 'var(--radius-lg)',
+            position: 'relative',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
+              <span style={{
+                fontSize: '10px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.05em',
+                color: ve.isNew ? 'var(--red)' : 'var(--color-gray-500)',
+              }}>
+                {ve.isNew ? '✨ New Variant' : `Variant ${idx + 1}`}
+              </span>
+              {(ve.isNew || canRemoveExisting) && variants.length > 1 && (
+                <button
+                  onClick={() => setVariants(prev => prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx))}
+                  style={{ fontSize: '12px', color: 'var(--color-error)', cursor: 'pointer', background: 'none', border: 'none', fontWeight: 600 }}
+                >
+                  ✕ Remove
+                </button>
+              )}
+            </div>
+            <div className={styles.formRow}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabelSmall}>Packaging Size</label>
+                <input
+                  className={styles.formInput}
+                  value={ve.packagingSize}
+                  placeholder="e.g. 250g"
+                  onChange={(e) => setVariants(prev => prev.map((v, i) => i === idx ? { ...v, packagingSize: e.target.value } : v))}
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabelSmall}>Weight (g)</label>
+                <input
+                  className={styles.formInput}
+                  type="number" min={0}
+                  value={ve.weight || ''}
+                  onChange={(e) => setVariants(prev => prev.map((v, i) => i === idx ? { ...v, weight: parseFloat(e.target.value) || 0 } : v))}
+                />
+              </div>
+            </div>
+            <div className={styles.formRow} style={{ marginTop: 'var(--space-2)' }}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabelSmall}>Price (₹)</label>
+                <input
+                  className={styles.formInput}
+                  type="number" min={0} step="0.01"
+                  value={ve.price || ''}
+                  onChange={(e) => setVariants(prev => prev.map((v, i) => i === idx ? { ...v, price: parseFloat(e.target.value) || 0 } : v))}
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabelSmall}>Compare At Price (₹)</label>
+                <input
+                  className={styles.formInput}
+                  type="number" min={0} step="0.01"
+                  value={ve.compareAtPrice || ''}
+                  onChange={(e) => setVariants(prev => prev.map((v, i) => i === idx ? { ...v, compareAtPrice: parseFloat(e.target.value) || 0 } : v))}
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabelSmall}>Stock</label>
+                <input
+                  className={styles.formInput}
+                  type="number" min={0}
+                  value={ve.stock || ''}
+                  onChange={(e) => setVariants(prev => prev.map((v, i) => i === idx ? { ...v, stock: parseInt(e.target.value) || 0 } : v))}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <button
+        onClick={() => setVariants(prev => [...prev, {
+          _id: `new-${Date.now()}`, packagingSize: '', price: 0, compareAtPrice: 0, stock: 0, weight: 0, isNew: true,
+        }])}
+        style={{
+          width: '100%', padding: 'var(--space-3)', marginTop: 'var(--space-3)',
+          border: '2px dashed var(--color-gray-300)', borderRadius: 'var(--radius-md)',
+          background: 'transparent', color: 'var(--color-gray-500)',
+          fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
+          transition: 'all 0.15s ease',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--red)'; e.currentTarget.style.color = 'var(--red)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-gray-300)'; e.currentTarget.style.color = 'var(--color-gray-500)'; }}
+      >
+        + Add New Pack Size Variant
+      </button>
+    </div>
+  );
 
   return (
     <div>
@@ -892,15 +871,12 @@ export default function AdminProductsPage() {
               </tr>
             </thead>
             <tbody>
-              {groupedItems.map((item) => {
-                if (isGroup(item)) {
-                  const allInGroup = [item.primary, ...item.variants];
-                  const primaryImage = item.primary.images[0];
-                  return allInGroup.map((p, idx) =>
-                    renderProductRow(p, idx > 0, idx === allInGroup.length - 1, primaryImage)
-                  );
-                }
-                return renderProductRow(item, false, false);
+              {filteredProducts.map((product) => {
+                // Render one row per variant, grouped under the product
+                const sorted = [...product.variants].sort((a, b) => a.price - b.price);
+                return sorted.map((v, vIdx) =>
+                  renderVariantRow(product, v, vIdx, vIdx === sorted.length - 1)
+                );
               })}
             </tbody>
           </table>
@@ -918,19 +894,14 @@ export default function AdminProductsPage() {
             </div>
 
             <div className={styles.modalBody}>
-              {/* Title */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Title</label>
                 <input className={styles.formInput} value={editForm.title || ''} onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))} />
               </div>
-
-              {/* Description */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Description</label>
                 <textarea className={styles.formTextarea} rows={3} value={editForm.description || ''} onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} />
               </div>
-
-              {/* Category */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Category</label>
                 <select className={styles.formSelect} value={editForm.category || ''} onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value }))}>
@@ -938,129 +909,8 @@ export default function AdminProductsPage() {
                 </select>
               </div>
 
-              {/* ===== VARIANTS SECTION ===== */}
-              <div style={{
-                padding: 'var(--space-4)',
-                background: 'rgba(107,140,62,0.04)',
-                border: '1px solid rgba(107,140,62,0.15)',
-                borderRadius: 'var(--radius-xl)',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
-                  <label className={styles.formLabel} style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--red)' }}>
-                    📦 Pack Size Variants
-                  </label>
-                  {editingProduct?.variantGroup && (
-                    <span style={{ fontSize: '10px', padding: '2px 8px', background: 'rgba(107,140,62,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--color-gray-600)', fontWeight: 600 }}>
-                      Group: {editingProduct.variantGroup}
-                    </span>
-                  )}
-                </div>
+              {renderVariantEditor(variantEdits, setVariantEdits, true)}
 
-                {loadingVariants ? (
-                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)', padding: 'var(--space-3)', textAlign: 'center' }}>
-                    Loading variants...
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                    {variantEdits.map((ve, idx) => (
-                      <div key={ve._id} style={{
-                        padding: 'var(--space-3)',
-                        background: ve.isNew ? 'rgba(198, 40, 40,0.03)' : (ve._id === editingProduct._id ? 'rgba(198, 40, 40,0.06)' : 'white'),
-                        border: ve.isNew ? '1.5px dashed var(--red)' : (ve._id === editingProduct._id ? '1px solid rgba(198, 40, 40,0.15)' : '1px solid var(--color-gray-200)'),
-                        borderRadius: 'var(--radius-lg)',
-                        position: 'relative',
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
-                          <span style={{
-                            fontSize: '10px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.05em',
-                            color: ve.isNew ? 'var(--red)' : (ve._id === editingProduct._id ? 'var(--red)' : 'var(--color-gray-500)'),
-                          }}>
-                            {ve.isNew ? '✨ New Variant' : (ve._id === editingProduct._id ? 'Primary' : 'Variant')}
-                          </span>
-                          {ve.isNew && (
-                            <button
-                              onClick={() => removeNewVariant(idx)}
-                              style={{ fontSize: '12px', color: 'var(--color-error)', cursor: 'pointer', background: 'none', border: 'none', fontWeight: 600 }}
-                            >
-                              ✕ Remove
-                            </button>
-                          )}
-                        </div>
-                        <div className={styles.formRow}>
-                          <div className={styles.formGroup}>
-                            <label className={styles.formLabelSmall}>Packaging Size</label>
-                            <input
-                              className={styles.formInput}
-                              value={ve.packagingSize}
-                              placeholder="e.g. 250g"
-                              onChange={(e) => updateVariantEdit(idx, 'packagingSize', e.target.value)}
-                            />
-                          </div>
-                          <div className={styles.formGroup}>
-                            <label className={styles.formLabelSmall}>Weight (g)</label>
-                            <input
-                              className={styles.formInput}
-                              type="number" min={0}
-                              value={ve.weight || ''}
-                              onChange={(e) => updateVariantEdit(idx, 'weight', parseFloat(e.target.value) || 0)}
-                            />
-                          </div>
-                        </div>
-                        <div className={styles.formRow} style={{ marginTop: 'var(--space-2)' }}>
-                          <div className={styles.formGroup}>
-                            <label className={styles.formLabelSmall}>Price (₹)</label>
-                            <input
-                              className={styles.formInput}
-                              type="number" min={0} step="0.01"
-                              value={ve.price || ''}
-                              onChange={(e) => updateVariantEdit(idx, 'price', parseFloat(e.target.value) || 0)}
-                            />
-                          </div>
-                          <div className={styles.formGroup}>
-                            <label className={styles.formLabelSmall}>Compare At Price (₹)</label>
-                            <input
-                              className={styles.formInput}
-                              type="number" min={0} step="0.01"
-                              value={ve.compareAtPrice || ''}
-                              onChange={(e) => updateVariantEdit(idx, 'compareAtPrice', parseFloat(e.target.value) || 0)}
-                            />
-                          </div>
-                          <div className={styles.formGroup}>
-                            <label className={styles.formLabelSmall}>Stock</label>
-                            <input
-                              className={styles.formInput}
-                              type="number" min={0}
-                              value={ve.stock || ''}
-                              onChange={(e) => updateVariantEdit(idx, 'stock', parseInt(e.target.value) || 0)}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Add new variant button */}
-                <button
-                  onClick={addNewVariant}
-                  style={{
-                    width: '100%', padding: 'var(--space-3)', marginTop: 'var(--space-3)',
-                    border: '2px dashed var(--color-gray-300)', borderRadius: 'var(--radius-md)',
-                    background: 'transparent', color: 'var(--color-gray-500)',
-                    fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--red)'; e.currentTarget.style.color = 'var(--red)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-gray-300)'; e.currentTarget.style.color = 'var(--color-gray-500)'; }}
-                >
-                  + Add New Pack Size Variant
-                </button>
-                <div style={{ fontSize: '10px', color: 'var(--color-gray-500)', marginTop: 'var(--space-2)' }}>
-                  New variants inherit title, description, category, images, and tags from the primary product.
-                </div>
-              </div>
-
-              {/* Tags */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Tags</label>
                 <div className={styles.tagContainer}>
@@ -1077,7 +927,6 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              {/* Images */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Images ({(editForm.images || []).length}/5)</label>
                 <div className={styles.imageGrid}>
@@ -1103,7 +952,6 @@ export default function AdminProductsPage() {
                 <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" style={{ display: 'none' }} onChange={handleImageUpload} />
               </div>
 
-              {/* Nutrition Info */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Nutrition Info</label>
                 <div className={styles.formRow}>
@@ -1116,7 +964,6 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              {/* Boolean Flags */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Flags</label>
                 <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
@@ -1154,59 +1001,27 @@ export default function AdminProductsPage() {
             </div>
 
             <div className={styles.modalBody}>
-              {/* Title */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Title *</label>
-                <input className={styles.formInput} value={addForm.title || ''} onChange={(e) => setAddForm((f) => ({ ...f, title: e.target.value }))} placeholder="Product name" />
+                <input className={styles.formInput} value={addForm.title} onChange={(e) => setAddForm((f) => ({ ...f, title: e.target.value }))} placeholder="Product name" />
               </div>
-
-              {/* Description */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Description *</label>
-                <textarea className={styles.formTextarea} rows={3} value={addForm.description || ''} onChange={(e) => setAddForm((f) => ({ ...f, description: e.target.value }))} placeholder="Product description (min 10 characters)" />
+                <textarea className={styles.formTextarea} rows={3} value={addForm.description} onChange={(e) => setAddForm((f) => ({ ...f, description: e.target.value }))} placeholder="Product description (min 10 characters)" />
               </div>
-
-              {/* Category */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Category *</label>
-                <select className={styles.formSelect} value={addForm.category || ''} onChange={(e) => setAddForm((f) => ({ ...f, category: e.target.value }))}>
+                <select className={styles.formSelect} value={addForm.category} onChange={(e) => setAddForm((f) => ({ ...f, category: e.target.value }))}>
                   {categories.filter(Boolean).map((c) => (<option key={c} value={c}>{categoryDisplayNames[c] || c}</option>))}
                 </select>
               </div>
 
-              {/* Packaging, Weight, Stock */}
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Packaging Size *</label>
-                  <input className={styles.formInput} value={addForm.packagingSize || ''} onChange={(e) => setAddForm((f) => ({ ...f, packagingSize: e.target.value }))} placeholder="e.g. 250g" />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Weight (g) *</label>
-                  <input className={styles.formInput} type="number" min={0} value={addForm.weight ?? ''} onChange={(e) => setAddForm((f) => ({ ...f, weight: parseFloat(e.target.value) || 0 }))} />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Stock</label>
-                  <input className={styles.formInput} type="number" min={0} value={addForm.stock ?? ''} onChange={(e) => setAddForm((f) => ({ ...f, stock: parseInt(e.target.value) || 0 }))} />
-                </div>
-              </div>
+              {renderVariantEditor(addVariants, setAddVariants)}
 
-              {/* Price Row */}
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Price (₹) *</label>
-                  <input className={styles.formInput} type="number" min={0} step="0.01" value={addForm.price ?? ''} onChange={(e) => setAddForm((f) => ({ ...f, price: parseFloat(e.target.value) || 0 }))} />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Compare At Price (₹)</label>
-                  <input className={styles.formInput} type="number" min={0} step="0.01" value={addForm.compareAtPrice ?? ''} onChange={(e) => { const val = e.target.value; setAddForm((f) => ({ ...f, compareAtPrice: val ? parseFloat(val) : undefined })); }} />
-                </div>
-              </div>
-
-              {/* Tags */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Tags</label>
                 <div className={styles.tagContainer}>
-                  {(addForm.tags || []).map((tag, i) => (
+                  {addForm.tags.map((tag, i) => (
                     <span key={i} className={styles.tag}>
                       {tag}
                       <button className={styles.tagRemove} onClick={() => removeAddTag(i)} aria-label={`Remove tag ${tag}`}>×</button>
@@ -1219,17 +1034,16 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              {/* Images */}
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Images ({(addForm.images || []).length}/5)</label>
+                <label className={styles.formLabel}>Images ({addForm.images.length}/5)</label>
                 <div className={styles.imageGrid}>
-                  {(addForm.images || []).map((img, i) => (
+                  {addForm.images.map((img, i) => (
                     <div key={i} className={styles.imageThumb}>
                       <Image src={img} alt={`Product image ${i + 1}`} fill sizes="80px" style={{ objectFit: 'cover' }} />
                       <button className={styles.imageRemove} onClick={() => removeAddImage(i)} aria-label="Remove image">×</button>
                     </div>
                   ))}
-                  {(addForm.images || []).length < 5 && (
+                  {addForm.images.length < 5 && (
                     <button className={styles.imageAdd} onClick={() => addFileInputRef.current?.click()} disabled={addUploading}>
                       {addUploading ? (
                         <span className={styles.spinner} />
@@ -1245,20 +1059,18 @@ export default function AdminProductsPage() {
                 <input ref={addFileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" style={{ display: 'none' }} onChange={handleAddImageUpload} />
               </div>
 
-              {/* Nutrition Info */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Nutrition Info</label>
                 <div className={styles.formRow}>
                   {(['calories', 'protein', 'carbs', 'fat', 'fiber'] as const).map((field) => (
                     <div key={field} className={styles.formGroup} style={{ flex: '1 1 0' }}>
                       <label className={styles.formLabelSmall}>{field.charAt(0).toUpperCase() + field.slice(1)}</label>
-                      <input className={styles.formInput} placeholder="e.g. 120 kcal" value={addForm.nutritionInfo?.[field] || ''} onChange={(e) => updateAddNutrition(field, e.target.value)} />
+                      <input className={styles.formInput} placeholder="e.g. 120 kcal" value={addForm.nutritionInfo[field] || ''} onChange={(e) => updateAddNutrition(field, e.target.value)} />
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Boolean Flags */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Flags</label>
                 <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
@@ -1268,7 +1080,7 @@ export default function AdminProductsPage() {
                     { key: 'isSpecialItem' as const, label: '✨ Special Item' },
                   ]).map(({ key, label }) => (
                     <label key={key} className={styles.checkboxLabel}>
-                      <input type="checkbox" checked={!!addForm[key]} onChange={(e) => setAddForm((f) => ({ ...f, [key]: e.target.checked }))} />
+                      <input type="checkbox" checked={addForm[key]} onChange={(e) => setAddForm((f) => ({ ...f, [key]: e.target.checked }))} />
                       {label}
                     </label>
                   ))}
@@ -1285,6 +1097,7 @@ export default function AdminProductsPage() {
           </div>
         </div>
       )}
+
       {/* Toggle Active Confirmation Modal */}
       {toggleConfirm && (
         <div className={styles.modalOverlay} onClick={() => setToggleConfirm(null)}>
@@ -1309,9 +1122,7 @@ export default function AdminProductsPage() {
                 className={`${styles.actionBtn}`}
                 style={{ border: '1px solid var(--color-gray-300)', color: 'var(--color-gray-600)', background: 'transparent' }}
                 onClick={() => setToggleConfirm(null)}
-              >
-                Cancel
-              </button>
+              >Cancel</button>
               <button
                 className={`${styles.actionBtn}`}
                 style={{
@@ -1327,6 +1138,7 @@ export default function AdminProductsPage() {
           </div>
         </div>
       )}
+
       {/* Delete Product Confirmation Modal */}
       {deleteConfirm && (
         <div className={styles.modalOverlay} onClick={() => setDeleteConfirm(null)}>
@@ -1338,7 +1150,7 @@ export default function AdminProductsPage() {
             <div className={styles.modalBody} style={{ textAlign: 'center', gap: 'var(--space-3)' }}>
               <div style={{ fontSize: '40px' }}>🗑️</div>
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)', lineHeight: 1.6 }}>
-                Permanently delete <strong>{deleteConfirm.title}</strong> ({deleteConfirm.packagingSize})?
+                Permanently delete <strong>{deleteConfirm.title}</strong> ({deleteConfirm.variants.map(v => v.packagingSize).join(', ')})?
               </p>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-error)', fontWeight: 600 }}>
                 This will remove its images, reviews, and clear it from all carts & wishlists. This action cannot be undone.
@@ -1349,9 +1161,7 @@ export default function AdminProductsPage() {
                 className={`${styles.actionBtn}`}
                 style={{ border: '1px solid var(--color-gray-300)', color: 'var(--color-gray-600)', background: 'transparent' }}
                 onClick={() => setDeleteConfirm(null)}
-              >
-                Cancel
-              </button>
+              >Cancel</button>
               <button
                 className={`${styles.actionBtn}`}
                 style={{ background: 'var(--color-error)', color: 'white', border: 'none' }}

@@ -3,21 +3,27 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
 
+interface WishlistVariant {
+  _id: string;
+  packagingSize: string;
+  price: number;
+  compareAtPrice?: number;
+  stock: number;
+}
+
 interface WishlistProduct {
   _id: string;
   productId: string;
   title: string;
   slug: string;
   images: string[];
-  price: number;
-  compareAtPrice?: number;
-  packagingSize: string;
-  stock: number;
+  variants: WishlistVariant[];
   category: string;
   isMustTry?: boolean;
   isBestSeller?: boolean;
   tags?: string[];
 }
+
 
 interface WishlistItem {
   _id: string;

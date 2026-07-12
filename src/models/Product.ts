@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 export interface INutritionInfo {
   calories?: string;
@@ -8,26 +8,29 @@ export interface INutritionInfo {
   fiber?: string;
 }
 
+export interface IVariant {
+  _id: Types.ObjectId;
+  packagingSize: string;
+  weight: number;
+  price: number;
+  compareAtPrice?: number;
+  stock: number;
+  salesCount: number;
+}
+
 export interface IProduct extends Document {
   productId: string;
   title: string;
   slug: string;
   description: string;
   images: string[];
-  price: number;
-  compareAtPrice?: number;
   category: string;
   tags: string[];
-  packagingSize: string;
-  parentProduct?: string;
-  variantGroup?: string;
-  stock: number;
+  variants: Types.DocumentArray<IVariant>;
   isActive: boolean;
   isMustTry: boolean;
   isSpecialItem: boolean;
   isBestSeller: boolean;
-  salesCount: number;
-  weight: number;
   hsnCode: string;
   nutritionInfo?: INutritionInfo;
   createdAt: Date;
@@ -43,7 +46,6 @@ const CATEGORIES = [
   'Premium Healthy Sweets',
 ] as const;
 
-
 const nutritionInfoSchema = new Schema(
   {
     calories: String,
@@ -55,6 +57,18 @@ const nutritionInfoSchema = new Schema(
   { _id: false }
 );
 
+const variantSchema = new Schema<IVariant>(
+  {
+    packagingSize: { type: String, required: true },
+    weight: { type: Number, required: true, min: 0 },
+    price: { type: Number, required: true, min: 0 },
+    compareAtPrice: { type: Number, min: 0 },
+    stock: { type: Number, default: 0, min: 0 },
+    salesCount: { type: Number, default: 0, min: 0 },
+  },
+  { _id: true }
+);
+
 const productSchema = new Schema<IProduct>(
   {
     productId: { type: String, required: true, unique: true },
@@ -62,20 +76,17 @@ const productSchema = new Schema<IProduct>(
     slug: { type: String, required: true, unique: true, lowercase: true },
     description: { type: String, required: true },
     images: { type: [String], default: [], validate: [(v: string[]) => v.length <= 5, 'Max 5 images'] },
-    price: { type: Number, required: true, min: 0 },
-    compareAtPrice: { type: Number, min: 0 },
     category: { type: String, required: true, enum: CATEGORIES },
     tags: { type: [String], default: [] },
-    packagingSize: { type: String, required: true },
-    parentProduct: { type: String },
-    variantGroup: { type: String },
-    stock: { type: Number, default: 0, min: 0 },
+    variants: {
+      type: [variantSchema],
+      required: true,
+      validate: [(v: IVariant[]) => v.length >= 1, 'At least one variant required'],
+    },
     isActive: { type: Boolean, default: true },
     isMustTry: { type: Boolean, default: false },
     isSpecialItem: { type: Boolean, default: false },
     isBestSeller: { type: Boolean, default: false },
-    salesCount: { type: Number, default: 0, min: 0 },
-    weight: { type: Number, required: true, min: 0 },
     hsnCode: { type: String, default: '' },
     nutritionInfo: { type: nutritionInfoSchema },
   },
@@ -84,8 +95,7 @@ const productSchema = new Schema<IProduct>(
 
 productSchema.index({ category: 1 });
 productSchema.index({ tags: 1 });
-productSchema.index({ price: 1 });
-productSchema.index({ variantGroup: 1 });
+productSchema.index({ 'variants.price': 1 });
 productSchema.index({ isActive: 1 });
 productSchema.index({ title: 'text', description: 'text', tags: 'text' });
 

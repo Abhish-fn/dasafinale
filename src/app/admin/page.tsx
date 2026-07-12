@@ -13,7 +13,7 @@ interface Stats {
     totalProducts: number; lowStockProducts: number; pendingOrders: number;
   };
   recentOrders: { orderId: string; items: { productSnapshot: { title: string } }[]; pricing: { total: number }; status: string; createdAt: string; shippingAddress: { fullName: string } }[];
-  topProducts: { title: string; productId: string; salesCount: number; price: number; images: string[]; packagingSize: string }[];
+  topProducts: { title: string; productId: string; totalSalesCount: number; minPrice: number; images: string[]; primaryPackagingSize: string }[];
   statusBreakdown: Record<string, number>;
 }
 
@@ -150,7 +150,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className={styles.topProductInfo}>
                     <div className={styles.topProductName}>{product.title}</div>
-                    <div className={styles.topProductMeta}>{product.salesCount} sold · {formatPrice(product.price)}</div>
+                    <div className={styles.topProductMeta}>{product.totalSalesCount} sold · {formatPrice(product.minPrice)}</div>
                   </div>
                 </div>
               ))}

@@ -32,10 +32,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Guest cart transferred', itemCount: guestCart.items.length });
     }
 
-    // Merge: add guest items that aren't already in user cart
+    // Merge: match on productId + variantId pair (not productId alone)
     for (const guestItem of guestCart.items) {
       const existingIndex = userCart.items.findIndex(
-        (item: Record<string, any>) => item.productId.toString() === guestItem.productId.toString()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (item: Record<string, any>) =>
+          item.productId.toString() === guestItem.productId.toString() &&
+          item.variantId?.toString() === guestItem.variantId?.toString()
       );
 
       if (existingIndex > -1) {
@@ -47,6 +50,7 @@ export async function POST(req: NextRequest) {
       } else {
         userCart.items.push({
           productId: guestItem.productId,
+          variantId: guestItem.variantId,
           quantity: guestItem.quantity,
           addedAt: guestItem.addedAt,
         });

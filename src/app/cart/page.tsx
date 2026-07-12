@@ -1,79 +1,29 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
-import styles from './cart.module.css';
 
-interface VariantOption {
-  _id: string;
-  packagingSize: string;
-  price: number;
-  stock: number;
-  productId: string;
-}
+import styles from './cart.module.css';
 
 export default function CartPage() {
   const { items, total, loading, updateQuantity, removeItem, swapVariant } = useCart();
   const { toast } = useToast();
 
-  // Track which items have their variant selector open
-  // Cache of fetched variants per variantGroup
-  const [variantCache, setVariantCache] = useState<Record<string, VariantOption[]>>({});
-  const [swapping, setSwapping] = useState<string | null>(null);
 
+  // Helper: get the variant data for a cart item
+  const getVariant = (item: typeof items[0]) => {
+    return item.product.variants?.find(v => v._id === item.variantId);
+  };
 
-
-  const fetchVariants = useCallback(async (variantGroup: string, currentProductId: string) => {
-    if (variantCache[variantGroup]) return;
+  const handleSwapVariant = async (itemId: string, newVariantId: string) => {
     try {
-      const res = await fetch(`/api/products/${currentProductId}`);
-      const data = await res.json();
-      if (res.ok) {
-        const allVariants: VariantOption[] = [
-          {
-            _id: data.product._id,
-            packagingSize: data.product.packagingSize,
-            price: data.product.price,
-            stock: data.product.stock,
-            productId: data.product.productId,
-          },
-          ...(data.variants || []).map((v: VariantOption & { productId: string }) => ({
-            _id: v._id,
-            packagingSize: v.packagingSize,
-            price: v.price,
-            stock: v.stock,
-            productId: v.productId,
-          })),
-        ].sort((a, b) => a.price - b.price);
-        setVariantCache((prev) => ({ ...prev, [variantGroup]: allVariants }));
-      }
-    } catch (err) {
-      console.error('Failed to fetch variants:', err);
-    }
-  }, [variantCache]);
-
-  // Auto-fetch variants for all cart items that have a variantGroup
-  useEffect(() => {
-    for (const item of items) {
-      if (item.product.variantGroup && !variantCache[item.product.variantGroup]) {
-        fetchVariants(item.product.variantGroup, item.product.productId);
-      }
-    }
-  }, [items, fetchVariants, variantCache]);
-
-  const handleSwapVariant = async (itemId: string, newProductId: string) => {
-    setSwapping(itemId);
-    try {
-      await swapVariant(itemId, newProductId);
+      await swapVariant(itemId, newVariantId);
       toast('Pack size updated!', 'success');
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Failed to change pack size', 'error');
-    } finally {
-      setSwapping(null);
     }
   };
 
@@ -120,8 +70,11 @@ export default function CartPage() {
       <div className={styles.layout}>
         <div className={styles.itemsList}>
           {items.map((item) => {
-            const hasVariants = !!item.product.variantGroup;
-            const variants = item.product.variantGroup ? variantCache[item.product.variantGroup] : undefined;
+            const variant = getVariant(item);
+            if (!variant) return null;
+
+            const hasMultipleVariants = item.product.variants.length > 1;
+            const sortedVariants = [...item.product.variants].sort((a, b) => a.price - b.price);
 
             return (
               <div key={item._id} className={styles.cartItem}>
@@ -144,13 +97,13 @@ export default function CartPage() {
 
                   <div className={styles.itemControls}>
                     {/* Variant Toggle Pills */}
-                    {hasVariants && variants && variants.length > 1 ? (
+                    {hasMultipleVariants ? (
                       <div className={styles.variantToggle}>
-                        {variants.map((v) => (
+                        {sortedVariants.map((v) => (
                           <button
                             key={v._id}
-                            className={`${styles.variantPill} ${v._id === item.product._id ? styles.variantPillActive : ''}`}
-                            disabled={v._id === item.product._id || v.stock === 0 || swapping === item._id}
+                            className={`${styles.variantPill} ${v._id === item.variantId ? styles.variantPillActive : ''}`}
+                            disabled={v._id === item.variantId || v.stock === 0}
                             onClick={() => handleSwapVariant(item._id, v._id)}
                             title={v.stock === 0 ? 'Out of stock' : `${v.packagingSize} — ${formatPrice(v.price)}`}
                           >
@@ -159,7 +112,7 @@ export default function CartPage() {
                         ))}
                       </div>
                     ) : (
-                      <span className={styles.itemSize}>{item.product.packagingSize}</span>
+                      <span className={styles.itemSize}>{variant.packagingSize}</span>
                     )}
 
                     {/* Quantity Selector */}
@@ -173,7 +126,7 @@ export default function CartPage() {
                       <button
                         className={styles.qtyBtn}
                         onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                        disabled={item.quantity >= item.product.stock}
+                        disabled={item.quantity >= variant.stock}
                       >+</button>
                     </div>
                   </div>
@@ -187,9 +140,9 @@ export default function CartPage() {
                     </svg>
                   </button>
                   <div style={{ textAlign: 'right' }}>
-                    <div className={styles.itemPrice}>{formatPrice(item.product.price * item.quantity)}</div>
+                    <div className={styles.itemPrice}>{formatPrice(variant.price * item.quantity)}</div>
                     {item.quantity > 1 && (
-                      <div className={styles.unitPrice}>{formatPrice(item.product.price)} each</div>
+                      <div className={styles.unitPrice}>{formatPrice(variant.price)} each</div>
                     )}
                   </div>
                 </div>
@@ -201,15 +154,19 @@ export default function CartPage() {
         <div className={styles.summary}>
           <h2 className={styles.summaryTitle}>Order Summary</h2>
           <div className={styles.summaryItemsList}>
-            {items.map((item) => (
-              <div key={item._id} className={styles.summaryItemRow}>
-                <span className={styles.summaryItemName}>
-                  {item.product.title}{item.product.packagingSize ? ` (${item.product.packagingSize})` : ''}
-                  {item.quantity > 1 && <span className={styles.summaryItemQty}> ×{item.quantity}</span>}
-                </span>
-                <span className={styles.summaryItemPrice}>{formatPrice(item.product.price * item.quantity)}</span>
-              </div>
-            ))}
+            {items.map((item) => {
+              const variant = getVariant(item);
+              if (!variant) return null;
+              return (
+                <div key={item._id} className={styles.summaryItemRow}>
+                  <span className={styles.summaryItemName}>
+                    {item.product.title}{variant.packagingSize ? ` (${variant.packagingSize})` : ''}
+                    {item.quantity > 1 && <span className={styles.summaryItemQty}> ×{item.quantity}</span>}
+                  </span>
+                  <span className={styles.summaryItemPrice}>{formatPrice(variant.price * item.quantity)}</span>
+                </div>
+              );
+            })}
           </div>
           <hr className={styles.summaryDivider} />
           <div className={styles.summaryRow}>

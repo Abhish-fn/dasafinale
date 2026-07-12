@@ -72,15 +72,20 @@ export async function POST(
       timestamp: new Date(),
       note: `Cancelled by ${session.user.role === 'admin' ? 'admin' : 'customer'}${refundId ? `. Refund ID: ${refundId}` : ''}`,
     });
-    await order.save();
 
-    // Release stock
-    for (const item of order.items) {
-      await Product.updateOne(
-        { _id: item.productId },
-        { $inc: { stock: item.quantity, salesCount: -item.quantity } }
-      );
+    // Release stock + reverse salesCount (idempotent via stockReleased flag)
+    if (!order.stockReleased) {
+      for (const item of order.items) {
+        await Product.updateOne(
+          { _id: item.productId },
+          { $inc: { 'variants.$[v].stock': item.quantity, 'variants.$[v].salesCount': -item.quantity } },
+          { arrayFilters: [{ 'v._id': item.variantId }] }
+        );
+      }
+      order.stockReleased = true;
     }
+
+    await order.save();
 
     // Release coupon
     if (order.coupon?.code) {

@@ -15,7 +15,7 @@ import { generateOrderId, calculateShippingFee } from '@/lib/utils';
 import { calculateGST } from '@/lib/gst';
 import { checkServiceability, calculateShippingCost } from '@/lib/delhivery';
 
-// POST /api/checkout/create-order — Create order with atomic stock reservation
+// POST /api/checkout/create-order — Create order with atomic variant-level stock reservation
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
@@ -46,11 +46,16 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Get cart items (or buy-now item)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let cartItems: { productId: string; quantity: number }[];
+    // Each item has: productId (MongoDB _id), variantId, quantity
+    let cartItems: { productId: string; variantId: string; quantity: number }[];
 
     if (parsed.isBuyNow && parsed.buyNowItem) {
-      cartItems = [{ productId: parsed.buyNowItem.productId, quantity: parsed.buyNowItem.quantity }];
+      // buyNowItem.productId is the MongoDB _id (NOT human-readable "CPS001")
+      cartItems = [{
+        productId: parsed.buyNowItem.productId,
+        variantId: parsed.buyNowItem.variantId,
+        quantity: parsed.buyNowItem.quantity,
+      }];
     } else {
       const cart = await Cart.findOne({ userId: session.user.id });
       if (!cart || cart.items.length === 0) {
@@ -59,55 +64,80 @@ export async function POST(req: NextRequest) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       cartItems = cart.items.map((item: any) => ({
         productId: item.productId.toString(),
+        variantId: item.variantId.toString(),
         quantity: item.quantity,
       }));
     }
 
-    // 3. Validate products and build order items
+    // 3. Validate products/variants and build order items with snapshots
     const orderItems = [];
     let subtotal = 0;
 
     for (const cartItem of cartItems) {
-      const product = await Product.findById(cartItem.productId);
-      if (!product || !product.isActive) {
+      // productId here is the MongoDB _id
+      const productDoc = await Product.findById(cartItem.productId);
+      if (!productDoc || !productDoc.isActive) {
         return NextResponse.json({ error: `Product not found: ${cartItem.productId}` }, { status: 400 });
       }
 
+      // Find the specific variant within the product
+      const variant = productDoc.variants.id(cartItem.variantId);
+      if (!variant) {
+        return NextResponse.json({
+          error: `Variant ${cartItem.variantId} not found in product ${productDoc.title}`,
+        }, { status: 400 });
+      }
+
+      // Snapshot captures variant-level data at time of purchase
       orderItems.push({
-        productId: new mongoose.Types.ObjectId(cartItem.productId),
+        productId: productDoc._id,
+        variantId: new mongoose.Types.ObjectId(cartItem.variantId),
         productSnapshot: {
-          title: product.title,
-          image: product.images[0] || '',
-          price: product.price,
-          packagingSize: product.packagingSize,
-          productId: product.productId,
-          weight: product.weight || 0,
-          hsnCode: product.hsnCode || '',
+          title: productDoc.title,
+          image: productDoc.images[0] || '',
+          price: variant.price,
+          packagingSize: variant.packagingSize,
+          productId: productDoc.productId, // human-readable "CPS001" for display
+          weight: variant.weight,
+          hsnCode: productDoc.hsnCode || '',
         },
         quantity: cartItem.quantity,
-        priceAtOrder: product.price,
+        priceAtOrder: variant.price,
       });
-      subtotal += product.price * cartItem.quantity;
+      subtotal += variant.price * cartItem.quantity;
     }
 
-    // 4. ATOMIC stock reservation using $inc with $gte floor check
+    // 4. ATOMIC stock reservation using $inc with arrayFilters
+    // The $gte guard in the arrayFilter ensures atomicity: if the variant's stock
+    // is less than requested quantity, the filter won't match and modifiedCount = 0.
+    // MongoDB guarantees document-level atomicity, so concurrent orders on the
+    // same variant cannot both succeed when stock is insufficient.
     for (let i = 0; i < cartItems.length; i++) {
       const cartItem = cartItems[i];
+      const variantOid = new mongoose.Types.ObjectId(cartItem.variantId);
+
       const result = await Product.updateOne(
-        { _id: cartItem.productId, stock: { $gte: cartItem.quantity } },
-        { $inc: { stock: -cartItem.quantity } }
+        { _id: cartItem.productId },
+        { $inc: { 'variants.$[v].stock': -cartItem.quantity } },
+        { arrayFilters: [{ 'v._id': variantOid, 'v.stock': { $gte: cartItem.quantity } }] }
       );
+
       if (result.modifiedCount === 0) {
-        // Rollback previously reserved stock
+        // Rollback previously reserved stock for items 0..i-1
         for (let j = 0; j < i; j++) {
+          const rollbackOid = new mongoose.Types.ObjectId(cartItems[j].variantId);
           await Product.updateOne(
             { _id: cartItems[j].productId },
-            { $inc: { stock: cartItems[j].quantity } }
+            { $inc: { 'variants.$[v].stock': cartItems[j].quantity } },
+            { arrayFilters: [{ 'v._id': rollbackOid }] }
           );
         }
-        const product = await Product.findById(cartItem.productId).select('title stock');
+
+        // Look up current stock for the error message
+        const productDoc = await Product.findById(cartItem.productId);
+        const variant = productDoc?.variants.id(cartItem.variantId);
         return NextResponse.json({
-          error: `Insufficient stock for ${product?.title || 'product'}. Available: ${product?.stock || 0}`,
+          error: `Insufficient stock for ${productDoc?.title || 'product'} (${variant?.packagingSize || '?'}). Available: ${variant?.stock || 0}`,
         }, { status: 400 });
       }
     }
@@ -234,6 +264,7 @@ export async function POST(req: NextRequest) {
         status: 'pending',
       },
       paymentProcessed: false,
+      stockReleased: false,
       status: 'placed',
       isBuyNow: parsed.isBuyNow || false,
       expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 min expiry

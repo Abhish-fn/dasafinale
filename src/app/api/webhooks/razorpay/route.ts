@@ -75,11 +75,12 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        // Increment sales
+        // Increment sales (guarded by paymentProcessed check above)
         for (const item of order.items) {
           await Product.updateOne(
             { _id: item.productId },
-            { $inc: { salesCount: item.quantity } }
+            { $inc: { 'variants.$[v].salesCount': item.quantity } },
+            { arrayFilters: [{ 'v._id': item.variantId }] }
           );
         }
 
@@ -106,12 +107,17 @@ export async function POST(req: NextRequest) {
         order.payment.failureReason = payment.error_description || 'Payment failed';
         await order.save();
 
-        // Release stock
-        for (const item of order.items) {
-          await Product.updateOne(
-            { _id: item.productId },
-            { $inc: { stock: item.quantity } }
-          );
+        // Release stock (idempotent via stockReleased flag — safe against webhook retries)
+        if (!order.stockReleased) {
+          for (const item of order.items) {
+            await Product.updateOne(
+              { _id: item.productId },
+              { $inc: { 'variants.$[v].stock': item.quantity } },
+              { arrayFilters: [{ 'v._id': item.variantId }] }
+            );
+          }
+          order.stockReleased = true;
+          await order.save();
         }
 
         // Release coupon

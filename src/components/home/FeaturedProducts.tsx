@@ -10,14 +10,13 @@ interface ProductData {
   productId: string;
   title: string;
   images: string[];
-  price: number;
-  compareAtPrice?: number;
+  variants: { _id: string; packagingSize: string; price: number; compareAtPrice?: number; stock: number }[];
   category: string;
-  packagingSize: string;
-  stock: number;
   isMustTry?: boolean;
   isBestSeller?: boolean;
+  tags?: string[];
 }
+
 
 interface FeaturedData {
   mustTry: ProductData[];

@@ -3,23 +3,29 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
 
+interface CartVariant {
+  _id: string;
+  packagingSize: string;
+  price: number;
+  compareAtPrice?: number;
+  stock: number;
+  weight: number;
+}
+
 interface CartProduct {
   _id: string;
-  productId: string;
+  productId: string; // human-readable "CPS001"
   title: string;
   slug: string;
   images: string[];
-  price: number;
-  compareAtPrice?: number;
-  packagingSize: string;
-  stock: number;
   category: string;
-  variantGroup?: string;
+  variants: CartVariant[];
 }
 
 interface CartItem {
   _id: string;
   product: CartProduct;
+  variantId: string;
   quantity: number;
 }
 
@@ -28,10 +34,10 @@ interface CartContextValue {
   total: number;
   itemCount: number;
   loading: boolean;
-  addToCart: (productId: string, quantity?: number) => Promise<void>;
+  addToCart: (productId: string, variantId: string, quantity?: number) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
-  swapVariant: (itemId: string, newProductId: string) => Promise<void>;
+  swapVariant: (itemId: string, newVariantId: string) => Promise<void>;
   refreshCart: () => Promise<void>;
 }
 
@@ -102,9 +108,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [session?.user, fetchCart]);
 
-  const addToCart = useCallback(async (productId: string, quantity = 1) => {
+  // addToCart takes the MongoDB _id of the product and the variant _id
+  const addToCart = useCallback(async (productId: string, variantId: string, quantity = 1) => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    const body: Record<string, unknown> = { productId, quantity };
+    const body: Record<string, unknown> = { productId, variantId, quantity };
     if (!session?.user) {
       headers['x-session-id'] = getSessionId();
       body.sessionId = getSessionId();
@@ -121,47 +128,93 @@ export function CartProvider({ children }: { children: ReactNode }) {
     await fetchCart();
   }, [session?.user, fetchCart]);
 
+  // Helper: compute total from items
+  const computeTotal = useCallback((cartItems: CartItem[]) => {
+    return cartItems.reduce((sum, item) => {
+      const variant = item.product.variants.find(v => v._id === item.variantId);
+      return sum + (variant?.price || 0) * item.quantity;
+    }, 0);
+  }, []);
+
   const updateQuantity = useCallback(async (itemId: string, quantity: number) => {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (!session?.user) {
-      headers['x-session-id'] = getSessionId();
+    // Optimistic: update local state immediately
+    const prevItems = items;
+    const prevTotal = total;
+    const optimistic = items.map(item =>
+      item._id === itemId ? { ...item, quantity } : item
+    );
+    setItems(optimistic);
+    setTotal(computeTotal(optimistic));
+
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (!session?.user) headers['x-session-id'] = getSessionId();
+      const res = await fetch(`/api/cart/${itemId}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ quantity }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      // Background reconcile with server
+      fetchCart();
+    } catch {
+      // Revert on failure
+      setItems(prevItems);
+      setTotal(prevTotal);
     }
-    await fetch(`/api/cart/${itemId}`, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify({ quantity }),
-    });
-    await fetchCart();
-  }, [session?.user, fetchCart]);
+  }, [items, total, session?.user, fetchCart, computeTotal]);
 
   const removeItem = useCallback(async (itemId: string) => {
-    const headers: Record<string, string> = {};
-    if (!session?.user) {
-      headers['x-session-id'] = getSessionId();
-    }
-    await fetch(`/api/cart/${itemId}`, {
-      method: 'DELETE',
-      headers,
-    });
-    await fetchCart();
-  }, [session?.user, fetchCart]);
+    // Optimistic: remove from local state immediately
+    const prevItems = items;
+    const prevTotal = total;
+    const optimistic = items.filter(item => item._id !== itemId);
+    setItems(optimistic);
+    setTotal(computeTotal(optimistic));
 
-  const swapVariant = useCallback(async (itemId: string, newProductId: string) => {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (!session?.user) {
-      headers['x-session-id'] = getSessionId();
+    try {
+      const headers: Record<string, string> = {};
+      if (!session?.user) headers['x-session-id'] = getSessionId();
+      const res = await fetch(`/api/cart/${itemId}`, {
+        method: 'DELETE',
+        headers,
+      });
+      if (!res.ok) throw new Error('Failed');
+      fetchCart();
+    } catch {
+      setItems(prevItems);
+      setTotal(prevTotal);
     }
-    const res = await fetch('/api/cart/swap-variant', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ itemId, newProductId }),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || 'Failed to swap variant');
+  }, [items, total, session?.user, fetchCart, computeTotal]);
+
+  // swapVariant: optimistic update swaps the variantId locally
+  const swapVariant = useCallback(async (itemId: string, newVariantId: string) => {
+    const prevItems = items;
+    const prevTotal = total;
+    const optimistic = items.map(item =>
+      item._id === itemId ? { ...item, variantId: newVariantId } : item
+    );
+    setItems(optimistic);
+    setTotal(computeTotal(optimistic));
+
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (!session?.user) headers['x-session-id'] = getSessionId();
+      const res = await fetch('/api/cart/swap-variant', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ itemId, newVariantId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to swap variant');
+      }
+      fetchCart();
+    } catch {
+      setItems(prevItems);
+      setTotal(prevTotal);
     }
-    await fetchCart();
-  }, [session?.user, fetchCart]);
+  }, [items, total, session?.user, fetchCart, computeTotal]);
 
   const itemCount = items.length;
 

@@ -1,11 +1,19 @@
 import { z } from 'zod';
 
-// --- Product ---
+// --- Variant (shared) ---
+const variantInputSchema = z.object({
+  packagingSize: z.string().min(1).max(20),
+  weight: z.number().positive(),
+  price: z.number().int().positive(),
+  compareAtPrice: z.number().int().positive().optional(),
+  stock: z.number().int().min(0).default(0),
+  salesCount: z.number().int().min(0).default(0),
+});
+
+// --- Product Create ---
 export const productSchema = z.object({
   title: z.string().min(2).max(200),
   description: z.string().min(10).max(5000),
-  price: z.number().int().positive(),
-  compareAtPrice: z.number().int().positive().optional(),
   category: z.enum([
     'Clay Pot Roasted Seeds & Superfoods',
     'Protein & Energy Snacks',
@@ -15,12 +23,8 @@ export const productSchema = z.object({
     'Premium Healthy Sweets',
   ]),
   tags: z.array(z.string()).max(10).default([]),
-  packagingSize: z.string().min(1).max(20),
-  parentProduct: z.string().optional(),
-  variantGroup: z.string().optional(),
-  stock: z.number().int().min(0).default(0),
-  weight: z.number().positive(),
   images: z.array(z.string().url()).max(5).default([]),
+  variants: z.array(variantInputSchema).min(1),
   isMustTry: z.boolean().default(false),
   isSpecialItem: z.boolean().default(false),
   isBestSeller: z.boolean().default(false),
@@ -36,13 +40,10 @@ export const productSchema = z.object({
   hsnCode: z.string().max(20).default(''),
 });
 
-// For updates, strip defaults so omitted fields don't get defaulted to 0/false/[]
-// which would overwrite existing DB values when doing partial updates
+// For updates — all fields optional, variants can include _id for existing
 export const productUpdateSchema = z.object({
   title: z.string().min(2).max(200),
   description: z.string().min(10).max(5000),
-  price: z.number().int().positive(),
-  compareAtPrice: z.number().int().positive().optional(),
   category: z.enum([
     'Clay Pot Roasted Seeds & Superfoods',
     'Protein & Energy Snacks',
@@ -52,12 +53,16 @@ export const productUpdateSchema = z.object({
     'Premium Healthy Sweets',
   ]),
   tags: z.array(z.string()).max(10),
-  packagingSize: z.string().min(1).max(20),
-  parentProduct: z.string().optional(),
-  variantGroup: z.string().optional(),
-  stock: z.number().int().min(0),
-  weight: z.number().positive(),
   images: z.array(z.string().url()).max(5),
+  variants: z.array(z.object({
+    _id: z.string().optional(),
+    packagingSize: z.string().min(1).max(20),
+    weight: z.number().positive(),
+    price: z.number().int().positive(),
+    compareAtPrice: z.number().int().positive().optional(),
+    stock: z.number().int().min(0),
+    salesCount: z.number().int().min(0).optional(),
+  })).min(1),
   isMustTry: z.boolean(),
   isSpecialItem: z.boolean(),
   isBestSeller: z.boolean(),
@@ -77,6 +82,7 @@ export const productUpdateSchema = z.object({
 // --- Cart ---
 export const cartItemSchema = z.object({
   productId: z.string().min(1),
+  variantId: z.string().min(1),
   quantity: z.number().int().min(1).max(50),
   sessionId: z.string().optional(),
 });
@@ -148,6 +154,7 @@ export const createOrderSchema = z.object({
   buyNowItem: z
     .object({
       productId: z.string().min(1),
+      variantId: z.string().min(1),
       quantity: z.number().int().min(1),
     })
     .optional(),

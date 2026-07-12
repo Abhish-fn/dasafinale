@@ -31,7 +31,7 @@ function getCacheKey(pincode: string, weightGrams: number, mode: string): string
 
 // ---------------------------------------------------------------------------
 // GET /api/shipping/quote?destPincode=XXXXXX
-// Optionally: &buyNowProductId=X&buyNowQuantity=N
+// Optionally: &buyNowProductId=X&buyNowVariantId=X&buyNowQuantity=N
 // ---------------------------------------------------------------------------
 
 export async function GET(req: NextRequest) {
@@ -53,20 +53,26 @@ export async function GET(req: NextRequest) {
     await dbConnect();
 
     // Compute total weight from DB — never trust client-supplied weight
+    // Weight is per-variant now, so we need the variant to look it up
     const buyNowProductId = searchParams.get('buyNowProductId');
+    const buyNowVariantId = searchParams.get('buyNowVariantId');
     const buyNowQuantity = parseInt(searchParams.get('buyNowQuantity') || '1', 10);
 
     let totalWeightGrams = 0;
 
     if (buyNowProductId) {
-      // Buy-now mode
-      const product = await Product.findById(buyNowProductId).select('weight').lean();
+      // Buy-now mode — look up the specific variant's weight
+      const product = await Product.findById(buyNowProductId).select('variants').lean();
       if (!product) {
         return NextResponse.json({ error: 'Product not found' }, { status: 404 });
       }
-      totalWeightGrams = (product.weight || 0) * buyNowQuantity;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const variant = (product.variants as any[]).find(
+        (v) => v._id.toString() === buyNowVariantId
+      );
+      totalWeightGrams = (variant?.weight || 0) * buyNowQuantity;
     } else {
-      // Cart mode
+      // Cart mode — sum weight across all cart items, each from its specific variant
       const cart = await Cart.findOne({ userId: session.user.id });
       if (!cart || cart.items.length === 0) {
         return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
@@ -75,18 +81,21 @@ export async function GET(req: NextRequest) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const productIds = cart.items.map((item: any) => item.productId);
       const products = await Product.find({ _id: { $in: productIds } })
-        .select('weight')
+        .select('variants')
         .lean();
 
-      const weightMap = new Map(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        products.map((p: any) => [p._id.toString(), p.weight || 0])
-      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const productMap = new Map(products.map((p: any) => [p._id.toString(), p]));
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       for (const item of cart.items as any[]) {
-        const weight = weightMap.get(item.productId.toString()) || 0;
-        totalWeightGrams += weight * item.quantity;
+        const product = productMap.get(item.productId.toString());
+        if (!product) continue;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const variant = (product.variants as any[]).find(
+          (v) => v._id.toString() === item.variantId?.toString()
+        );
+        totalWeightGrams += (variant?.weight || 0) * item.quantity;
       }
     }
 

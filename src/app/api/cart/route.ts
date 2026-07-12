@@ -7,7 +7,7 @@ import { auth } from '@/lib/auth';
 import { cartItemSchema } from '@/lib/validations';
 import { sanitize } from '@/lib/sanitize';
 
-// GET /api/cart — Get cart with populated products
+// GET /api/cart — Get cart with populated products (variants are embedded)
 export async function GET(req: NextRequest) {
   try {
     await dbConnect();
@@ -23,27 +23,51 @@ export async function GET(req: NextRequest) {
       : { sessionId };
 
     const cart = await Cart.findOne(query)
-      .populate('items.productId', 'title slug images price compareAtPrice packagingSize stock isActive category variantGroup')
+      .populate('items.productId', 'title slug images variants isActive category productId')
       .lean();
 
     if (!cart) {
       return NextResponse.json({ items: [], total: 0 });
     }
 
-    // Filter out inactive/deleted products and calculate total
-    const items = cart.items
-      .filter((item: Record<string, any>) => item.productId?.isActive)
-      .map((item: Record<string, any>) => ({
-        _id: item._id,
-        product: item.productId,
-        quantity: Math.min(item.quantity, item.productId?.stock || 0),
-        addedAt: item.addedAt,
-      }));
+    // Filter out inactive/deleted products, skip items with missing variantId (stale pre-migration)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const items: any[] = [];
+    let total = 0;
 
-    const total = items.reduce(
-      (sum: number, item: Record<string, any>) => sum + (item.product.price * item.quantity),
-      0
-    );
+    for (const item of cart.items as any[]) {
+      const product = item.productId;
+      if (!product?.isActive) continue;
+
+      // Skip stale cart items missing variantId (pre-migration leftovers)
+      if (!item.variantId) {
+        console.warn(`[Cart] Skipping cart item with missing variantId for product ${product._id}`);
+        continue;
+      }
+
+      // Find the specific variant
+      const variant = product.variants?.find(
+        (v: any) => v._id.toString() === item.variantId.toString()
+      );
+
+      if (!variant) {
+        console.warn(`[Cart] Variant ${item.variantId} not found in product ${product._id}, skipping`);
+        continue;
+      }
+
+      // Cap quantity to variant stock
+      const quantity = Math.min(item.quantity, variant.stock || 0);
+
+      items.push({
+        _id: item._id,
+        product,
+        variantId: item.variantId,
+        quantity,
+        addedAt: item.addedAt,
+      });
+
+      total += variant.price * quantity;
+    }
 
     return NextResponse.json({ items, total });
   } catch (error) {
@@ -58,26 +82,33 @@ export async function POST(req: NextRequest) {
     await dbConnect();
     const session = await auth();
     const body = sanitize(await req.json());
-    const { productId, quantity, sessionId } = cartItemSchema.parse(body);
+    // productId here is the MongoDB _id, NOT the human-readable "CPS001"
+    const { productId, variantId, quantity, sessionId } = cartItemSchema.parse(body);
 
     if (!session?.user && !sessionId) {
       return NextResponse.json({ error: 'Session ID required for guest cart' }, { status: 400 });
     }
 
-    // Validate product exists and has stock
+    // Validate product exists (productId = MongoDB _id)
     const product = await Product.findById(productId);
     if (!product || !product.isActive) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
-    if (product.stock < quantity) {
-      return NextResponse.json({ error: 'Insufficient stock', available: product.stock }, { status: 400 });
+
+    // Find the specific variant within this product
+    const variant = product.variants.id(variantId);
+    if (!variant) {
+      return NextResponse.json({ error: 'Variant not found' }, { status: 404 });
+    }
+    if (variant.stock < quantity) {
+      return NextResponse.json({ error: 'Insufficient stock', available: variant.stock }, { status: 400 });
     }
 
-    const query = session?.user
+    const cartQuery = session?.user
       ? { userId: session.user.id }
       : { sessionId };
 
-    let cart = await Cart.findOne(query);
+    let cart = await Cart.findOne(cartQuery);
 
     if (!cart) {
       cart = new Cart({
@@ -86,21 +117,29 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Check if product already in cart
+    // Check if this exact product+variant combo is already in cart
     const existingIndex = cart.items.findIndex(
-      (item: Record<string, any>) => item.productId.toString() === productId
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (item: Record<string, any>) =>
+        item.productId.toString() === productId &&
+        item.variantId?.toString() === variantId
     );
 
     if (existingIndex > -1) {
-      // Update quantity
       const newQty = cart.items[existingIndex].quantity + quantity;
-      if (newQty > product.stock) {
-        return NextResponse.json({ error: 'Exceeds available stock', available: product.stock }, { status: 400 });
+      if (newQty > variant.stock) {
+        return NextResponse.json({ error: 'Exceeds available stock', available: variant.stock }, { status: 400 });
       }
       cart.items[existingIndex].quantity = newQty;
     } else {
-      cart.items.push({ productId: new mongoose.Types.ObjectId(productId), quantity, addedAt: new Date() });
+      cart.items.push({
+        productId: new mongoose.Types.ObjectId(productId),
+        variantId: new mongoose.Types.ObjectId(variantId),
+        quantity,
+        addedAt: new Date(),
+      });
     }
+
 
     await cart.save();
     return NextResponse.json({ message: 'Item added to cart', itemCount: cart.items.length });

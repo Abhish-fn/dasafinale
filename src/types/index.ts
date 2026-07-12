@@ -48,6 +48,16 @@ export interface INutritionInfo {
   fiber?: string;
 }
 
+export interface IVariant {
+  _id: string;
+  packagingSize: string;
+  weight: number;
+  price: number;
+  compareAtPrice?: number;
+  stock: number;
+  salesCount: number;
+}
+
 export interface IProduct {
   _id: string;
   productId: string;
@@ -55,21 +65,14 @@ export interface IProduct {
   slug: string;
   description: string;
   images: string[];
-  price: number;
-  compareAtPrice?: number;
   category: ProductCategory;
   tags: string[];
-  packagingSize: string;
-  parentProduct?: string;
-  variantGroup?: string;
-  variantCount?: number;
-  stock: number;
+  variants: IVariant[];
   isActive: boolean;
   isMustTry: boolean;
   isSpecialItem: boolean;
   isBestSeller: boolean;
-  salesCount: number;
-  weight: number;
+  hsnCode?: string;
   nutritionInfo?: INutritionInfo;
   createdAt: string;
   updatedAt: string;
@@ -77,18 +80,21 @@ export interface IProduct {
 
 export interface ICartItem {
   productId: string;
+  variantId: string;
   quantity: number;
   addedAt: string;
 }
 
 export interface IOrderItem {
   productId: string;
+  variantId: string;
   productSnapshot: {
     title: string;
     image: string;
     price: number;
     packagingSize: string;
     productId: string;
+    weight: number;
   };
   quantity: number;
   priceAtOrder: number;
