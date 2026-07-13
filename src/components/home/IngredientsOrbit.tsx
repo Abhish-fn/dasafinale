@@ -27,16 +27,16 @@ type Ingredient = {
 };
 
 const INGREDIENTS: Ingredient[] = [
-  { name: 'Watermelon Seeds',  image: '/images/ingredients/Watermelon.png',         accent: '#D9BD93', initial: 'W', zoom: 3.2 },
-  { name: 'Corn',              image: '/images/ingredients/Corn.png',         accent: '#C9A14A', initial: 'C', zoom: 2.4 },
-  { name: 'Moong',             image: '/images/ingredients/Moong.png',      accent: '#9C8456', initial: 'M', zoom: 3.0 },
-  { name: 'Peanuts',           image: '/images/ingredients/Peanuts.png',            accent: '#C9BC95', initial: 'P', zoom: 2.6 },
-  { name: 'Bajra',             image: '/images/ingredients/Bajra.png',          accent: '#BDB29C', initial: 'B', zoom: 4.5 },
-  { name: 'Soya',              image: '/images/ingredients/Soya.png',         accent: '#C99A3D', initial: 'S', zoom: 2.6 },
-  { name: 'Kunkudu (Moth Beans)', image: '/images/ingredients/Kunkudu.png',            accent: '#8B4A3A', initial: 'K', zoom: 2.4 },
-  { name: 'masoor',            image: '/images/ingredients/Masoor.png',         accent: '#D8CDB2', initial: 'A', zoom: 3.2 },
-  { name: 'Pumpkin Seeds',     image: '/images/ingredients/Pumpkin.png',   accent: '#5C6B3D', initial: 'P', zoom: 2.8 },
-  { name: 'HorseGram (Ulavalu)',image: '/images/ingredients/Ulavalu.png', accent: '#D9A833', initial: 'H', zoom: 2.6 },
+  { name: 'Watermelon Seeds',  image: '/images/ingredients/Watermelon.webp',         accent: '#D9BD93', initial: 'W', zoom: 3.2 },
+  { name: 'Corn',              image: '/images/ingredients/Corn.webp',         accent: '#C9A14A', initial: 'C', zoom: 2.4 },
+  { name: 'Moong',             image: '/images/ingredients/Moong.webp',      accent: '#9C8456', initial: 'M', zoom: 3.0 },
+  { name: 'Peanuts',           image: '/images/ingredients/Peanuts.webp',            accent: '#C9BC95', initial: 'P', zoom: 2.6 },
+  { name: 'Bajra',             image: '/images/ingredients/Bajra.webp',          accent: '#BDB29C', initial: 'B', zoom: 4.5 },
+  { name: 'Soya',              image: '/images/ingredients/Soya.webp',         accent: '#C99A3D', initial: 'S', zoom: 2.6 },
+  { name: 'Kunkudu (Moth Beans)', image: '/images/ingredients/Kunkudu.webp',            accent: '#8B4A3A', initial: 'K', zoom: 2.4 },
+  { name: 'masoor',            image: '/images/ingredients/Masoor.webp',         accent: '#D8CDB2', initial: 'A', zoom: 3.2 },
+  { name: 'Pumpkin Seeds',     image: '/images/ingredients/Pumpkin.webp',   accent: '#5C6B3D', initial: 'P', zoom: 2.8 },
+  { name: 'HorseGram (Ulavalu)',image: '/images/ingredients/Ulavalu.webp', accent: '#D9A833', initial: 'H', zoom: 2.6 },
 ];
 
 /**
