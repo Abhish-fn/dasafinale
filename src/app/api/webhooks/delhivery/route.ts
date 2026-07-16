@@ -53,6 +53,9 @@ export async function POST(req: NextRequest) {
     // Delhivery sends individual updates or batch — handle both
     const updates = Array.isArray(payload) ? payload : [payload];
 
+    // Collect orders that need email notifications (dispatched AFTER response)
+    const emailQueue: { orderId: string; userId: string; status: string }[] = [];
+
     for (const update of updates) {
       const waybill = update.waybill || update.Waybill || update.awb;
       const delhiveryStatus =
@@ -120,16 +123,27 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      // Send email for significant status changes (non-blocking)
+      // Queue email for post-response dispatch
       if (EMAIL_STATUSES.includes(ourStatus)) {
-        const User = (await import('@/models/User')).default;
-        const user = await User.findById(order.userId).select('email');
-        if (user?.email) {
-          sendShippingUpdate(order.orderId, user.email, ourStatus).catch(
-            console.error
-          );
-        }
+        emailQueue.push({ orderId: order.orderId, userId: order.userId.toString(), status: ourStatus });
       }
+    }
+
+    // Dispatch emails AFTER response — detached, non-blocking
+    if (emailQueue.length > 0) {
+      (async () => {
+        try {
+          const User = (await import('@/models/User')).default;
+          for (const job of emailQueue) {
+            const user = await User.findById(job.userId).select('email').lean();
+            if (user?.email) {
+              sendShippingUpdate(job.orderId, user.email as string, job.status).catch(console.error);
+            }
+          }
+        } catch (err) {
+          console.error('[DELHIVERY WEBHOOK] Email dispatch error:', err);
+        }
+      })();
     }
 
     return NextResponse.json({ status: 'ok' });
