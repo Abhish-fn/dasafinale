@@ -36,13 +36,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
     }
 
-    // Verify HMAC-SHA256 signature
-    const expectedSignature = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(rawBody)
-      .digest('hex');
-
-    if (expectedSignature !== signature) {
+    // Verify: Delhivery sends the shared secret as a static header value
+    const sigBuffer = Buffer.from(signature);
+    const secretBuffer = Buffer.from(webhookSecret);
+    if (sigBuffer.length !== secretBuffer.length || !crypto.timingSafeEqual(sigBuffer, secretBuffer)) {
       console.error('[DELHIVERY WEBHOOK] Invalid signature');
       return NextResponse.json(
         { error: 'Invalid signature' },
