@@ -19,10 +19,10 @@ const STATUS_MAP: Record<string, string> = {
 };
 
 // Statuses that trigger email notification
-const EMAIL_STATUSES = ['shipped', 'out_for_delivery', 'delivered'];
+const EMAIL_STATUSES = new Set(['shipped', 'out_for_delivery', 'delivered']);
 
 // ---------------------------------------------------------------------------
-// POST /api/webhooks/delhivery — Delhivery push webhook (HMAC verified)
+// POST /api/webhooks/delhivery — Delhivery push webhook
 // ---------------------------------------------------------------------------
 
 export async function POST(req: NextRequest) {
@@ -32,29 +32,20 @@ export async function POST(req: NextRequest) {
     const webhookSecret = process.env.DELHIVERY_WEBHOOK_SECRET;
 
     if (!signature || !webhookSecret) {
-      console.error('[DELHIVERY WEBHOOK] Missing signature or webhook secret');
       return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
     }
 
-    // Verify: Delhivery sends the shared secret as a static header value
+    // Constant-time signature verification
     const sigBuffer = Buffer.from(signature);
     const secretBuffer = Buffer.from(webhookSecret);
     if (sigBuffer.length !== secretBuffer.length || !crypto.timingSafeEqual(sigBuffer, secretBuffer)) {
-      console.error('[DELHIVERY WEBHOOK] Invalid signature');
-      return NextResponse.json(
-        { error: 'Invalid signature' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
     const payload = JSON.parse(rawBody);
     await dbConnect();
 
-    // Delhivery sends individual updates or batch — handle both
     const updates = Array.isArray(payload) ? payload : [payload];
-
-    // Collect orders that need email notifications (dispatched AFTER response)
-    const emailQueue: { orderId: string; userId: string; status: string }[] = [];
 
     for (const update of updates) {
       const waybill = update.waybill || update.Waybill || update.awb;
@@ -66,15 +57,15 @@ export async function POST(req: NextRequest) {
 
       if (!waybill || !delhiveryStatus) continue;
 
-      // Map Delhivery status to our status
       const ourStatus = STATUS_MAP[delhiveryStatus];
+
       if (!ourStatus) {
-        console.log(
-          `[DELHIVERY WEBHOOK] Unmapped status: ${delhiveryStatus} for waybill ${waybill}`
-        );
-        // Still record the raw status update even if unmapped
+        // Unmapped status — record only if rawStatus actually changed
         await Order.updateOne(
-          { 'tracking.waybill': waybill },
+          {
+            'tracking.waybill': waybill,
+            'delhivery.rawStatus': { $ne: delhiveryStatus },
+          },
           {
             $set: {
               'tracking.delhiveryStatus': delhiveryStatus,
@@ -94,9 +85,12 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      // Update order status + tracking
+      // Idempotent: only update if order status is actually different
       const order = await Order.findOneAndUpdate(
-        { 'tracking.waybill': waybill },
+        {
+          'tracking.waybill': waybill,
+          status: { $ne: ourStatus },
+        },
         {
           $set: {
             status: ourStatus,
@@ -116,40 +110,22 @@ export async function POST(req: NextRequest) {
         { returnDocument: 'after' }
       );
 
-      if (!order) {
-        console.warn(
-          `[DELHIVERY WEBHOOK] Order not found for waybill: ${waybill}`
-        );
-        continue;
-      }
+      // No match = status unchanged or order not found — skip
+      if (!order) continue;
 
-      // Queue email for post-response dispatch
-      if (EMAIL_STATUSES.includes(ourStatus)) {
-        emailQueue.push({ orderId: order.orderId, userId: order.userId.toString(), status: ourStatus });
-      }
-    }
-
-    // Dispatch emails AFTER response — detached, non-blocking
-    if (emailQueue.length > 0) {
-      (async () => {
-        try {
-          const User = (await import('@/models/User')).default;
-          for (const job of emailQueue) {
-            const user = await User.findById(job.userId).select('email').lean();
-            if (user?.email) {
-              sendShippingUpdate(job.orderId, user.email as string, job.status).catch(console.error);
-            }
-          }
-        } catch (err) {
-          console.error('[DELHIVERY WEBHOOK] Email dispatch error:', err);
+      // Fire-and-forget email (only runs once per actual status change)
+      if (EMAIL_STATUSES.has(ourStatus)) {
+        const User = (await import('@/models/User')).default;
+        const user = await User.findById(order.userId).select('email').lean();
+        if (user?.email) {
+          sendShippingUpdate(order.orderId, user.email as string, ourStatus).catch(console.error);
         }
-      })();
+      }
     }
 
     return NextResponse.json({ status: 'ok' });
   } catch (error) {
     console.error('[DELHIVERY WEBHOOK] Error:', error);
-    // Return 200 to avoid Delhivery retrying on our processing errors
     return NextResponse.json({ status: 'ok' });
   }
 }
