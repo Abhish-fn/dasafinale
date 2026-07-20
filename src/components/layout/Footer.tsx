@@ -76,13 +76,13 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className={styles.heading}>We Promise</h3>
-            <div className={styles.promiseList}>
-              <div className={styles.promiseItem}>🌿 100% Natural</div>
-              <div className={styles.promiseItem}>🏠 Homemade Style</div>
-              <div className={styles.promiseItem}>✅ Quality Tested</div>
-              <div className={styles.promiseItem}>🚚 Fast Delivery</div>
-            </div>
+            <h3 className={styles.heading}>Policies</h3>
+            <nav className={styles.linkList}>
+              <Link href="/privacy-policy" className={styles.link}>Privacy Policy</Link>
+              <Link href="/terms-and-conditions" className={styles.link}>Terms &amp; Conditions</Link>
+              <Link href="/shipping-policy" className={styles.link}>Shipping Policy</Link>
+              <Link href="/refund-and-returns" className={styles.link}>Refund &amp; Returns</Link>
+            </nav>
           </div>
         </div>
 

@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
           {
             'tracking.waybill': waybill,
             'delhivery.rawStatus': { $ne: delhiveryStatus },
-          },
+          } as Record<string, unknown>,
           {
             $set: {
               'tracking.delhiveryStatus': delhiveryStatus,
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
         {
           'tracking.waybill': waybill,
           status: { $ne: ourStatus },
-        },
+        } as Record<string, unknown>,
         {
           $set: {
             status: ourStatus,

@@ -103,7 +103,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
     if (selectedOutOfStock) return;
-    router.push(`/checkout?buyNow=true&productId=${product.productId}&variantId=${selectedVariant._id}&quantity=1`);
+    router.push(`/checkout?buyNow=true&productId=${product._id}&variantId=${selectedVariant._id}&quantity=1`);
   };
 
   return (
