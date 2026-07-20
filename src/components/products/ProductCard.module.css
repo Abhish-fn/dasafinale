@@ -1,10 +1,14 @@
 .card {
   position: relative;
   background: var(--color-surface);
-  border: 1px solid rgba(198, 40, 40,0.08);
+  border: 1px solid rgba(198, 40, 40, 0.08);
   border-radius: var(--radius-xl);
   overflow: hidden;
-  transition: all var(--transition-base);
+  /* Use explicit props — 'transition: all' forces style recalc on every property */
+  transition: transform var(--transition-base), box-shadow var(--transition-base),
+              border-color var(--transition-base);
+  /* Promote to its own compositor layer upfront so hover transform is cheap */
+  will-change: transform;
 }
 
 .card:hover {
@@ -77,12 +81,13 @@
   border-radius: var(--radius-full);
   box-shadow: var(--shadow-sm);
   color: var(--color-gray-400);
-  transition: all var(--transition-fast);
+  /* Only transition color + opacity — no layout or paint changes */
+  transition: color var(--transition-fast), opacity var(--transition-fast);
 }
 
 .wishlistBtn:hover {
   color: var(--color-error);
-  box-shadow: var(--shadow-md);
+  opacity: 0.85;
 }
 
 .wishlisted {
@@ -138,7 +143,7 @@
   border: 1.5px solid transparent;
   border-radius: var(--radius-full);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: border-color var(--transition-fast), color var(--transition-fast);
   white-space: nowrap;
 }
 
@@ -217,14 +222,17 @@
   border: none;
   border-radius: var(--radius-full);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  /* Opacity is compositor-only — cheaper than filter:brightness */
+  transition: opacity var(--transition-fast);
   letter-spacing: 0.02em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.addToCartBtn:hover { filter: brightness(1.1); box-shadow: 0 4px 12px rgba(198,40,40,0.3); }
-.addToCartBtn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; box-shadow: none; }
+/* Pre-declare shadow so it doesn't trigger repaint on hover */
+.addToCartBtn { box-shadow: 0 4px 12px rgba(198, 40, 40, 0); }
+.addToCartBtn:hover { opacity: 0.88; box-shadow: 0 4px 12px rgba(198, 40, 40, 0.3); }
+.addToCartBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .buyNowBtn {
   flex-shrink: 0;
@@ -238,10 +246,10 @@
   border: none;
   border-radius: var(--radius-full);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: opacity var(--transition-fast);
 }
-.buyNowBtn:hover { filter: brightness(1.1); box-shadow: 0 4px 12px rgba(255,179,0,0.35); }
-.buyNowBtn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; box-shadow: none; }
+.buyNowBtn:hover { opacity: 0.88; }
+.buyNowBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .tags {
   display: flex;

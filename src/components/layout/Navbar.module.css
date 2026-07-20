@@ -111,7 +111,7 @@
   height: 40px;
   border-radius: var(--radius-full);
   color: var(--color-gray-600);
-  transition: all var(--transition-fast);
+  transition: color var(--transition-fast), background var(--transition-fast);
 }
 
 .iconBtn:hover {
@@ -228,12 +228,11 @@
   color: white;
   background: linear-gradient(135deg, var(--red), var(--red-dark));
   border-radius: var(--radius-full);
-  transition: all var(--transition-base);
+  transition: opacity var(--transition-base);
 }
 
 .signInBtn:hover {
-  background: linear-gradient(135deg, var(--red-light), var(--red));
-  box-shadow: var(--shadow-md);
+  opacity: 0.88;
 }
 
 .hamburger {
