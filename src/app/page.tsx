@@ -12,7 +12,7 @@ const categories = [
   { name: 'Roasted Seeds', slug: 'Clay Pot Roasted Seeds & Superfoods', image: '/images/categories/RoastedSeeds.webp' },
   { name: 'Healthy Chips',  slug: 'Healthy Chips & Crisps',             image: '/images/categories/HealthyChips.webp' },
   { name: 'Jaggery Biscuits', slug: 'Palm Jaggery Millet Biscuits',     image: '/images/categories/JaggeryBiscuits.webp' },
-  { name: 'Healthy Sweets', slug: 'Premium Healthy Sweets',             image: '/images/categories/Healthy Sweets.webp' },
+  { name: 'Healthy Sweets', slug: 'Premium Healthy Sweets',             image: '/images/categories/HealthySweets.webp' },
   { name: 'Protein Snacks', slug: 'Protein & Energy Snacks',            image: '/images/categories/Proteinseeds.webp' },
   { name: 'Millet Snacks',  slug: 'Traditional Millet Savoury Snacks',  image: '/images/categories/MilletSnacks.webp' },
 ];
@@ -20,20 +20,24 @@ const categories = [
 async function getActiveBanner() {
   try {
     await dbConnect();
-    const banner = await Banner.findOne({ isActive: true }).lean();
-    if (banner) {
-      return { imageUrl: banner.imageUrl as string, altText: (banner.altText as string) || 'DasaDinusulu Banner' };
+    // 1. Prefer an explicitly active banner
+    const active = await Banner.findOne({ isActive: true }).lean();
+    if (active) {
+      return { imageUrl: active.imageUrl as string, altText: (active.altText as string) || 'DasaDinusulu Banner' };
+    }
+    // 2. Fall back to the most recently uploaded banner (any state)
+    const latest = await Banner.findOne().sort({ createdAt: -1 }).lean();
+    if (latest) {
+      return { imageUrl: latest.imageUrl as string, altText: (latest.altText as string) || 'DasaDinusulu Banner' };
     }
   } catch {
-    // fallback to static
+    // fall through to static
   }
-  return { imageUrl: '/images/hbanner.png', altText: 'DasaDinusulu – Clay Pot Roasted Trusted Goodness.' };
+  // 3. Last resort — static asset (should rarely happen)
+  return { imageUrl: '/images/Dasadinusulu.webp', altText: 'DasaDinusulu – Clay Pot Roasted Trusted Goodness.' };
 }
 
-// ISR: cache the homepage and regenerate at most every 150 seconds.
-// Banner and featured product changes propagate within 150s.
-// Admin product/reel mutations call revalidatePath('/') to bust the cache immediately.
-export const revalidate = 150;
+export const dynamic = 'force-dynamic';
 
 
 export default async function HomePage() {
