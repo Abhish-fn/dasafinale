@@ -30,7 +30,11 @@ async function getActiveBanner() {
   return { imageUrl: '/images/hbanner.png', altText: 'DasaDinusulu – Clay Pot Roasted Trusted Goodness.' };
 }
 
-export const dynamic = 'force-dynamic';
+// ISR: cache the homepage and regenerate at most every 150 seconds.
+// Banner and featured product changes propagate within 150s.
+// Admin product/reel mutations call revalidatePath('/') to bust the cache immediately.
+export const revalidate = 150;
+
 
 export default async function HomePage() {
   const banner = await getActiveBanner();

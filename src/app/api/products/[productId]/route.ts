@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import dbConnect from '@/lib/db';
 import Product from '@/models/Product';
 import { auth } from '@/lib/auth';
@@ -74,6 +75,9 @@ export async function PUT(
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
+
+    // Bust the homepage ISR cache so featured-product changes are reflected immediately
+    revalidatePath('/');
 
     return NextResponse.json({ product });
   } catch (error) {

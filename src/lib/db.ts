@@ -28,6 +28,12 @@ export default async function dbConnect(): Promise<typeof mongoose> {
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
+      // Fail fast when Atlas is unreachable (e.g. build machine IP not whitelisted).
+      // Each server component has a try/catch that returns static fallback data on
+      // connection failure, so the build succeeds. Runtime connections from whitelisted
+      // server IPs succeed normally and ISR populates real data on first request.
+      serverSelectionTimeoutMS: 5_000,
+      connectTimeoutMS: 5_000,
     });
   }
 

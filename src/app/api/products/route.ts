@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import mongoose from 'mongoose';
 import dbConnect from '@/lib/db';
 import Product from '@/models/Product';
@@ -159,6 +160,9 @@ export async function POST(req: NextRequest) {
       productId,
       slug: finalSlug,
     });
+
+    // Bust the homepage ISR cache so new featured products appear immediately
+    revalidatePath('/');
 
     return NextResponse.json({ product }, { status: 201 });
   } catch (error) {

@@ -1,9 +1,16 @@
-'use client';
+/**
+ * FeaturedProducts — Server Component
+ *
+ * Fetches featured product data directly from the DB (no useEffect, no client JS).
+ * The page-level ISR (revalidate=150) handles caching; admin mutations call
+ * revalidatePath('/') to bust the cache immediately when featured products change.
+ */
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import dbConnect from '@/lib/db';
+import Product from '@/models/Product';
 import ProductCard from '@/components/products/ProductCard';
-import { SkeletonCard } from '@/components/ui/Skeleton';
+import styles from './FeaturedProducts.module.css';
 
 interface ProductData {
   _id: string;
@@ -17,38 +24,51 @@ interface ProductData {
   tags?: string[];
 }
 
+async function getFeaturedProducts(): Promise<ProductData[]> {
+  try {
+    await dbConnect();
 
-interface FeaturedData {
-  mustTry: ProductData[];
-  bestSellers: ProductData[];
-  newArrivals: ProductData[];
+    const featuredPipeline = (
+      filter: Record<string, unknown>,
+      sortField: Record<string, 1 | -1>,
+      limit: number
+    ) => [
+      { $match: { isActive: true, ...filter } },
+      { $addFields: { totalSalesCount: { $sum: '$variants.salesCount' } } },
+      { $sort: sortField },
+      { $limit: limit },
+    ];
+
+    const [mustTry, bestSellers, newArrivals] = await Promise.all([
+      Product.aggregate(featuredPipeline({ isMustTry: true }, { totalSalesCount: -1 }, 4)),
+      Product.aggregate(featuredPipeline({ isBestSeller: true }, { totalSalesCount: -1 }, 4)),
+      Product.aggregate([
+        { $match: { isActive: true } },
+        { $sort: { createdAt: -1 } },
+        { $limit: 4 },
+      ]),
+    ]);
+
+    // Merge all, deduplicate by _id, take top 6
+    const all = [...bestSellers, ...mustTry, ...newArrivals] as ProductData[];
+    const seen = new Set<string>();
+    return all
+      .filter((p) => {
+        const id = String(p._id);
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      })
+      .slice(0, 6);
+  } catch {
+    return [];
+  }
 }
 
-export default function FeaturedProducts() {
-  const [products, setProducts] = useState<ProductData[]>([]);
-  const [loading, setLoading] = useState(true);
+export default async function FeaturedProducts() {
+  const products = await getFeaturedProducts();
 
-  useEffect(() => {
-    fetch('/api/products/featured')
-      .then((r) => r.json())
-      .then((data: FeaturedData) => {
-        // Merge all products, deduplicate by _id, and take the top 6
-        const all = [...(data.bestSellers || []), ...(data.mustTry || []), ...(data.newArrivals || [])];
-        const seen = new Set<string>();
-        const unique = all.filter((p) => {
-          if (seen.has(p._id)) return false;
-          seen.add(p._id);
-          return true;
-        });
-        setProducts(unique.slice(0, 6));
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (!loading && products.length === 0) {
-    return null;
-  }
+  if (products.length === 0) return null;
 
   return (
     <section
@@ -73,26 +93,10 @@ export default function FeaturedProducts() {
         Handpicked favourites from Andhra&apos;s finest
       </p>
 
-      <div className="featured-grid">
-        <style>{`
-          .featured-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: var(--space-4);
-          }
-          @media (min-width: 768px) {
-            .featured-grid {
-              grid-template-columns: repeat(6, 1fr);
-              gap: var(--space-4);
-            }
-          }
-        `}</style>
-        {loading
-          ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-          : products.map((product) => (
-              <ProductCard key={product._id} product={product} />
-            ))
-        }
+      <div className={styles.featuredGrid}>
+        {products.map((product) => (
+          <ProductCard key={String(product._id)} product={product} />
+        ))}
       </div>
     </section>
   );

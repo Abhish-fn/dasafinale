@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import dbConnect from '@/lib/db';
 import Reel from '@/models/Reel';
 import { auth } from '@/lib/auth';
@@ -44,6 +45,9 @@ export async function POST(req: NextRequest) {
       isActive: true,
     });
 
+    // Bust homepage ISR cache so new reel appears immediately
+    revalidatePath('/');
+
     return NextResponse.json({ reel }, { status: 201 });
   } catch (error) {
     console.error('POST /api/admin/reels error:', error);
@@ -68,6 +72,8 @@ export async function DELETE(req: NextRequest) {
     }
 
     await Reel.findByIdAndDelete(id);
+    // Bust homepage ISR cache so deleted reel is no longer shown
+    revalidatePath('/');
     return NextResponse.json({ message: 'Reel deleted' });
   } catch (error) {
     console.error('DELETE /api/admin/reels error:', error);

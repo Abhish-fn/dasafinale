@@ -3,7 +3,7 @@
    Traditional Andhra Snacks — Red, Gold, Cream — Royal Red
    =================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@600;700;800;900&family=Playfair+Display:wght@400;700;900&display=swap');
+/* Fonts are loaded via next/font/google in layout.tsx (self-hosted, non-blocking) */
 
 /* --- CSS Custom Properties (Design Tokens) --- */
 :root {
