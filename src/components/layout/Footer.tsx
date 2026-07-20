@@ -13,11 +13,12 @@ const quickLinks = [
 ];
 
 const categories = [
-  { href: '/products?category=Dry%20Fruit%20Laddu', label: 'Dry Fruit Laddu' },
-  { href: '/products?category=Roasted%20Snacks', label: 'Roasted Snacks' },
-  { href: '/products?category=Dry%20Fruits%20%26%20Nuts', label: 'Dry Fruits & Nuts' },
-  { href: '/products?category=Millet%20Snacks', label: 'Millet Snacks' },
-  { href: '/products?category=Seeds%20%26%20Powders', label: 'Seeds & Powders' },
+  { href: '/products?category=Clay%20Pot%20Roasted%20Seeds%20%26%20Superfoods', label: 'Roasted Seeds' },
+  { href: '/products?category=Healthy%20Chips%20%26%20Crisps',                  label: 'Healthy Chips' },
+  { href: '/products?category=Palm%20Jaggery%20Millet%20Biscuits',              label: 'Jaggery Biscuits' },
+  { href: '/products?category=Premium%20Healthy%20Sweets',                      label: 'Healthy Sweets' },
+  { href: '/products?category=Protein%20%26%20Energy%20Snacks',                 label: 'Protein Snacks' },
+  { href: '/products?category=Traditional%20Millet%20Savoury%20Snacks',         label: 'Millet Snacks' },
 ];
 
 export default function Footer() {
