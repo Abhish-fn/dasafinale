@@ -9,12 +9,12 @@ import styles from './page.module.css';
 /* eslint-disable @next/next/no-img-element */
 
 const categories = [
-  { name: 'Roasted Seeds', slug: 'Clay Pot Roasted Seeds & Superfoods', image: '/images/categories/RoastedSeeds.jpg' },
-  { name: 'Healthy Chips',  slug: 'Healthy Chips & Crisps',             image: '/images/categories/HealthyChips.jpg' },
-  { name: 'Jaggery Biscuits', slug: 'Palm Jaggery Millet Biscuits',     image: '/images/categories/JaggeryBiscuits.png' },
-  { name: 'Healthy Sweets', slug: 'Premium Healthy Sweets',             image: '/images/categories/Healthy Sweets.jpg' },
-  { name: 'Protein Snacks', slug: 'Protein & Energy Snacks',            image: '/images/categories/Proteinseeds.png' },
-  { name: 'Millet Snacks',  slug: 'Traditional Millet Savoury Snacks',  image: '/images/categories/MilletSnacks.png' },
+  { name: 'Roasted Seeds', slug: 'Clay Pot Roasted Seeds & Superfoods', image: '/images/categories/RoastedSeeds.webp' },
+  { name: 'Healthy Chips',  slug: 'Healthy Chips & Crisps',             image: '/images/categories/HealthyChips.webp' },
+  { name: 'Jaggery Biscuits', slug: 'Palm Jaggery Millet Biscuits',     image: '/images/categories/JaggeryBiscuits.webp' },
+  { name: 'Healthy Sweets', slug: 'Premium Healthy Sweets',             image: '/images/categories/Healthy Sweets.webp' },
+  { name: 'Protein Snacks', slug: 'Protein & Energy Snacks',            image: '/images/categories/Proteinseeds.webp' },
+  { name: 'Millet Snacks',  slug: 'Traditional Millet Savoury Snacks',  image: '/images/categories/MilletSnacks.webp' },
 ];
 
 async function getActiveBanner() {

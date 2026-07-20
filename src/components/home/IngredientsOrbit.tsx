@@ -105,7 +105,7 @@ export default function DasaDinusuluHero() {
 
           <div className={styles.potCenter}>
             <img
-              src="/images/Dasadinusulu.png"
+              src="/images/Dasadinusulu.webp"
               alt="Dasa Dinusulu"
               loading="lazy"
               style={{
