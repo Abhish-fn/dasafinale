@@ -70,6 +70,11 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Free Shipping Strip */}
+      <div className={styles.shippingStrip}>
+        🚚 FREE Shipping Above ₹1,499 For Orders in AP &amp; Telangana
+      </div>
+
       {/* Ingredients Orbit */}
       <IngredientsOrbit />
 

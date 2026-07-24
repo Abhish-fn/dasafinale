@@ -82,6 +82,18 @@
 }
 
 
+/* Free Shipping Strip */
+.shippingStrip {
+  background: var(--red);
+  color: white;
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 8px var(--space-4);
+}
+
 /* Shared Section Styles */
 .sectionContainer {
   max-width: var(--max-width);
