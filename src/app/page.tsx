@@ -31,10 +31,9 @@ async function getActiveBanner() {
       return { imageUrl: latest.imageUrl as string, altText: (latest.altText as string) || 'DasaDinusulu Banner' };
     }
   } catch {
-    // fall through to static
+    // DB unreachable — show blank banner
   }
-  // 3. Last resort — static asset (should rarely happen)
-  return { imageUrl: '/images/Dasadinusulu.webp', altText: 'DasaDinusulu – Clay Pot Roasted Trusted Goodness.' };
+  return null;
 }
 
 export const dynamic = 'force-dynamic';
@@ -48,14 +47,16 @@ export default async function HomePage() {
       {/* Hero Banner */}
       <section className={styles.heroBanner}>
         <div className={styles.heroBannerImageWrap}>
-          <Image
-            src={banner.imageUrl}
-            alt={banner.altText}
-            fill
-            priority
-            sizes="100vw"
-            className={styles.heroBannerImage}
-          />
+          {banner && (
+            <Image
+              src={banner.imageUrl}
+              alt={banner.altText}
+              fill
+              priority
+              sizes="100vw"
+              className={styles.heroBannerImage}
+            />
+          )}
         </div>
         <div className={styles.heroBannerOverlay}>
           <div className={styles.heroBannerCta}>
